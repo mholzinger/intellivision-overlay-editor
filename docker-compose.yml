@@ -1,0 +1,16 @@
+# version: '3.8'
+
+services:
+  overlay-editor:
+    build: .
+    container_name: intellivision-overlay-editor
+    ports:
+      - "5000:5000"
+    environment:
+      - OVL_HOST=0.0.0.0
+      - OVL_PORT=5000
+      - OVL_DEBUG=0
+    restart: unless-stopped
+    # volumes:
+      # Optional: Mount a local directory for persistent overlays
+      # - ./overlays:/app/overlays

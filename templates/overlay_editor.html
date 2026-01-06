@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intellivision Overlay Editor - Professional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 40px;
+            border-bottom: 4px solid #3498db;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: #bdc3c7;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 50% 50%;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .preview-panel {
+            background: #ecf0f1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-right: 1px solid #ddd;
+        }
+
+        .preview-container {
+            background: white;
+            border-radius: 8px;
+            padding: 0; /* let the svg occupy full panel */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        #svg-preview {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            border: 2px solid #34495e;
+            border-radius: 6px;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        /* Ensure inner SVG scales to container and covers (may crop) */
+        #svg-preview svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .control-section h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-section h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #3498db;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .input-group input[type="text"],
+        .input-group input[type="file"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .button-input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .button-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .button-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            color: white;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .file-upload {
+            border: 2px dashed #3498db;
+            background: #ebf5fb;
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload:hover {
+            background: #d6eaf8;
+            border-color: #2980b9;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .status-success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .status-error {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        /* Responsive: stack panels vertically on narrow viewports */
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-panel {
+                order: 1;
+            }
+
+            .controls-panel {
+                order: 2;
+            }
+
+            .preview-container {
+                padding: 20px;
+                min-height: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Intellivision Overlay Editor</h1>
+            <p>Professional overlay creator for Intellivision Sprint controllers</p>
+        </div>
+
+        <div class="main-content">
+            <div class="preview-panel">
+                <div class="preview-container">
+                    <div id="svg-preview"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="exportPNG()">
+                        <span>📥</span> Download PNG
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetOverlay()">
+                        <span>🔄</span> Reset All
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearArtwork()">
+                        <span>🗑️</span> Clear Artwork
+                    </button>
+                </div>
+                <div style="margin: 12px 0 0 0;">
+                    <label style="font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="export-include-template" checked>
+                        Include overlay template in export
+                    </label>
+                </div>
+
+                <div id="status" class="status-message"></div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-section">
+                    <h2>Game Title</h2>
+                    <div class="input-group">
+                        <label for="title">Overlay Title</label>
+                        <input type="text" id="title" placeholder="Enter game title" value="TITLE" oninput="updateTitle()">
+                        <div class="helper-text">Displayed in the title bar area (max ~20 characters)</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="font-color">Font Color</label>
+                        <input type="color" id="font-color" value="#ffffff" oninput="updateTitleColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">Pick any color for the game title</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="font-select">Font</label>
+                        <select id="font-select" onchange="updateTitleFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
+                        <div class="helper-text">Choose a TTF or OTF font from the local fonts folder</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="title-font-size">Font Size</label>
+                        <input type="range" id="title-font-size" min="1" max="24" value="4" step="0.5" oninput="updateTitleSize()">
+                        <div class="helper-text">Size: <span id="title-font-size-value">4</span>px</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="title-bg-color">Title Background Color</label>
+                        <input type="color" id="title-bg-color" value="#0000ff" oninput="updateTitleBackground()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+                                <input type="checkbox" id="title-bg-enabled" onchange="toggleTitleBackground()" checked>
+                                Enable background fill (like official overlays)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Artwork Upload</h2>
+                    <div class="input-group">
+                        <label class="file-upload">
+                            <div class="upload-icon">🖼️</div>
+                            <div><strong>Click to upload artwork</strong></div>
+                            <div class="helper-text">Recommended: PNG or JPG, will be positioned in visible window area</div>
+                            <input type="file" id="artwork-upload" accept="image/*" onchange="handleArtworkUpload(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-section" id="artwork-controls" style="display: none;">
+                    <h2>Artwork Position & Scale</h2>
+                    <div class="input-group">
+                        <label>Artwork Opacity</label>
+                        <input type="range" id="artwork-opacity" min="0" max="1" value="0.9" step="0.05" oninput="updateArtworkOpacity()" style="width: 100%;">
+                        <div class="helper-text">
+                            Transparency: <span id="opacity-value">90</span>%
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>X-axis Position (Horizontal)</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="moveArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
+                            <input type="range" id="artwork-x-pos" min="-55" max="55" value="0" step="0.5"
+                                   oninput="updateArtworkPosition()" style="flex: 1;">
+                            <button class="btn btn-secondary" onclick="moveArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
+                        </div>
+                        <div class="helper-text" style="margin-top: 8px;">
+                            X offset: <span id="x-position-value">0</span>mm
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Y-axis Position (Vertical)</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="moveArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
+                            <input type="range" id="artwork-y-pos" min="-90" max="90" value="0" step="0.5"
+                                   oninput="updateArtworkPosition()" style="flex: 1;">
+                            <button class="btn btn-secondary" onclick="moveArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
+                        </div>
+                        <div class="helper-text" style="margin-top: 8px;">
+                            Y offset: <span id="y-position-value">0</span>mm
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Artwork Scale (Zoom)</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="scaleArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
+                            <input type="range" id="artwork-scale" min="0.5" max="2.5" value="1.0" step="0.05"
+                                   oninput="updateArtworkScale()" style="flex: 1;">
+                            <button class="btn btn-secondary" onclick="scaleArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
+                        </div>
+                        <div class="helper-text" style="margin-top: 8px;">
+                            Scale: <span id="scale-value">100</span>%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Button Label Styling</h2>
+                    <div class="input-group">
+                        <label for="button-label-color">Button Label Color</label>
+                        <input type="color" id="button-label-color" value="#000000" oninput="updateAllButtonLabels()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">Color for all button text</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="button-font-select">Button Font</label>
+                        <select id="button-font-select" onchange="updateButtonFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
+                        <div class="helper-text">Choose a font for button labels</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="button-label-size">Button Label Size</label>
+                        <input type="range" id="button-label-size" min="1" max="10" value="3.5" step="0.25" oninput="updateAllButtonLabels()">
+                        <div class="helper-text">Size: <span id="button-label-size-value">3.5</span>px</div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Button Labels</h2>
+                    <div class="helper-text" style="margin-bottom: 15px;">
+                        Customize the label for each button
+                    </div>
+                    <div class="button-grid">
+                        <div>
+                            <div class="button-label">Button 1</div>
+                            <input type="text" class="button-input" id="btn-input-1" value="1" oninput="updateButton(1)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-1" onchange="toggleButtonBackground(1)">
+                                BG
+                                <input type="color" id="btn-bg-color-1" value="#ff0000" oninput="updateButtonBackground(1)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 2</div>
+                            <input type="text" class="button-input" id="btn-input-2" value="2" oninput="updateButton(2)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-2" onchange="toggleButtonBackground(2)">
+                                BG
+                                <input type="color" id="btn-bg-color-2" value="#ff0000" oninput="updateButtonBackground(2)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 3</div>
+                            <input type="text" class="button-input" id="btn-input-3" value="3" oninput="updateButton(3)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-3" onchange="toggleButtonBackground(3)">
+                                BG
+                                <input type="color" id="btn-bg-color-3" value="#ff0000" oninput="updateButtonBackground(3)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 4</div>
+                            <input type="text" class="button-input" id="btn-input-4" value="4" oninput="updateButton(4)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-4" onchange="toggleButtonBackground(4)">
+                                BG
+                                <input type="color" id="btn-bg-color-4" value="#ff0000" oninput="updateButtonBackground(4)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 5</div>
+                            <input type="text" class="button-input" id="btn-input-5" value="5" oninput="updateButton(5)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-5" onchange="toggleButtonBackground(5)">
+                                BG
+                                <input type="color" id="btn-bg-color-5" value="#ff0000" oninput="updateButtonBackground(5)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 6</div>
+                            <input type="text" class="button-input" id="btn-input-6" value="6" oninput="updateButton(6)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-6" onchange="toggleButtonBackground(6)">
+                                BG
+                                <input type="color" id="btn-bg-color-6" value="#ff0000" oninput="updateButtonBackground(6)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 7</div>
+                            <input type="text" class="button-input" id="btn-input-7" value="7" oninput="updateButton(7)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-7" onchange="toggleButtonBackground(7)">
+                                BG
+                                <input type="color" id="btn-bg-color-7" value="#ff0000" oninput="updateButtonBackground(7)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 8</div>
+                            <input type="text" class="button-input" id="btn-input-8" value="8" oninput="updateButton(8)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-8" onchange="toggleButtonBackground(8)">
+                                BG
+                                <input type="color" id="btn-bg-color-8" value="#ff0000" oninput="updateButtonBackground(8)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Button 9</div>
+                            <input type="text" class="button-input" id="btn-input-9" value="9" oninput="updateButton(9)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-9" onchange="toggleButtonBackground(9)">
+                                BG
+                                <input type="color" id="btn-bg-color-9" value="#ff0000" oninput="updateButtonBackground(9)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Clear</div>
+                            <input type="text" class="button-input" id="btn-input-clear" value="CLR" oninput="updateButton('clear')">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-clear" onchange="toggleButtonBackground('clear')">
+                                BG
+                                <input type="color" id="btn-bg-color-clear" value="#ff0000" oninput="updateButtonBackground('clear')" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">0</div>
+                            <input type="text" class="button-input" id="btn-input-0" value="0" oninput="updateButton(0)">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-0" onchange="toggleButtonBackground(0)">
+                                BG
+                                <input type="color" id="btn-bg-color-0" value="#ff0000" oninput="updateButtonBackground(0)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                        <div>
+                            <div class="button-label">Enter</div>
+                            <input type="text" class="button-input" id="btn-input-enter" value="ENT" oninput="updateButton('enter')">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px;">
+                                <input type="checkbox" id="btn-bg-enabled-enter" onchange="toggleButtonBackground('enter')">
+                                BG
+                                <input type="color" id="btn-bg-color-enter" value="#ff0000" oninput="updateButtonBackground('enter')" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Button Artwork</h2>
+                    <div class="helper-text" style="margin-bottom: 15px;">
+                        Upload individual artwork for each button. Artwork appears between button background and text.
+                    </div>
+
+                    <div class="input-group">
+                        <label for="button-artwork-select">Select Button</label>
+                        <select id="button-artwork-select" onchange="selectButtonForArtwork()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;">
+                            <option value="">-- Select a button --</option>
+                            <option value="1">Button 1</option>
+                            <option value="2">Button 2</option>
+                            <option value="3">Button 3</option>
+                            <option value="4">Button 4</option>
+                            <option value="5">Button 5</option>
+                            <option value="6">Button 6</option>
+                            <option value="7">Button 7</option>
+                            <option value="8">Button 8</option>
+                            <option value="9">Button 9</option>
+                            <option value="clear">Clear</option>
+                            <option value="0">0</option>
+                            <option value="enter">Enter</option>
+                        </select>
+                    </div>
+
+                    <div id="button-artwork-controls" style="display: none;">
+                        <div class="input-group">
+                            <label class="file-upload" style="margin-top: 15px;">
+                                <div class="upload-icon">🎨</div>
+                                <div><strong>Upload Button Artwork</strong></div>
+                                <div style="font-size: 12px; color: #666;">PNG, JPG, or GIF</div>
+                                <input type="file" id="button-artwork-upload" accept="image/*" onchange="handleButtonArtworkUpload(event)">
+                            </label>
+                        </div>
+
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                                <input type="checkbox" id="btn-art-remove-white" onchange="reprocessButtonArtwork()">
+                                Remove white/light backgrounds (make transparent)
+                            </label>
+                            <div class="helper-text" style="margin-top: 4px;">
+                                Automatically removes white or near-white pixels from the image
+                            </div>
+                        </div>
+
+                        <div class="input-group" id="btn-art-threshold-control" style="display: none;">
+                            <label>White Detection Threshold</label>
+                            <input type="range" id="btn-art-threshold" min="200" max="255" value="245" step="1" oninput="reprocessButtonArtwork()" style="width: 100%;">
+                            <div class="helper-text">
+                                Threshold: <span id="btn-art-threshold-value">245</span> (lower = more aggressive)
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Artwork Opacity</label>
+                            <input type="range" id="btn-art-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateButtonArtwork()" style="width: 100%;">
+                            <div class="helper-text">
+                                Transparency: <span id="btn-art-opacity-value">100</span>%
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>X-axis Position (Horizontal)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveButtonArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
+                                <input type="range" id="btn-art-x-pos" min="-11.4" max="11.4" value="0" step="0.1"
+                                       oninput="updateButtonArtwork()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveButtonArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Position: <span id="btn-art-x-value">0.0</span>mm
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Y-axis Position (Vertical)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveButtonArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
+                                <input type="range" id="btn-art-y-pos" min="-11.4" max="11.4" value="0" step="0.1"
+                                       oninput="updateButtonArtwork()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveButtonArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Position: <span id="btn-art-y-value">0.0</span>mm
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Rotation</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="rotateButtonArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
+                                <input type="range" id="btn-art-rotation" min="-180" max="180" value="0" step="1"
+                                       oninput="updateButtonArtwork()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="rotateButtonArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Angle: <span id="btn-art-rotation-value">0</span>°
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Scale / Zoom</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="scaleButtonArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
+                                <input type="range" id="btn-art-scale" min="0.1" max="3.0" value="1.0" step="0.05"
+                                       oninput="updateButtonArtwork()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="scaleButtonArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Scale: <span id="btn-art-scale-value">100</span>%
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <button class="btn btn-secondary" onclick="clearButtonArtwork()" style="width: 100%; margin-top: 10px;">
+                                <span>🗑️</span> Clear Button Artwork
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Action Buttons</h2>
+                    <div class="helper-text" style="margin-bottom: 15px;">
+                        Customize labels for the side action buttons (text runs vertically along edges)
+                    </div>
+                    <div class="input-group">
+                        <label for="action-label-color">Action Button Color</label>
+                        <input type="color" id="action-label-color" value="#000000" oninput="updateAllActionButtons()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">Color for all action button text</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="action-font-select">Action Button Font</label>
+                        <select id="action-font-select" onchange="updateActionFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
+                        <div class="helper-text">Choose a font for action button labels</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="action-label-size">Action Button Size</label>
+                        <input type="range" id="action-label-size" min="1" max="10" value="1.2" step="0.1" oninput="updateAllActionButtons()">
+                        <div class="helper-text">Size: <span id="action-label-size-value">1.2</span>px</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="action-arrow-color">Arrow Fill Color</label>
+                        <input type="color" id="action-arrow-color" value="#8B4513" oninput="updateActionArrowColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+                                <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
+                                Enable arrow fill color
+                            </label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="action-top">Top (both left & right - shared action)</label>
+                        <input type="text" class="button-input" id="action-top" value="FIRE" oninput="updateActionButton('top')" style="width: 100%; padding: 10px;">
+                        <div class="helper-text">Controls both top-left and top-right labels</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div>
+                            <div class="button-label">Bottom Left</div>
+                            <input type="text" class="button-input" id="action-bottom-left" value="FIRE" oninput="updateActionButton('bottom-left')">
+                        </div>
+                        <div>
+                            <div class="button-label">Bottom Right</div>
+                            <input type="text" class="button-input" id="action-bottom-right" value="FIRE" oninput="updateActionButton('bottom-right')">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h2>Bottom Arrows</h2>
+                    <div class="helper-text" style="margin-bottom: 15px;">
+                        Customize the text label between the two downward arrows at the bottom
+                    </div>
+                    <div class="input-group">
+                        <label for="bottom-text-input">Bottom Text</label>
+                        <input type="text" class="button-input" id="bottom-text-input" value="DIRECTION" oninput="updateBottomText()" style="text-align: center;">
+                        <div class="helper-text">Common labels: DIRECTION, AIM, MOVE, etc.</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="bottom-text-font-select">Font</label>
+                        <select id="bottom-text-font-select" onchange="updateBottomTextFont()" class="button-input"></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="bottom-text-color">Text Color</label>
+                        <input type="color" id="bottom-text-color" value="#666666" oninput="updateBottomTextColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                    </div>
+                    <div class="input-group">
+                        <label for="bottom-text-size">Text Size: <span id="bottom-text-size-value">1.2</span>px</label>
+                        <input type="range" id="bottom-text-size" min="0.8" max="3" step="0.1" value="1.2" oninput="updateBottomTextSize()" style="width: 100%;">
+                    </div>
+                    <div class="input-group">
+                        <label for="bottom-arrow-color">Arrow Fill Color</label>
+                        <input type="color" id="bottom-arrow-color" value="#8B4513" oninput="updateBottomArrowColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+                                <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
+                                Enable arrow fill color
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let svgDoc = null;
+        let artworkDataURL = null;
+        let artworkXOffset = 0;
+        let artworkYOffset = 0;
+        let artworkScale = 1.0;
+        let artworkOpacity = 0.9;
+
+        // Button artwork storage: { buttonNum: { dataURL, originalDataURL, x, y, scale, rotation, opacity } }
+        let buttonArtwork = {};
+        let selectedButtonForArtwork = null;
+
+        // Load the SVG template on page load
+        async function loadTemplate() {
+            try {
+                const response = await fetch('/get_template');
+                const data = await response.json();
+
+                if (data.svg) {
+                    const preview = document.getElementById('svg-preview');
+                    preview.innerHTML = data.svg;
+                    svgDoc = document.querySelector('#svg-preview svg');
+
+// Use 'meet' (contain) in preview so uploaded artwork is fully visible and editable
+                        if (svgDoc) {
+                            svgDoc.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                        svgDoc.style.width = '100%';
+                        svgDoc.style.height = '100%';
+                        // load available fonts and apply defaults
+                        loadFonts();
+                        updateTitle();
+                        updateTitleSize();  // Called after updateTitle to center it
+                        toggleTitleBackground();  // Apply default blue title background
+                        updateAllButtonLabels();  // Apply button label styling on load
+                        toggleActionArrowFill();  // Apply default brown arrow fill
+                        toggleBottomArrowFill();  // Apply default brown bottom arrow fill
+                    }
+
+                    showStatus('Template loaded successfully!', 'success');
+                } else {
+                    showStatus('Error loading template', 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function getSelectedFontColor() {
+            return document.getElementById('font-color').value;
+        }
+
+        function updateTitleColor() {
+            const titleElement = svgDoc && svgDoc.querySelector('#title-text');
+            if (titleElement) {
+                titleElement.style.fill = getSelectedFontColor();
+            }
+        }
+
+        function updateTitle() {
+            const title = document.getElementById('title').value;
+            const titleElement = svgDoc.querySelector('#title-text');
+            if (titleElement) {
+                titleElement.textContent = title || 'TITLE';
+                titleElement.style.fill = getSelectedFontColor();
+            }
+        }
+
+        async function loadFonts() {
+            try {
+                const resp = await fetch('/fonts/list');
+                const data = await resp.json();
+                const select = document.getElementById('font-select');
+                const buttonSelect = document.getElementById('button-font-select');
+                const actionSelect = document.getElementById('action-font-select');
+                const bottomSelect = document.getElementById('bottom-text-font-select');
+                select.innerHTML = '';
+                buttonSelect.innerHTML = '';
+                actionSelect.innerHTML = '';
+                bottomSelect.innerHTML = '';
+
+                if (data.fonts && data.fonts.length > 0) {
+                    let defaultIndex = 0;
+                    data.fonts.forEach((f, index) => {
+                        // Create option for title font selector
+                        const opt = document.createElement('option');
+                        opt.value = JSON.stringify(f);
+                        if (f.type === 'system') {
+                            opt.textContent = f.family + ' (system)';
+                        } else {
+                            opt.textContent = f.family;
+                        }
+                        select.appendChild(opt);
+
+                        // Create option for button font selector
+                        const btnOpt = document.createElement('option');
+                        btnOpt.value = JSON.stringify(f);
+                        if (f.type === 'system') {
+                            btnOpt.textContent = f.family + ' (system)';
+                        } else {
+                            btnOpt.textContent = f.family;
+                        }
+                        buttonSelect.appendChild(btnOpt);
+
+                        // Create option for action button font selector
+                        const actionOpt = document.createElement('option');
+                        actionOpt.value = JSON.stringify(f);
+                        if (f.type === 'system') {
+                            actionOpt.textContent = f.family + ' (system)';
+                        } else {
+                            actionOpt.textContent = f.family;
+                        }
+                        actionSelect.appendChild(actionOpt);
+
+                        // Create option for bottom text font selector
+                        const bottomOpt = document.createElement('option');
+                        bottomOpt.value = JSON.stringify(f);
+                        if (f.type === 'system') {
+                            bottomOpt.textContent = f.family + ' (system)';
+                        } else {
+                            bottomOpt.textContent = f.family;
+                        }
+                        bottomSelect.appendChild(bottomOpt);
+
+                        // Set Eurostile BQ as default
+                        if (f.family === 'Eurostile BQ' && f.type === 'system') {
+                            defaultIndex = index;
+                            console.log('✓ Found Eurostile BQ at index', index);
+                        }
+                    });
+                    // Select default font for all selectors
+                    select.selectedIndex = defaultIndex;
+                    buttonSelect.selectedIndex = defaultIndex;
+                    actionSelect.selectedIndex = defaultIndex;
+                    console.log('Selected font index:', defaultIndex);
+                    updateTitleFont();
+                    updateButtonFont();
+                    updateActionFont();
+                } else {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No fonts found';
+                    select.appendChild(opt);
+
+                    const btnOpt = document.createElement('option');
+                    btnOpt.value = '';
+                    btnOpt.textContent = 'No fonts found';
+                    buttonSelect.appendChild(btnOpt);
+
+                    const actionOpt = document.createElement('option');
+                    actionOpt.value = '';
+                    actionOpt.textContent = 'No fonts found';
+                    actionSelect.appendChild(actionOpt);
+                }
+            } catch (error) {
+                console.error('Error loading fonts', error);
+            }
+        }
+
+        function updateTitleFont() {
+            const select = document.getElementById('font-select');
+            const fontValue = select.value;
+            const titleElement = svgDoc.querySelector('#title-text');
+            if (!fontValue) return;
+
+            // Parse font data
+            const fontData = JSON.parse(fontValue);
+            const family = fontData.family;
+            const isSystem = fontData.type === 'system';
+
+            // Create or replace a <style id="embedded-font-style"> inside the SVG
+            let styleEl = svgDoc.querySelector('#embedded-font-style');
+            if (!styleEl) {
+                styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleEl.setAttribute('id', 'embedded-font-style');
+                svgDoc.insertBefore(styleEl, svgDoc.firstChild);
+            }
+
+            if (isSystem) {
+                // System font: just set font-family, no @font-face needed
+                styleEl.textContent = `#title-text { font-family: "${family}" !important; }`;
+            } else {
+                // Custom font: use @font-face for browser preview
+                const fontFile = fontData.file;
+                const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+                styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#title-text { font-family: "${family}" !important; }`;
+
+                // Also load in browser for preview
+                let headStyle = document.getElementById('preview-embedded-font-style');
+                if (!headStyle) {
+                    headStyle = document.createElement('style');
+                    headStyle.id = 'preview-embedded-font-style';
+                    document.head.appendChild(headStyle);
+                }
+                headStyle.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+            }
+
+            if (titleElement) {
+                titleElement.style.fontFamily = family;
+                titleElement.style.fill = getSelectedFontColor();
+            }
+        }
+
+        function updateButtonFont() {
+            const select = document.getElementById('button-font-select');
+            const fontValue = select.value;
+            if (!fontValue) return;
+
+            // Parse font data
+            const fontData = JSON.parse(fontValue);
+            const family = fontData.family;
+            const isSystem = fontData.type === 'system';
+
+            // For button labels, we'll embed font info in SVG styles
+            let styleEl = svgDoc.querySelector('#embedded-button-font-style');
+            if (!styleEl) {
+                styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleEl.setAttribute('id', 'embedded-button-font-style');
+                svgDoc.insertBefore(styleEl, svgDoc.firstChild);
+            }
+
+            if (isSystem) {
+                // System font: just set font-family for button labels
+                styleEl.textContent = `.button-label-text { font-family: "${family}" !important; }`;
+            } else {
+                // Custom font: use @font-face for button labels
+                const fontFile = fontData.file;
+                const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+                styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.button-label-text { font-family: "${family}" !important; }`;
+
+                // Also load in browser for preview (reuse or add to existing preview style)
+                let headStyle = document.getElementById('preview-embedded-font-style');
+                if (!headStyle) {
+                    headStyle = document.createElement('style');
+                    headStyle.id = 'preview-embedded-font-style';
+                    document.head.appendChild(headStyle);
+                }
+                // Append button font if not already there
+                if (!headStyle.textContent.includes(`font-family: "${family}"`)) {
+                    headStyle.textContent += `\n@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+                }
+            }
+
+            // Update all button labels to use the new font
+            updateAllButtonLabels();
+        }
+
+        function updateTitleSize() {
+            const size = parseFloat(document.getElementById('title-font-size').value);
+            document.getElementById('title-font-size-value').textContent = size;
+            const titleElement = svgDoc.querySelector('#title-text');
+            if (titleElement) {
+                titleElement.style.fontSize = size + 'px';
+                titleElement.style.fill = getSelectedFontColor();
+
+                // Center the text vertically in the title box
+                // Title box is at y=3.5 with height=9, so center is at y=8
+                // Adjust based on font size (approximate baseline offset)
+                const baseY = 8;  // Center Y of title box
+                const baselineOffset = size * 0.35;  // Approximate text baseline offset
+                const centeredY = baseY + baselineOffset;
+                titleElement.setAttribute('y', centeredY.toFixed(2));
+            }
+        }
+
+        function updateTitleBackground() {
+            const enabled = document.getElementById('title-bg-enabled').checked;
+            if (enabled) {
+                toggleTitleBackground();
+            }
+        }
+
+        function toggleTitleBackground() {
+            const bgElement = svgDoc && svgDoc.querySelector('#title-background');
+            if (!bgElement) return;
+
+            const enabled = document.getElementById('title-bg-enabled').checked;
+            const color = document.getElementById('title-bg-color').value;
+
+            if (enabled) {
+                bgElement.setAttribute('fill', color);
+            } else {
+                bgElement.setAttribute('fill', 'none');
+            }
+        }
+
+        function updateButton(num) {
+            const value = document.getElementById(`btn-input-${num}`).value;
+            const btnElement = svgDoc && svgDoc.querySelector(`#btn-${num}`);
+            console.log('updateButton called:', num, 'value:', value, 'element:', btnElement);
+            if (btnElement) {
+                btnElement.textContent = value;
+                // Apply global button label styling (color, size, AND font)
+                const color = document.getElementById('button-label-color').value;
+                const size = document.getElementById('button-label-size').value;
+                const fontSelect = document.getElementById('button-font-select');
+                const fontValue = fontSelect.value;
+                let fontFamily = 'Arial, sans-serif';
+                if (fontValue) {
+                    try {
+                        const fontData = JSON.parse(fontValue);
+                        fontFamily = fontData.family;
+                    } catch (e) {
+                        console.error('Error parsing button font:', e);
+                    }
+                }
+
+                // Use inline style to override CSS class styles
+                btnElement.style.fill = color;
+                btnElement.style.fontSize = size + 'px';
+                btnElement.style.fontFamily = fontFamily;
+                console.log('Button updated - text:', value, 'color:', color, 'size:', size, 'font:', fontFamily);
+            } else {
+                console.error('Button element not found for:', num);
+            }
+        }
+
+        function updateAllButtonLabels() {
+            const color = document.getElementById('button-label-color').value;
+            const size = parseFloat(document.getElementById('button-label-size').value);
+            const fontSelect = document.getElementById('button-font-select');
+            const fontValue = fontSelect.value;
+            let fontFamily = 'Arial, sans-serif';
+            if (fontValue) {
+                try {
+                    const fontData = JSON.parse(fontValue);
+                    fontFamily = fontData.family;
+                } catch (e) {
+                    console.error('Error parsing button font:', e);
+                }
+            }
+
+            document.getElementById('button-label-size-value').textContent = size;
+
+            // Update all 12 button labels
+            const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'clear', 0, 'enter'];
+            buttons.forEach(num => {
+                const btnElement = svgDoc && svgDoc.querySelector(`#btn-${num}`);
+                if (btnElement) {
+                    // Use inline style to override CSS class styles
+                    btnElement.style.fill = color;
+                    btnElement.style.fontSize = size + 'px';
+                    btnElement.style.fontFamily = fontFamily;
+                }
+            });
+        }
+
+        function toggleButtonBackground(num) {
+            const bgElement = svgDoc && svgDoc.querySelector(`#btn-bg-${num}`);
+            const enabled = document.getElementById(`btn-bg-enabled-${num}`).checked;
+            const color = document.getElementById(`btn-bg-color-${num}`).value;
+
+            if (!bgElement && enabled) {
+                // Create background rectangle if it doesn't exist
+                createButtonBackground(num);
+            } else if (bgElement) {
+                // Update existing background
+                if (enabled) {
+                    bgElement.setAttribute('fill', color);
+                    bgElement.setAttribute('opacity', '1.0');
+                } else {
+                    bgElement.setAttribute('fill', 'none');
+                    bgElement.setAttribute('opacity', '0');
+                }
+            }
+        }
+
+        function createButtonBackground(num) {
+            // Button coordinates matching the SVG template
+            const buttonCoords = {
+                1: {x: 7.20, y: 26.05}, 2: {x: 21.10, y: 26.05}, 3: {x: 35.00, y: 26.05},
+                4: {x: 7.20, y: 41.19}, 5: {x: 21.10, y: 41.19}, 6: {x: 35.00, y: 41.19},
+                7: {x: 7.20, y: 56.33}, 8: {x: 21.10, y: 56.33}, 9: {x: 35.00, y: 56.33},
+                'clear': {x: 7.20, y: 71.48}, 0: {x: 21.10, y: 71.48}, 'enter': {x: 35.00, y: 71.48}
+            };
+
+            const coords = buttonCoords[num];
+            if (!coords) return;
+
+            // Create rectangle element
+            const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            bgRect.setAttribute('id', `btn-bg-${num}`);
+            bgRect.setAttribute('x', coords.x);
+            bgRect.setAttribute('y', coords.y);
+            bgRect.setAttribute('width', '11.4');
+            bgRect.setAttribute('height', '11.4');
+            bgRect.setAttribute('rx', '1.5');
+            bgRect.setAttribute('ry', '1.5');
+
+            const color = document.getElementById(`btn-bg-color-${num}`).value;
+            bgRect.setAttribute('fill', color);
+            bgRect.setAttribute('opacity', '1.0');
+
+            // Insert before the button text element so it appears behind
+            const btnText = svgDoc.querySelector(`#btn-${num}`);
+            if (btnText && btnText.parentNode) {
+                btnText.parentNode.insertBefore(bgRect, btnText);
+            }
+        }
+
+        function updateButtonBackground(num) {
+            const enabled = document.getElementById(`btn-bg-enabled-${num}`).checked;
+            if (enabled) {
+                toggleButtonBackground(num);
+            }
+        }
+
+        // Action Button Functions
+        function updateActionButton(position) {
+            const value = document.getElementById(`action-${position}`).value;
+
+            if (position === 'top') {
+                // Update both top-left and top-right labels
+                const topLeftLabel = svgDoc && svgDoc.querySelector('#top-left-label');
+                const topRightLabel = svgDoc && svgDoc.querySelector('#top-right-label');
+                if (topLeftLabel) {
+                    topLeftLabel.textContent = value || 'FIRE';
+                    applyActionButtonStyling(topLeftLabel);
+                }
+                if (topRightLabel) {
+                    topRightLabel.textContent = value || 'FIRE';
+                    applyActionButtonStyling(topRightLabel);
+                }
+            } else {
+                // Update individual bottom labels
+                const labelElement = svgDoc && svgDoc.querySelector(`#${position}-label`);
+                if (labelElement) {
+                    labelElement.textContent = value || 'FIRE';
+                    applyActionButtonStyling(labelElement);
+                }
+            }
+        }
+
+        function applyActionButtonStyling(element) {
+            if (!element) return;
+
+            const color = document.getElementById('action-label-color').value;
+            const size = parseFloat(document.getElementById('action-label-size').value);
+            const fontSelect = document.getElementById('action-font-select');
+            const fontValue = fontSelect.value;
+            let fontFamily = 'Arial, sans-serif';
+
+            if (fontValue) {
+                try {
+                    const fontData = JSON.parse(fontValue);
+                    fontFamily = fontData.family;
+                } catch (e) {
+                    console.error('Error parsing action button font:', e);
+                }
+            }
+
+            element.style.fill = color;
+            element.style.fontSize = size + 'px';
+            element.style.fontFamily = fontFamily;
+        }
+
+        function updateAllActionButtons() {
+            const size = parseFloat(document.getElementById('action-label-size').value);
+            document.getElementById('action-label-size-value').textContent = size.toFixed(1);
+
+            // Update all four action button labels
+            const actionLabels = ['top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'];
+            actionLabels.forEach(labelId => {
+                const labelElement = svgDoc && svgDoc.querySelector(`#${labelId}`);
+                if (labelElement) {
+                    applyActionButtonStyling(labelElement);
+                }
+            });
+        }
+
+        function updateActionFont() {
+            const select = document.getElementById('action-font-select');
+            const fontValue = select.value;
+            if (!fontValue) return;
+
+            // Parse font data
+            const fontData = JSON.parse(fontValue);
+            const family = fontData.family;
+            const isSystem = fontData.type === 'system';
+
+            // For action button labels, we'll embed font info in SVG styles
+            let styleEl = svgDoc.querySelector('#embedded-action-font-style');
+            if (!styleEl) {
+                styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleEl.setAttribute('id', 'embedded-action-font-style');
+                svgDoc.insertBefore(styleEl, svgDoc.firstChild);
+            }
+
+            if (isSystem) {
+                // System font: just set font-family for action labels
+                styleEl.textContent = `.action-label-text { font-family: "${family}" !important; }`;
+            } else {
+                // Custom font: use @font-face for action labels
+                const fontFile = fontData.file;
+                const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+                styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.action-label-text { font-family: "${family}" !important; }`;
+
+                // Also load in browser for preview (reuse or add to existing preview style)
+                let headStyle = document.getElementById('preview-embedded-font-style');
+                if (!headStyle) {
+                    headStyle = document.createElement('style');
+                    headStyle.id = 'preview-embedded-font-style';
+                    document.head.appendChild(headStyle);
+                }
+                // Append action font if not already there
+                if (!headStyle.textContent.includes(`font-family: "${family}"`)) {
+                    headStyle.textContent += `\n@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+                }
+            }
+
+            // Update all action button labels to use the new font
+            updateAllActionButtons();
+        }
+
+        function updateActionArrowColor() {
+            const enabled = document.getElementById('action-arrow-fill-enabled').checked;
+            if (enabled) {
+                toggleActionArrowFill();
+            }
+        }
+
+        function toggleActionArrowFill() {
+            const enabled = document.getElementById('action-arrow-fill-enabled').checked;
+            const color = document.getElementById('action-arrow-color').value;
+
+            const arrowIds = ['top-left-arrow', 'top-right-arrow', 'bottom-left-arrow', 'bottom-right-arrow'];
+            arrowIds.forEach(arrowId => {
+                const arrow = svgDoc && svgDoc.querySelector(`#${arrowId}`);
+                if (arrow) {
+                    if (enabled) {
+                        arrow.setAttribute('fill', color);
+                    } else {
+                        arrow.setAttribute('fill', 'none');
+                    }
+                }
+            });
+        }
+
+        // Disc Direction Arrow Functions
+        function updateBottomText() {
+            const value = document.getElementById('bottom-text-input').value;
+            const textElement = svgDoc && svgDoc.querySelector('#bottom-text');
+            if (textElement) {
+                textElement.textContent = value || 'DIRECTION';
+            }
+        }
+
+        function updateBottomArrowColor() {
+            const enabled = document.getElementById('bottom-arrow-fill-enabled').checked;
+            if (enabled) {
+                toggleBottomArrowFill();
+            }
+        }
+
+        function toggleBottomArrowFill() {
+            const enabled = document.getElementById('bottom-arrow-fill-enabled').checked;
+            const color = document.getElementById('bottom-arrow-color').value;
+
+            const arrowIds = ['disc-left-arrow', 'disc-right-arrow'];
+            arrowIds.forEach(arrowId => {
+                const arrow = svgDoc && svgDoc.querySelector(`#${arrowId}`);
+                if (arrow) {
+                    if (enabled) {
+                        arrow.setAttribute('fill', color);
+                    } else {
+                        arrow.setAttribute('fill', 'none');
+                    }
+                }
+            });
+        }
+
+        function updateBottomTextFont() {
+            const select = document.getElementById('bottom-text-font-select');
+            const fontValue = select.value;
+            const textElement = svgDoc && svgDoc.querySelector('#bottom-text');
+            if (!fontValue || !textElement) return;
+
+            const fontData = JSON.parse(fontValue);
+            const family = fontData.family;
+            const isSystem = fontData.type === 'system';
+
+            // Create or update embedded font style for bottom text
+            let styleEl = svgDoc.querySelector('#embedded-bottom-text-font-style');
+            if (!styleEl) {
+                styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleEl.setAttribute('id', 'embedded-bottom-text-font-style');
+                svgDoc.querySelector('defs').appendChild(styleEl);
+            }
+
+            if (isSystem) {
+                styleEl.textContent = `#bottom-text { font-family: "${family}" !important; }`;
+            } else {
+                const fontFile = fontData.file;
+                const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+                styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#bottom-text { font-family: "${family}" !important; }`;
+            }
+
+            textElement.style.fontFamily = family;
+        }
+
+        function updateBottomTextColor() {
+            const color = document.getElementById('bottom-text-color').value;
+            const textElement = svgDoc && svgDoc.querySelector('#bottom-text');
+            if (textElement) {
+                textElement.style.fill = color;
+            }
+        }
+
+        function updateBottomTextSize() {
+            const size = parseFloat(document.getElementById('bottom-text-size').value);
+            document.getElementById('bottom-text-size-value').textContent = size;
+            const textElement = svgDoc && svgDoc.querySelector('#bottom-text');
+            if (textElement) {
+                textElement.style.fontSize = size + 'px';
+            }
+        }
+
+        // Button Artwork Functions
+        function selectButtonForArtwork() {
+            const select = document.getElementById('button-artwork-select');
+            selectedButtonForArtwork = select.value;
+
+            if (selectedButtonForArtwork) {
+                document.getElementById('button-artwork-controls').style.display = 'block';
+
+                // Load existing artwork data if available
+                if (buttonArtwork[selectedButtonForArtwork]) {
+                    const art = buttonArtwork[selectedButtonForArtwork];
+                    document.getElementById('btn-art-x-pos').value = art.x;
+                    document.getElementById('btn-art-y-pos').value = art.y;
+                    document.getElementById('btn-art-scale').value = art.scale;
+                    document.getElementById('btn-art-rotation').value = art.rotation;
+                    document.getElementById('btn-art-opacity').value = art.opacity;
+                    document.getElementById('btn-art-x-value').textContent = art.x.toFixed(1);
+                    document.getElementById('btn-art-y-value').textContent = art.y.toFixed(1);
+                    document.getElementById('btn-art-scale-value').textContent = Math.round(art.scale * 100);
+                    document.getElementById('btn-art-rotation-value').textContent = art.rotation;
+                    document.getElementById('btn-art-opacity-value').textContent = Math.round(art.opacity * 100);
+
+                    // Check if this button has transparency enabled (dataURL differs from original)
+                    const hasTransparency = art.dataURL !== art.originalDataURL;
+                    document.getElementById('btn-art-remove-white').checked = hasTransparency;
+                    document.getElementById('btn-art-threshold-control').style.display = hasTransparency ? 'block' : 'none';
+                } else {
+                    // Reset to defaults
+                    document.getElementById('btn-art-x-pos').value = 0;
+                    document.getElementById('btn-art-y-pos').value = 0;
+                    document.getElementById('btn-art-scale').value = 1.0;
+                    document.getElementById('btn-art-rotation').value = 0;
+                    document.getElementById('btn-art-opacity').value = 1.0;
+                    document.getElementById('btn-art-x-value').textContent = '0.0';
+                    document.getElementById('btn-art-y-value').textContent = '0.0';
+                    document.getElementById('btn-art-scale-value').textContent = '100';
+                    document.getElementById('btn-art-rotation-value').textContent = '0';
+                    document.getElementById('btn-art-opacity-value').textContent = '100';
+                    document.getElementById('btn-art-remove-white').checked = false;
+                    document.getElementById('btn-art-threshold-control').style.display = 'none';
+                }
+            } else {
+                document.getElementById('button-artwork-controls').style.display = 'none';
+            }
+        }
+
+        function handleButtonArtworkUpload(event) {
+            if (!selectedButtonForArtwork) return;
+
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const originalDataURL = e.target.result;
+
+                // Initialize button artwork data with defaults
+                buttonArtwork[selectedButtonForArtwork] = {
+                    dataURL: originalDataURL,
+                    originalDataURL: originalDataURL,  // Store original for reprocessing
+                    x: 0,
+                    y: 0,
+                    scale: 1.0,
+                    rotation: 0,
+                    opacity: 1.0
+                };
+
+                // Reset UI controls
+                document.getElementById('btn-art-x-pos').value = 0;
+                document.getElementById('btn-art-y-pos').value = 0;
+                document.getElementById('btn-art-scale').value = 1.0;
+                document.getElementById('btn-art-rotation').value = 0;
+                document.getElementById('btn-art-opacity').value = 1.0;
+                document.getElementById('btn-art-x-value').textContent = '0.0';
+                document.getElementById('btn-art-y-value').textContent = '0.0';
+                document.getElementById('btn-art-scale-value').textContent = '100';
+                document.getElementById('btn-art-rotation-value').textContent = '0';
+                document.getElementById('btn-art-opacity-value').textContent = '100';
+
+                // Apply transparency if checkbox is enabled
+                reprocessButtonArtwork();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Function to remove white backgrounds from button artwork
+        function removeWhiteBackground(imageDataURL, threshold, callback) {
+            const img = new Image();
+            img.onload = function() {
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+
+                // Draw image
+                ctx.drawImage(img, 0, 0);
+
+                // Get image data
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+
+                // Process pixels (RGBA format: r, g, b, a, r, g, b, a, ...)
+                for (let i = 0; i < pixels.length; i += 4) {
+                    const r = pixels[i];
+                    const g = pixels[i + 1];
+                    const b = pixels[i + 2];
+
+                    // If pixel is white/light (above threshold), make it transparent
+                    if (r > threshold && g > threshold && b > threshold) {
+                        pixels[i + 3] = 0;  // Set alpha to 0 (transparent)
+                    }
+                }
+
+                // Put processed data back
+                ctx.putImageData(imageData, 0, 0);
+
+                // Convert to data URL
+                callback(canvas.toDataURL('image/png'));
+            };
+            img.src = imageDataURL;
+        }
+
+        // Reprocess button artwork when transparency settings change
+        function reprocessButtonArtwork() {
+            if (!selectedButtonForArtwork || !buttonArtwork[selectedButtonForArtwork]) return;
+
+            const removeWhite = document.getElementById('btn-art-remove-white').checked;
+            const threshold = parseInt(document.getElementById('btn-art-threshold').value);
+
+            // Update threshold display and show/hide threshold control
+            document.getElementById('btn-art-threshold-value').textContent = threshold;
+            document.getElementById('btn-art-threshold-control').style.display = removeWhite ? 'block' : 'none';
+
+            const art = buttonArtwork[selectedButtonForArtwork];
+
+            if (removeWhite && art.originalDataURL) {
+                // Process the original image to remove white background
+                removeWhiteBackground(art.originalDataURL, threshold, function(processedDataURL) {
+                    art.dataURL = processedDataURL;
+                    insertButtonArtwork(selectedButtonForArtwork);
+                });
+            } else {
+                // Use original image without processing
+                art.dataURL = art.originalDataURL;
+                insertButtonArtwork(selectedButtonForArtwork);
+            }
+        }
+
+        function insertButtonArtwork(buttonNum) {
+            if (!buttonArtwork[buttonNum]) return;
+
+            const art = buttonArtwork[buttonNum];
+
+            // Button center coordinates
+            const buttonCenters = {
+                1: {cx: 12.90, cy: 31.75}, 2: {cx: 26.80, cy: 31.75}, 3: {cx: 40.70, cy: 31.75},
+                4: {cx: 12.90, cy: 46.89}, 5: {cx: 26.80, cy: 46.89}, 6: {cx: 40.70, cy: 46.89},
+                7: {cx: 12.90, cy: 62.03}, 8: {cx: 26.80, cy: 62.03}, 9: {cx: 40.70, cy: 62.03},
+                'clear': {cx: 12.90, cy: 77.18}, 0: {cx: 26.80, cy: 77.18}, 'enter': {cx: 40.70, cy: 77.18}
+            };
+
+            const center = buttonCenters[buttonNum];
+            if (!center) return;
+
+            // Remove existing artwork for this button
+            const existingArt = svgDoc.querySelector(`#btn-art-${buttonNum}`);
+            if (existingArt) {
+                existingArt.remove();
+            }
+
+            // Create image element
+            const xlinkNS = 'http://www.w3.org/1999/xlink';
+            const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            image.setAttribute('id', `btn-art-${buttonNum}`);
+            image.setAttributeNS(xlinkNS, 'xlink:href', art.dataURL);
+
+            // Size artwork to fit button (11.4mm button size)
+            const artSize = 11.4;
+            image.setAttributeNS(null, 'width', artSize.toString());
+            image.setAttributeNS(null, 'height', artSize.toString());
+            image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
+            image.setAttributeNS(null, 'opacity', art.opacity.toString());
+
+            // Position at button center (offset by half the size to center)
+            const baseX = center.cx - (artSize / 2);
+            const baseY = center.cy - (artSize / 2);
+            image.setAttributeNS(null, 'x', baseX.toString());
+            image.setAttributeNS(null, 'y', baseY.toString());
+
+            // Apply transforms: translate to center, rotate, scale, translate offset, translate back
+            let transforms = [];
+
+            // Translate to center of button for rotation/scale
+            transforms.push(`translate(${center.cx}, ${center.cy})`);
+
+            // Apply rotation
+            if (art.rotation !== 0) {
+                transforms.push(`rotate(${art.rotation})`);
+            }
+
+            // Apply scale
+            if (art.scale !== 1.0) {
+                transforms.push(`scale(${art.scale})`);
+            }
+
+            // Apply position offset
+            if (art.x !== 0 || art.y !== 0) {
+                transforms.push(`translate(${art.x}, ${art.y})`);
+            }
+
+            // Translate back (negative of center)
+            transforms.push(`translate(${-center.cx}, ${-center.cy})`);
+
+            if (transforms.length > 0) {
+                image.setAttributeNS(null, 'transform', transforms.join(' '));
+            }
+
+            // Insert button artwork AFTER button background but BEFORE button text
+            // Z-order: bg color → artwork → text
+            const btnText = svgDoc.querySelector(`#btn-${buttonNum}`);
+            const btnBg = svgDoc.querySelector(`#btn-bg-${buttonNum}`);
+
+            if (btnText && btnText.parentNode) {
+                btnText.parentNode.insertBefore(image, btnText);
+            } else if (btnBg && btnBg.parentNode) {
+                btnBg.parentNode.insertBefore(image, btnBg.nextSibling);
+            }
+        }
+
+        function updateButtonArtwork() {
+            if (!selectedButtonForArtwork || !buttonArtwork[selectedButtonForArtwork]) return;
+
+            // Update artwork data from controls
+            buttonArtwork[selectedButtonForArtwork].x = parseFloat(document.getElementById('btn-art-x-pos').value);
+            buttonArtwork[selectedButtonForArtwork].y = parseFloat(document.getElementById('btn-art-y-pos').value);
+            buttonArtwork[selectedButtonForArtwork].scale = parseFloat(document.getElementById('btn-art-scale').value);
+            buttonArtwork[selectedButtonForArtwork].rotation = parseFloat(document.getElementById('btn-art-rotation').value);
+            buttonArtwork[selectedButtonForArtwork].opacity = parseFloat(document.getElementById('btn-art-opacity').value);
+
+            // Update UI labels
+            document.getElementById('btn-art-x-value').textContent = buttonArtwork[selectedButtonForArtwork].x.toFixed(1);
+            document.getElementById('btn-art-y-value').textContent = buttonArtwork[selectedButtonForArtwork].y.toFixed(1);
+            document.getElementById('btn-art-scale-value').textContent = Math.round(buttonArtwork[selectedButtonForArtwork].scale * 100);
+            document.getElementById('btn-art-rotation-value').textContent = buttonArtwork[selectedButtonForArtwork].rotation;
+            document.getElementById('btn-art-opacity-value').textContent = Math.round(buttonArtwork[selectedButtonForArtwork].opacity * 100);
+
+            // Re-insert artwork with new transforms
+            insertButtonArtwork(selectedButtonForArtwork);
+        }
+
+        function moveButtonArtworkX(delta) {
+            if (!selectedButtonForArtwork) return;
+            const slider = document.getElementById('btn-art-x-pos');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(-11.4, Math.min(11.4, newValue));
+            updateButtonArtwork();
+        }
+
+        function moveButtonArtworkY(delta) {
+            if (!selectedButtonForArtwork) return;
+            const slider = document.getElementById('btn-art-y-pos');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(-11.4, Math.min(11.4, newValue));
+            updateButtonArtwork();
+        }
+
+        function rotateButtonArtwork(delta) {
+            if (!selectedButtonForArtwork) return;
+            const slider = document.getElementById('btn-art-rotation');
+            let newValue = parseFloat(slider.value) + delta;
+            // Wrap around at -180/180
+            if (newValue > 180) newValue = -180 + (newValue - 180);
+            if (newValue < -180) newValue = 180 + (newValue + 180);
+            slider.value = newValue;
+            updateButtonArtwork();
+        }
+
+        function scaleButtonArtwork(delta) {
+            if (!selectedButtonForArtwork) return;
+            const slider = document.getElementById('btn-art-scale');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(0.1, Math.min(3.0, newValue));
+            updateButtonArtwork();
+        }
+
+        function clearButtonArtwork() {
+            if (!selectedButtonForArtwork) return;
+
+            // Remove artwork from SVG
+            const artElement = svgDoc.querySelector(`#btn-art-${selectedButtonForArtwork}`);
+            if (artElement) {
+                artElement.remove();
+            }
+
+            // Remove from storage
+            delete buttonArtwork[selectedButtonForArtwork];
+
+            // Reset file input
+            document.getElementById('button-artwork-upload').value = '';
+
+            showStatus(`Artwork cleared for button ${selectedButtonForArtwork}`, 'success');
+        }
+
+        function handleArtworkUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                artworkDataURL = e.target.result;
+                artworkXOffset = 0;
+                artworkYOffset = 0;
+                artworkScale = 1.0;
+                artworkOpacity = 0.9;
+                document.getElementById('artwork-x-pos').value = 0;
+                document.getElementById('artwork-y-pos').value = 0;
+                document.getElementById('artwork-scale').value = 1.0;
+                document.getElementById('artwork-opacity').value = 0.9;
+                document.getElementById('x-position-value').textContent = '0';
+                document.getElementById('y-position-value').textContent = '0';
+                document.getElementById('scale-value').textContent = '100';
+                document.getElementById('opacity-value').textContent = '90';
+                insertArtwork(artworkDataURL);
+                document.getElementById('artwork-controls').style.display = 'block';
+                showStatus('Artwork uploaded successfully!', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function insertArtwork(dataURL) {
+            // Remove existing artwork if present
+            const existingArtwork = svgDoc.querySelector('#custom-artwork');
+            if (existingArtwork) {
+                existingArtwork.remove();
+            }
+
+            // Create new image element that fills the entire overlay
+            const svgNS = "http://www.w3.org/2000/svg";
+            const xlinkNS = "http://www.w3.org/1999/xlink";
+            const image = document.createElementNS(svgNS, 'image');
+
+            // Set all attributes BEFORE inserting into DOM for better compatibility
+            image.setAttributeNS(null, 'id', 'custom-artwork');
+            image.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
+
+            // Fill the entire overlay area (55.6mm x 90.4mm)
+            // The mask will handle transparency for rounded corners
+            const artworkWidth = 55.6;
+            const artworkHeight = 90.4;
+
+            // Use setAttributeNS(null, ...) to ensure attributes are properly serialized
+            image.setAttributeNS(null, 'x', '0');
+            image.setAttributeNS(null, 'y', '0');
+            image.setAttributeNS(null, 'width', artworkWidth.toString());
+            image.setAttributeNS(null, 'height', artworkHeight.toString());
+            // Preserve aspect ratio so artwork isn't distorted
+            image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
+            image.setAttributeNS(null, 'opacity', artworkOpacity.toString());
+
+            // Apply position and scale transforms
+            const centerX = artworkWidth / 2;
+            const centerY = artworkHeight / 2;
+
+            // Build transform: translate to center, apply scale, translate back, then apply position offset
+            let transforms = [];
+            if (artworkScale !== 1.0 || artworkXOffset !== 0 || artworkYOffset !== 0) {
+                transforms.push(`translate(${artworkXOffset}, ${artworkYOffset})`);
+                if (artworkScale !== 1.0) {
+                    transforms.push(`translate(${centerX}, ${centerY})`);
+                    transforms.push(`scale(${artworkScale})`);
+                    transforms.push(`translate(${-centerX}, ${-centerY})`);
+                }
+            }
+
+            if (transforms.length > 0) {
+                image.setAttributeNS(null, 'transform', transforms.join(' '));
+            }
+
+            // Insert after background but before other elements
+            const background = svgDoc.querySelector('rect[fill="#FFFFFF"]');
+            background.parentNode.insertBefore(image, background.nextSibling);
+
+            // Debug: verify attributes were set
+            console.log('IMAGE INSERTED INTO DOM:');
+            console.log('  x:', image.getAttributeNS(null, 'x'));
+            console.log('  y:', image.getAttributeNS(null, 'y'));
+            console.log('  width:', image.getAttributeNS(null, 'width'));
+            console.log('  height:', image.getAttributeNS(null, 'height'));
+            console.log('  transform:', image.getAttributeNS(null, 'transform'));
+        }
+
+        function clearArtwork() {
+            const artwork = svgDoc.querySelector('#custom-artwork');
+            if (artwork) {
+                artwork.remove();
+                artworkDataURL = null;
+                artworkYOffset = 0;
+                artworkScale = 1.0;
+                document.getElementById('artwork-upload').value = '';
+                document.getElementById('artwork-controls').style.display = 'none';
+                showStatus('Artwork cleared', 'success');
+            }
+        }
+
+        function moveArtworkX(delta) {
+            const slider = document.getElementById('artwork-x-pos');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(-55, Math.min(55, newValue));
+            updateArtworkPosition();
+        }
+
+        function moveArtworkY(delta) {
+            const slider = document.getElementById('artwork-y-pos');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(-90, Math.min(90, newValue));
+            updateArtworkPosition();
+        }
+
+        function updateArtworkPosition() {
+            const xSlider = document.getElementById('artwork-x-pos');
+            const ySlider = document.getElementById('artwork-y-pos');
+            artworkXOffset = parseFloat(xSlider.value);
+            artworkYOffset = parseFloat(ySlider.value);
+            document.getElementById('x-position-value').textContent = artworkXOffset.toFixed(1);
+            document.getElementById('y-position-value').textContent = artworkYOffset.toFixed(1);
+
+            if (artworkDataURL) {
+                insertArtwork(artworkDataURL);
+            }
+        }
+
+        function scaleArtwork(delta) {
+            const slider = document.getElementById('artwork-scale');
+            const newValue = parseFloat(slider.value) + delta;
+            slider.value = Math.max(0.5, Math.min(2.5, newValue));
+            updateArtworkScale();
+        }
+
+        function updateArtworkScale() {
+            const slider = document.getElementById('artwork-scale');
+            artworkScale = parseFloat(slider.value);
+            document.getElementById('scale-value').textContent = Math.round(artworkScale * 100);
+
+            if (artworkDataURL) {
+                insertArtwork(artworkDataURL);
+            }
+        }
+
+        function updateArtworkOpacity() {
+            const slider = document.getElementById('artwork-opacity');
+            artworkOpacity = parseFloat(slider.value);
+            document.getElementById('opacity-value').textContent = Math.round(artworkOpacity * 100);
+
+            if (artworkDataURL) {
+                insertArtwork(artworkDataURL);
+            }
+        }
+
+        async function exportPNG() {
+            try {
+                // Clone preview SVG and include page-level preview fonts (if any)
+                const exportCopy = svgDoc.cloneNode(true);
+                const headStyle = document.getElementById('preview-embedded-font-style');
+                if (headStyle) {
+                    let styleEl = exportCopy.querySelector('#embedded-font-style');
+                    if (!styleEl) {
+                        styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                        styleEl.setAttribute('id', 'embedded-font-style');
+                        exportCopy.insertBefore(styleEl, exportCopy.firstChild);
+                    }
+                    styleEl.textContent = (styleEl.textContent || '') + '\n' + headStyle.textContent;
+                }
+                // Ensure exported title uses selected color
+                const exportTitle = exportCopy.querySelector('#title-text');
+                if (exportTitle) {
+                    exportTitle.setAttribute('fill', getSelectedFontColor());
+                }
+
+                // Ensure title background is applied if enabled
+                const exportTitleBg = exportCopy.querySelector('#title-background');
+                const bgEnabled = document.getElementById('title-bg-enabled').checked;
+                if (exportTitleBg && bgEnabled) {
+                    const bgColor = document.getElementById('title-bg-color').value;
+                    exportTitleBg.setAttribute('fill', bgColor);
+                } else if (exportTitleBg) {
+                    exportTitleBg.setAttribute('fill', 'none');
+                }
+
+                // Ensure button labels use selected styling and text content
+                const buttonLabelColor = document.getElementById('button-label-color').value;
+                const buttonLabelSize = document.getElementById('button-label-size').value;
+                const buttonFontSelect = document.getElementById('button-font-select');
+                const buttonFontValue = buttonFontSelect.value;
+                let buttonFontFamily = 'Arial, sans-serif';
+                if (buttonFontValue) {
+                    try {
+                        const fontData = JSON.parse(buttonFontValue);
+                        buttonFontFamily = fontData.family;
+                    } catch (e) {
+                        console.error('Error parsing button font for export:', e);
+                    }
+                }
+
+                const buttonConfigs = [
+                    {id: 'btn-1', inputId: 'btn-input-1'},
+                    {id: 'btn-2', inputId: 'btn-input-2'},
+                    {id: 'btn-3', inputId: 'btn-input-3'},
+                    {id: 'btn-4', inputId: 'btn-input-4'},
+                    {id: 'btn-5', inputId: 'btn-input-5'},
+                    {id: 'btn-6', inputId: 'btn-input-6'},
+                    {id: 'btn-7', inputId: 'btn-input-7'},
+                    {id: 'btn-8', inputId: 'btn-input-8'},
+                    {id: 'btn-9', inputId: 'btn-input-9'},
+                    {id: 'btn-clear', inputId: 'btn-input-clear'},
+                    {id: 'btn-0', inputId: 'btn-input-0'},
+                    {id: 'btn-enter', inputId: 'btn-input-enter'}
+                ];
+                buttonConfigs.forEach(config => {
+                    const btnElement = exportCopy.querySelector(`#${config.id}`);
+                    const inputElement = document.getElementById(config.inputId);
+                    if (btnElement && inputElement) {
+                        // Set the text content from the input field
+                        btnElement.textContent = inputElement.value;
+                        // Apply styling using style attribute to override CSS classes and ensure serialization
+                        btnElement.setAttribute('style', `fill: ${buttonLabelColor}; font-size: ${buttonLabelSize}px; font-family: ${buttonFontFamily};`);
+                    }
+                });
+
+                // Ensure action button labels are applied
+                // Get action button styling
+                const actionLabelColor = document.getElementById('action-label-color').value;
+                const actionLabelSize = document.getElementById('action-label-size').value;
+                const actionFontSelect = document.getElementById('action-font-select');
+                const actionFontValue = actionFontSelect.value;
+                let actionFontFamily = 'Arial, sans-serif';
+                if (actionFontValue) {
+                    try {
+                        const fontData = JSON.parse(actionFontValue);
+                        actionFontFamily = fontData.family;
+                    } catch (e) {
+                        console.error('Error parsing action button font for export:', e);
+                    }
+                }
+
+                // Top buttons share the same label
+                const topValue = document.getElementById('action-top').value || 'FIRE';
+                const topLeftLabel = exportCopy.querySelector('#top-left-label');
+                const topRightLabel = exportCopy.querySelector('#top-right-label');
+                if (topLeftLabel) {
+                    topLeftLabel.textContent = topValue;
+                    topLeftLabel.setAttribute('style', `fill: ${actionLabelColor}; font-size: ${actionLabelSize}px; font-family: ${actionFontFamily};`);
+                }
+                if (topRightLabel) {
+                    topRightLabel.textContent = topValue;
+                    topRightLabel.setAttribute('style', `fill: ${actionLabelColor}; font-size: ${actionLabelSize}px; font-family: ${actionFontFamily};`);
+                }
+
+                // Bottom buttons are independent
+                const bottomLeftValue = document.getElementById('action-bottom-left').value || 'FIRE';
+                const bottomRightValue = document.getElementById('action-bottom-right').value || 'FIRE';
+                const bottomLeftLabel = exportCopy.querySelector('#bottom-left-label');
+                const bottomRightLabel = exportCopy.querySelector('#bottom-right-label');
+                if (bottomLeftLabel) {
+                    bottomLeftLabel.textContent = bottomLeftValue;
+                    bottomLeftLabel.setAttribute('style', `fill: ${actionLabelColor}; font-size: ${actionLabelSize}px; font-family: ${actionFontFamily};`);
+                }
+                if (bottomRightLabel) {
+                    bottomRightLabel.textContent = bottomRightValue;
+                    bottomRightLabel.setAttribute('style', `fill: ${actionLabelColor}; font-size: ${actionLabelSize}px; font-family: ${actionFontFamily};`);
+                }
+
+                // Apply action arrow fill color if enabled
+                const arrowFillEnabled = document.getElementById('action-arrow-fill-enabled').checked;
+                const arrowFillColor = document.getElementById('action-arrow-color').value;
+                const arrowIds = ['top-left-arrow', 'top-right-arrow', 'bottom-left-arrow', 'bottom-right-arrow'];
+                arrowIds.forEach(arrowId => {
+                    const arrow = exportCopy.querySelector(`#${arrowId}`);
+                    if (arrow) {
+                        if (arrowFillEnabled) {
+                            arrow.setAttribute('fill', arrowFillColor);
+                        } else {
+                            arrow.setAttribute('fill', 'none');
+                        }
+                    }
+                });
+
+                // Apply bottom arrow text and fill color if enabled
+                const bottomText = document.getElementById('bottom-text-input').value || 'DIRECTION';
+                const bottomTextElement = exportCopy.querySelector('#bottom-text');
+                if (bottomTextElement) {
+                    bottomTextElement.textContent = bottomText;
+
+                    // Apply bottom text styling
+                    const bottomTextColor = document.getElementById('bottom-text-color').value;
+                    const bottomTextSize = document.getElementById('bottom-text-size').value;
+                    bottomTextElement.style.fill = bottomTextColor;
+                    bottomTextElement.style.fontSize = bottomTextSize + 'px';
+
+                    // Apply font if selected
+                    const bottomFontSelect = document.getElementById('bottom-text-font-select');
+                    if (bottomFontSelect.value) {
+                        const fontData = JSON.parse(bottomFontSelect.value);
+                        bottomTextElement.style.fontFamily = fontData.family;
+                    }
+                }
+
+                const bottomArrowFillEnabled = document.getElementById('bottom-arrow-fill-enabled').checked;
+                const bottomArrowFillColor = document.getElementById('bottom-arrow-color').value;
+                const bottomArrowIds = ['disc-left-arrow', 'disc-right-arrow'];
+                bottomArrowIds.forEach(arrowId => {
+                    const arrow = exportCopy.querySelector(`#${arrowId}`);
+                    if (arrow) {
+                        if (bottomArrowFillEnabled) {
+                            arrow.setAttribute('fill', bottomArrowFillColor);
+                        } else {
+                            arrow.setAttribute('fill', 'none');
+                        }
+                    }
+                });
+
+                // Ensure button backgrounds are applied if enabled
+                const buttonNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'clear', 0, 'enter'];
+                const buttonCoords = {
+                    1: {x: 7.20, y: 26.05}, 2: {x: 21.10, y: 26.05}, 3: {x: 35.00, y: 26.05},
+                    4: {x: 7.20, y: 41.19}, 5: {x: 21.10, y: 41.19}, 6: {x: 35.00, y: 41.19},
+                    7: {x: 7.20, y: 56.33}, 8: {x: 21.10, y: 56.33}, 9: {x: 35.00, y: 56.33},
+                    'clear': {x: 7.20, y: 71.48}, 0: {x: 21.10, y: 71.48}, 'enter': {x: 35.00, y: 71.48}
+                };
+                buttonNumbers.forEach(num => {
+                    const bgEnabled = document.getElementById(`btn-bg-enabled-${num}`).checked;
+                    const bgColor = document.getElementById(`btn-bg-color-${num}`).value;
+                    const btnElement = exportCopy.querySelector(`#btn-${num}`);
+
+                    if (bgEnabled && btnElement) {
+                        // Create or update background rectangle in export copy
+                        let bgRect = exportCopy.querySelector(`#btn-bg-${num}`);
+                        if (!bgRect) {
+                            const coords = buttonCoords[num];
+                            if (coords) {
+                                bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                                bgRect.setAttribute('id', `btn-bg-${num}`);
+                                bgRect.setAttribute('x', coords.x);
+                                bgRect.setAttribute('y', coords.y);
+                                bgRect.setAttribute('width', '11.4');
+                                bgRect.setAttribute('height', '11.4');
+                                bgRect.setAttribute('rx', '1.5');
+                                bgRect.setAttribute('ry', '1.5');
+                                // Insert before the button text element so it appears behind
+                                btnElement.parentNode.insertBefore(bgRect, btnElement);
+                            }
+                        }
+                        if (bgRect) {
+                            bgRect.setAttribute('fill', bgColor);
+                            bgRect.setAttribute('opacity', '1.0');
+                        }
+                    }
+                });
+
+                // Ensure button artwork is applied if exists
+                const buttonCenters = {
+                    1: {cx: 12.90, cy: 31.75}, 2: {cx: 26.80, cy: 31.75}, 3: {cx: 40.70, cy: 31.75},
+                    4: {cx: 12.90, cy: 46.89}, 5: {cx: 26.80, cy: 46.89}, 6: {cx: 40.70, cy: 46.89},
+                    7: {cx: 12.90, cy: 62.03}, 8: {cx: 26.80, cy: 62.03}, 9: {cx: 40.70, cy: 62.03},
+                    'clear': {cx: 12.90, cy: 77.18}, 0: {cx: 26.80, cy: 77.18}, 'enter': {cx: 40.70, cy: 77.18}
+                };
+                buttonNumbers.forEach(num => {
+                    if (buttonArtwork[num]) {
+                        const art = buttonArtwork[num];
+                        const center = buttonCenters[num];
+                        const btnElement = exportCopy.querySelector(`#btn-${num}`);
+
+                        if (center && btnElement) {
+                            // Create or update button artwork in export copy
+                            let artImage = exportCopy.querySelector(`#btn-art-${num}`);
+                            if (!artImage) {
+                                const xlinkNS = 'http://www.w3.org/1999/xlink';
+                                artImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                                artImage.setAttribute('id', `btn-art-${num}`);
+                                artImage.setAttributeNS(xlinkNS, 'xlink:href', art.dataURL);
+
+                                // Size artwork to fit button (11.4mm button size)
+                                const artSize = 11.4;
+                                artImage.setAttributeNS(null, 'width', artSize.toString());
+                                artImage.setAttributeNS(null, 'height', artSize.toString());
+                                artImage.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
+
+                                // Position at button center (offset by half the size to center)
+                                const baseX = center.cx - (artSize / 2);
+                                const baseY = center.cy - (artSize / 2);
+                                artImage.setAttributeNS(null, 'x', baseX.toString());
+                                artImage.setAttributeNS(null, 'y', baseY.toString());
+
+                                // Insert before button text
+                                btnElement.parentNode.insertBefore(artImage, btnElement);
+                            }
+
+                            // Apply transforms and opacity
+                            artImage.setAttributeNS(null, 'opacity', art.opacity.toString());
+
+                            let transforms = [];
+                            transforms.push(`translate(${center.cx}, ${center.cy})`);
+                            if (art.rotation !== 0) {
+                                transforms.push(`rotate(${art.rotation})`);
+                            }
+                            if (art.scale !== 1.0) {
+                                transforms.push(`scale(${art.scale})`);
+                            }
+                            if (art.x !== 0 || art.y !== 0) {
+                                transforms.push(`translate(${art.x}, ${art.y})`);
+                            }
+                            transforms.push(`translate(${-center.cx}, ${-center.cy})`);
+
+                            if (transforms.length > 0) {
+                                artImage.setAttributeNS(null, 'transform', transforms.join(' '));
+                            }
+                        }
+                    }
+                });
+
+                // Hide overlay template if not requested
+                const includeTemplate = document.getElementById('export-include-template').checked;
+                if (!includeTemplate) {
+                    // Remove actual template SVG elements by their real IDs
+                    // DON'T remove keypad_buttons group or action button groups - we need to keep the text and arrow elements
+                    const templateIds = ['outer_boundary', 'title_bar_zone', 'title-border', 'grid_info'];
+                    templateIds.forEach(id => {
+                        const el = exportCopy.querySelector(`#${id}`);
+                        if (el) el.remove();
+                    });
+                    // Remove template elements by class (outline, guide, button, label, zone)
+                    // BUT preserve the title text (#title-text), button labels (btn-1, btn-2, etc.), action button labels, and bottom text
+                    const buttonLabelIds = ['btn-1', 'btn-2', 'btn-3', 'btn-4', 'btn-5', 'btn-6', 'btn-7', 'btn-8', 'btn-9', 'btn-clear', 'btn-0', 'btn-enter'];
+                    const actionLabelIds = ['top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'];
+                    const bottomLabelIds = ['bottom-text'];
+                    const classSelectors = ['.outline', '.guide', '.button', '.button_center', '.label', '.label_small', '.zone'];
+                    classSelectors.forEach(selector => {
+                        const elements = exportCopy.querySelectorAll(selector);
+                        elements.forEach(el => {
+                            // Don't remove the title text element, button labels, action button labels, or bottom text
+                            if (el.id !== 'title-text' && !buttonLabelIds.includes(el.id) && !actionLabelIds.includes(el.id) && !bottomLabelIds.includes(el.id)) {
+                                el.remove();
+                            }
+                        });
+                    });
+                    // Remove other template rects and lines (separator lines, hidden area, etc.)
+                    const rects = exportCopy.querySelectorAll('rect[fill="#E0E0E0"]');
+                    rects.forEach(el => el.remove());
+                    const lines = exportCopy.querySelectorAll('line');
+                    lines.forEach(el => el.remove());
+                }
+
+                const svgString = new XMLSerializer().serializeToString(exportCopy);
+                const title = document.getElementById('title').value.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'overlay';
+
+                const response = await fetch('/export_png', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        svg: svgString,
+                        filename: title,
+                        include_template: includeTemplate
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${title}_big_overlay.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showStatus('PNG downloaded successfully!', 'success');
+                } else {
+                    showStatus('Error exporting PNG', 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function resetOverlay() {
+            if (confirm('Reset all changes? This cannot be undone.')) {
+                location.reload();
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status-message status-' + type;
+            status.style.display = 'block';
+
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        // Load template when page loads
+        window.addEventListener('DOMContentLoaded', loadTemplate);
+    </script>
+</body>
+</html>
