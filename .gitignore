@@ -41,3 +41,6 @@ test_*.svg
 
 # OS
 Thumbs.db
+
+
+.github/

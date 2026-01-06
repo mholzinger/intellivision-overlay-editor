@@ -1,5 +1,12 @@
 /* Main Layout and Structure */
 
+/* Load SF Intellivised font for header */
+@font-face {
+    font-family: 'SF Intellivised';
+    src: url('/fonts/SF Intellivised.ttf') format('truetype');
+    font-display: swap;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -30,9 +37,11 @@ body {
 }
 
 .header h1 {
+    font-family: 'SF Intellivised', var(--font-family);
     font-size: var(--font-size-2xl);
     margin-bottom: 8px;
     font-weight: 700;
+    letter-spacing: 0.05em;
 }
 
 .header p {
