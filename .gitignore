@@ -34,7 +34,6 @@ logs/
 
 # Fly.io
 .fly/
-fly.toml
 
 # Local test files
 test_*.png
