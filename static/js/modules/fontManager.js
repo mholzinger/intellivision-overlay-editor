@@ -15,8 +15,7 @@ export class FontManager {
      */
     static async loadFonts() {
         try {
-            const response = await APIService.listFonts();
-            const data = JSON.parse(response);
+            const data = await APIService.listFonts();
             const select = document.getElementById('font-select');
             const buttonSelect = document.getElementById('button-font-select');
             const actionSelect = document.getElementById('action-font-select');
