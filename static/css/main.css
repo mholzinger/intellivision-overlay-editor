@@ -40,6 +40,17 @@ body {
     color: var(--gray-300);
 }
 
+.header a {
+    color: #3498db;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--transition-fast);
+}
+
+.header a:hover {
+    border-bottom-color: #3498db;
+}
+
 .main-content {
     display: grid;
     grid-template-columns: 50% 50%;
