@@ -1,0 +1,62 @@
+/**
+ * SVG Manager Module
+ * Handles SVG document operations and initialization
+ */
+
+import { appState } from '../services/stateManager.js';
+import { APIService } from '../services/api.js';
+import { UIManager } from './uiManager.js';
+import { FontManager } from './fontManager.js';
+import { TitleEditor } from './titleEditor.js';
+import { ButtonEditor } from './buttonEditor.js';
+import { ActionButtons } from './actionButtons.js';
+import { BottomControls } from './bottomControls.js';
+
+export class SVGManager {
+    /**
+     * Load the SVG template from the server
+     */
+    static async loadTemplate() {
+        try {
+            const response = await APIService.getTemplate();
+            const data = JSON.parse(response);
+
+            if (data.svg) {
+                const preview = document.getElementById('svg-preview');
+                preview.innerHTML = data.svg;
+                const svgDoc = document.querySelector('#svg-preview svg');
+                appState.setSvgDoc(svgDoc);
+
+                // Use 'meet' (contain) in preview so uploaded artwork is fully visible and editable
+                if (svgDoc) {
+                    svgDoc.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    svgDoc.style.width = '100%';
+                    svgDoc.style.height = '100%';
+
+                    // Load available fonts and apply defaults
+                    await FontManager.loadFonts();
+                    TitleEditor.updateTitle();
+                    TitleEditor.updateTitleSize();  // Called after updateTitle to center it
+                    TitleEditor.toggleTitleBackground();  // Apply default blue title background
+                    ButtonEditor.updateAllButtonLabels();  // Apply button label styling on load
+                    ActionButtons.toggleActionArrowFill();  // Apply default brown arrow fill
+                    BottomControls.toggleBottomArrowFill();  // Apply default brown bottom arrow fill
+                }
+
+                UIManager.showStatus('Template loaded successfully!', 'success');
+            } else {
+                UIManager.showStatus('Error loading template', 'error');
+            }
+        } catch (error) {
+            UIManager.showStatus('Error: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Get the SVG document
+     * @returns {Document} SVG document
+     */
+    static getSvgDoc() {
+        return appState.getSvgDoc();
+    }
+}

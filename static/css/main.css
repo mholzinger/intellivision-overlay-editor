@@ -1,0 +1,139 @@
+/* Main Layout and Structure */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--gradient-body);
+    min-height: 100vh;
+    padding: var(--spacing-lg);
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.header {
+    background: var(--gradient-header);
+    color: var(--white);
+    padding: var(--spacing-xl) var(--spacing-xxl);
+    border-bottom: 4px solid var(--primary-color);
+}
+
+.header h1 {
+    font-size: var(--font-size-2xl);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.header p {
+    font-size: var(--font-size-lg);
+    color: var(--gray-300);
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    gap: 0;
+    min-height: calc(100vh - 200px);
+}
+
+.preview-panel {
+    background: var(--gray-100);
+    padding: var(--spacing-xxl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    border-right: 1px solid var(--gray-200);
+}
+
+.preview-container {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 0; /* let the svg occupy full panel */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+#svg-preview {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border: 2px solid var(--dark-800);
+    border-radius: var(--radius-md);
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Ensure inner SVG scales to container and covers (may crop) */
+#svg-preview svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.controls-panel {
+    background: var(--gray-50);
+    padding: var(--spacing-xl);
+    overflow-y: auto;
+}
+
+.control-section {
+    background: var(--white);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.control-section h2 {
+    font-size: var(--font-size-xl);
+    color: var(--dark-900);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.control-section h2::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: var(--radius-sm);
+}
+
+/* Responsive: stack panels vertically on narrow viewports */
+@media (max-width: 900px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-panel {
+        order: 1;
+    }
+
+    .controls-panel {
+        order: 2;
+    }
+
+    .preview-container {
+        padding: var(--spacing-lg);
+        min-height: 320px;
+    }
+}

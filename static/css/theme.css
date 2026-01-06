@@ -1,0 +1,71 @@
+/* Theme Variables and Colors */
+:root {
+    /* Primary Colors */
+    --primary-color: #3498db;
+    --primary-dark: #2980b9;
+    --secondary-color: #95a5a6;
+    --secondary-dark: #7f8c8d;
+    --success-color: #27ae60;
+    --success-dark: #229954;
+    --error-color: #e74c3c;
+
+    /* Gradients */
+    --gradient-body: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-header: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    --gradient-primary: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    --gradient-success: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    --gradient-secondary: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+
+    /* Neutral Colors */
+    --white: #ffffff;
+    --gray-50: #f8f9fa;
+    --gray-100: #ecf0f1;
+    --gray-200: #ddd;
+    --gray-300: #bdc3c7;
+    --gray-400: #95a5a6;
+    --gray-500: #7f8c8d;
+    --gray-600: #555;
+    --dark-900: #2c3e50;
+    --dark-800: #34495e;
+
+    /* Spacing */
+    --spacing-xs: 6px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+    --spacing-xxl: 40px;
+
+    /* Border Radius */
+    --radius-sm: 2px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
+
+    /* Transitions */
+    --transition-fast: 0.2s;
+    --transition-normal: 0.3s;
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-size-xs: 11px;
+    --font-size-sm: 12px;
+    --font-size-base: 13px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 18px;
+    --font-size-2xl: 32px;
+
+    /* Status Colors */
+    --status-success-bg: #d5f4e6;
+    --status-success-text: #27ae60;
+    --status-error-bg: #fadbd8;
+    --status-error-text: #e74c3c;
+    --status-info-bg: #ebf5fb;
+    --status-info-border: #d6eaf8;
+}
