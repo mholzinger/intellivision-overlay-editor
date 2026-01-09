@@ -20,14 +20,18 @@ export class FontManager {
             const buttonSelect = document.getElementById('button-font-select');
             const actionSelect = document.getElementById('action-font-select');
             const bottomSelect = document.getElementById('bottom-text-font-select');
+            const copyrightSelect = document.getElementById('copyright-font-select');
 
             select.innerHTML = '';
             buttonSelect.innerHTML = '';
             actionSelect.innerHTML = '';
             bottomSelect.innerHTML = '';
+            copyrightSelect.innerHTML = '';
 
             if (data.fonts && data.fonts.length > 0) {
-                let defaultIndex = 0;
+                let arialBlackIndex = -1;
+                let eurostileBQIndex = -1;
+                let eurostileBoldExtIndex = -1;
                 data.fonts.forEach((f, index) => {
                     // Create option for title font selector
                     const opt = document.createElement('option');
@@ -53,22 +57,45 @@ export class FontManager {
                     bottomOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
                     bottomSelect.appendChild(bottomOpt);
 
-                    // Set Eurostile BQ as default
+                    // Create option for copyright font selector
+                    const copyrightOpt = document.createElement('option');
+                    copyrightOpt.value = JSON.stringify(f);
+                    copyrightOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    copyrightSelect.appendChild(copyrightOpt);
+
+                    // Track indices for different default fonts
+                    if (f.family === 'Arial Black' && f.type === 'system') {
+                        arialBlackIndex = index;
+                        console.log('✓ Found Arial Black at index', index);
+                    }
                     if (f.family === 'Eurostile BQ' && f.type === 'system') {
-                        defaultIndex = index;
+                        eurostileBQIndex = index;
                         console.log('✓ Found Eurostile BQ at index', index);
+                    }
+                    if (f.family === 'Eurostile Bold Extended' && f.type === 'system') {
+                        eurostileBoldExtIndex = index;
+                        console.log('✓ Found Eurostile Bold Extended at index', index);
                     }
                 });
 
-                // Select default font for all selectors
-                select.selectedIndex = defaultIndex;
-                buttonSelect.selectedIndex = defaultIndex;
-                actionSelect.selectedIndex = defaultIndex;
-                console.log('Selected font index:', defaultIndex);
+                // Select appropriate default fonts for each selector
+                // Title: Arial Black
+                select.selectedIndex = arialBlackIndex >= 0 ? arialBlackIndex : 0;
+                // Copyright: Arial Black
+                copyrightSelect.selectedIndex = arialBlackIndex >= 0 ? arialBlackIndex : 0;
+                // Button labels: Eurostile Bold Extended
+                buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : (eurostileBQIndex >= 0 ? eurostileBQIndex : 0);
+                // Action buttons: Eurostile BQ
+                actionSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                // Bottom text: Eurostile BQ
+                bottomSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+
+                console.log('Font indices - Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex);
 
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();
                 FontManager.updateActionFont();
+                FontManager.updateCopyrightFont();
             } else {
                 const opt = document.createElement('option');
                 opt.value = '';
@@ -262,6 +289,44 @@ export class FontManager {
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
             styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#bottom-text { font-family: "${family}" !important; }`;
+        }
+
+        textElement.style.fontFamily = family;
+    }
+
+    /**
+     * Update copyright text font based on selection
+     */
+    static updateCopyrightFont() {
+        const select = document.getElementById('copyright-font-select');
+        const fontValue = select.value;
+        const svgDoc = appState.getSvgDoc();
+        const textElement = svgDoc?.querySelector('#copyright-text');
+        if (!fontValue || !textElement) return;
+
+        const fontData = JSON.parse(fontValue);
+        const family = fontData.family;
+        const isSystem = fontData.type === 'system';
+
+        // Create or update embedded font style for copyright text
+        let styleEl = svgDoc.querySelector('#embedded-copyright-font-style');
+        if (!styleEl) {
+            styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            styleEl.setAttribute('id', 'embedded-copyright-font-style');
+            const defs = svgDoc.querySelector('defs');
+            if (defs) {
+                defs.appendChild(styleEl);
+            } else {
+                svgDoc.insertBefore(styleEl, svgDoc.firstChild);
+            }
+        }
+
+        if (isSystem) {
+            styleEl.textContent = `#copyright-text { font-family: "${family}" !important; }`;
+        } else {
+            const fontFile = fontData.file;
+            const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#copyright-text { font-family: "${family}" !important; }`;
         }
 
         textElement.style.fontFamily = family;

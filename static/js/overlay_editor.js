@@ -59,6 +59,27 @@ function setupEventHandlers() {
         titleBgColor.addEventListener('input', () => TitleEditor.updateTitleBackground());
     }
 
+    // Copyright text controls
+    const copyrightInput = document.getElementById('copyright-input');
+    if (copyrightInput) {
+        copyrightInput.addEventListener('input', () => TitleEditor.updateCopyrightText());
+    }
+
+    const copyrightColor = document.getElementById('copyright-color');
+    if (copyrightColor) {
+        copyrightColor.addEventListener('input', () => TitleEditor.updateCopyrightColor());
+    }
+
+    const copyrightFontSelect = document.getElementById('copyright-font-select');
+    if (copyrightFontSelect) {
+        copyrightFontSelect.addEventListener('change', () => FontManager.updateCopyrightFont());
+    }
+
+    const copyrightFontSize = document.getElementById('copyright-font-size');
+    if (copyrightFontSize) {
+        copyrightFontSize.addEventListener('input', () => TitleEditor.updateCopyrightSize());
+    }
+
     // Button label controls
     const buttonLabelColor = document.getElementById('button-label-color');
     if (buttonLabelColor) {
@@ -245,6 +266,10 @@ window.updateTitleColor = () => TitleEditor.updateTitleColor();
 window.updateTitleFont = () => FontManager.updateTitleFont();
 window.updateTitleSize = () => TitleEditor.updateTitleSize();
 window.toggleTitleBackground = () => TitleEditor.toggleTitleBackground();
+window.updateCopyrightText = () => TitleEditor.updateCopyrightText();
+window.updateCopyrightColor = () => TitleEditor.updateCopyrightColor();
+window.updateCopyrightFont = () => FontManager.updateCopyrightFont();
+window.updateCopyrightSize = () => TitleEditor.updateCopyrightSize();
 window.updateButton = (num) => ButtonEditor.updateButton(num);
 window.updateAllButtonLabels = () => ButtonEditor.updateAllButtonLabels();
 window.updateButtonFont = () => FontManager.updateButtonFont();

@@ -80,4 +80,41 @@ export class TitleEditor {
             bgElement.setAttribute('fill', 'none');
         }
     }
+
+    /**
+     * Update copyright text
+     */
+    static updateCopyrightText() {
+        const text = document.getElementById('copyright-input').value;
+        const svgDoc = appState.getSvgDoc();
+        const copyrightElement = svgDoc?.querySelector('#copyright-text');
+        if (copyrightElement) {
+            copyrightElement.textContent = text || '© Copyright Year & Printing Info.';
+        }
+    }
+
+    /**
+     * Update copyright text color
+     */
+    static updateCopyrightColor() {
+        const color = document.getElementById('copyright-color').value;
+        const svgDoc = appState.getSvgDoc();
+        const copyrightElement = svgDoc?.querySelector('#copyright-text');
+        if (copyrightElement) {
+            copyrightElement.style.fill = color;
+        }
+    }
+
+    /**
+     * Update copyright font size
+     */
+    static updateCopyrightSize() {
+        const size = parseFloat(document.getElementById('copyright-font-size').value);
+        document.getElementById('copyright-font-size-value').textContent = size;
+        const svgDoc = appState.getSvgDoc();
+        const copyrightElement = svgDoc?.querySelector('#copyright-text');
+        if (copyrightElement) {
+            copyrightElement.style.fontSize = size + 'px';
+        }
+    }
 }
