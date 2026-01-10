@@ -12,7 +12,8 @@
     <div class="container">
         <div class="header">
             <h1>Intellivision Overlay Editor</h1>
-            <p>Overlay creator for Intellivision Sprint controllers | <a href="https://github.com/mholzinger/intellivision-overlay-editor" target="_blank" rel="noopener noreferrer" style="color: #3498db; text-decoration: none;">View on GitHub</a></p>
+            <span class="header-subtitle">for Sprint controllers</span>
+            <span class="header-link-text">View this project on <a href="https://github.com/mholzinger/intellivision-overlay-editor" target="_blank" rel="noopener noreferrer" class="header-link">GitHub</a></span>
         </div>
 
         <div class="main-content">
@@ -21,20 +22,20 @@
                     <div id="svg-preview"></div>
                 </div>
 
-                <div class="action-buttons">
-                    <button class="btn btn-success" onclick="exportPNG()">
-                        <span>📥</span> Download PNG
+                <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-success btn-sm" onclick="exportPNG()" style="padding: 8px 12px; font-size: 13px;">
+                        📥 Download PNG
                     </button>
-                    <button class="btn btn-secondary" onclick="resetOverlay()">
-                        <span>🔄</span> Reset All
+                    <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" style="padding: 8px 12px; font-size: 13px;">
+                        🔄 Reset
                     </button>
-                    <button class="btn btn-secondary" onclick="clearArtwork()">
-                        <span>🗑️</span> Clear Artwork
+                    <button class="btn btn-secondary btn-sm" onclick="clearArtwork()" style="padding: 8px 12px; font-size: 13px;">
+                        🗑️ Clear Art
                     </button>
                 </div>
-                <div style="margin: 12px 0 0 0;">
-                    <label style="font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                        <input type="checkbox" id="export-include-template" checked>
+                <div style="margin: 8px 0 0 0;">
+                    <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="export-include-template">
                         Include overlay template in export
                     </label>
                 </div>
@@ -43,6 +44,7 @@
             </div>
 
             <div class="controls-panel">
+                <div class="controls-grid">
                 <div class="control-section">
                     <h2>Game Title</h2>
                     <div class="input-group">
@@ -177,7 +179,7 @@
                     </div>
                 </div>
 
-                <div class="control-section">
+                <div class="control-section full-width">
                     <h2>Button Labels</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
                         Customize the label for each button
@@ -294,7 +296,7 @@
                     </div>
                 </div>
 
-                <div class="control-section">
+                <div class="control-section full-width">
                     <h2>Button Artwork</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
                         Upload individual artwork for each button. Artwork appears between button background and text.
@@ -494,6 +496,7 @@
                             </label>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

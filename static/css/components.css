@@ -62,10 +62,10 @@
 
 /* Action Buttons */
 .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
+    margin-top: var(--spacing-md);
 }
 
 .btn {
@@ -100,6 +100,12 @@
 .btn-secondary {
     background: var(--gradient-secondary);
     color: var(--white);
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 13px;
+    gap: 4px;
 }
 
 /* Helper Text */
