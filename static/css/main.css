@@ -58,6 +58,14 @@ body {
     color: var(--gray-300);
 }
 
+.header-link-text code {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
 .header-link {
     color: #3498db;
     text-decoration: none;

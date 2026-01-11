@@ -4,6 +4,15 @@ echo "🐳 Testing Intellivision Overlay Editor in Docker"
 echo "=================================================="
 echo ""
 
+# Capture git info for version display
+export GIT_COMMIT_HASH=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "")
+export GIT_COMMIT_DATE=$(git log -1 --format=%cd --date=short 2>/dev/null || echo "")
+
+if [ -n "$GIT_COMMIT_HASH" ]; then
+    echo "📌 Version: $GIT_COMMIT_HASH (${GIT_COMMIT_DATE})"
+    echo ""
+fi
+
 echo "📦 Building Docker image..."
 docker-compose build
 

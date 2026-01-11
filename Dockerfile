@@ -49,5 +49,11 @@ EXPOSE 5000
 ENV FLASK_APP=overlay_editor_app.py
 ENV PYTHONUNBUFFERED=1
 
+# Git version info (passed at build time)
+ARG GIT_COMMIT_HASH=""
+ARG GIT_COMMIT_DATE=""
+ENV GIT_COMMIT_HASH=${GIT_COMMIT_HASH}
+ENV GIT_COMMIT_DATE=${GIT_COMMIT_DATE}
+
 # Run the Flask app
 CMD ["python", "overlay_editor_app.py"]

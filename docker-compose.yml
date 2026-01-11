@@ -2,7 +2,11 @@
 
 services:
   overlay-editor:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT_HASH: ${GIT_COMMIT_HASH:-}
+        GIT_COMMIT_DATE: ${GIT_COMMIT_DATE:-}
     container_name: intellivision-overlay-editor
     ports:
       - "5000:5000"

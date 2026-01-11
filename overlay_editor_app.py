@@ -11,6 +11,7 @@ from io import BytesIO
 from PIL import Image
 import cairosvg
 import os
+import subprocess
 
 # Configure fontconfig to find our custom fonts BEFORE importing cairosvg
 FONTS_CONF = Path(__file__).parent / "fonts.conf"
@@ -26,10 +27,44 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 # Path to the SVG template
 TEMPLATE_PATH = Path(__file__).parent / "intellivision_overlay_RECTANGULAR.svg"
 
+
+def get_git_info():
+    """Get git commit hash and date for version display.
+
+    First checks environment variables (set at Docker build time),
+    then falls back to git commands (for local development).
+    """
+    # Check environment variables first (Docker deployment)
+    env_hash = os.environ.get('GIT_COMMIT_HASH', '').strip()
+    env_date = os.environ.get('GIT_COMMIT_DATE', '').strip()
+
+    if env_hash:
+        return {'hash': env_hash, 'date': env_date or None}
+
+    # Fall back to git commands (local development)
+    try:
+        commit_hash = subprocess.check_output(
+            ['git', 'rev-parse', '--short=7', 'HEAD'],
+            cwd=Path(__file__).parent,
+            stderr=subprocess.DEVNULL
+        ).decode('utf-8').strip()
+
+        commit_date = subprocess.check_output(
+            ['git', 'log', '-1', '--format=%cd', '--date=short'],
+            cwd=Path(__file__).parent,
+            stderr=subprocess.DEVNULL
+        ).decode('utf-8').strip()
+
+        return {'hash': commit_hash, 'date': commit_date}
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return {'hash': None, 'date': None}
+
+
 @app.route('/')
 def index():
     """Serve the main editor interface"""
-    return render_template('overlay_editor.html')
+    git_info = get_git_info()
+    return render_template('overlay_editor.html', git_info=git_info)
 
 @app.route('/get_template')
 def get_template():

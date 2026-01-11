@@ -7,6 +7,9 @@ app = 'intellivision-overlay-editor'
 primary_region = 'ewr'
 
 [build]
+  [build.args]
+    GIT_COMMIT_HASH = ""
+    GIT_COMMIT_DATE = ""
 
 [env]
   OVL_HOST = "0.0.0.0"
