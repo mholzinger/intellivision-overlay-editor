@@ -18,19 +18,31 @@ export class MainArtwork {
         const reader = new FileReader();
         reader.onload = function(e) {
             const dataURL = e.target.result;
+            appState.setArtworkOriginalData(dataURL);  // Store original
             appState.setArtworkData(dataURL);
             appState.setArtworkPosition(0, 0);
             appState.setArtworkScale(1.0);
             appState.setArtworkOpacity(0.9);
+            appState.setArtworkRotation(0);
+            appState.setArtworkTiled(false);
+            appState.setArtworkRemoveWhite(false);
+            appState.setArtworkWhiteThreshold(245);
 
             document.getElementById('artwork-x-pos').value = 0;
             document.getElementById('artwork-y-pos').value = 0;
             document.getElementById('artwork-scale').value = 1.0;
             document.getElementById('artwork-opacity').value = 0.9;
+            document.getElementById('artwork-rotation').value = 0;
+            document.getElementById('artwork-tile').checked = false;
+            document.getElementById('artwork-remove-white').checked = false;
+            document.getElementById('artwork-threshold').value = 245;
+            document.getElementById('artwork-threshold-value').textContent = '245';
+            document.getElementById('artwork-threshold-control').style.display = 'none';
             document.getElementById('x-position-value').textContent = '0';
             document.getElementById('y-position-value').textContent = '0';
             document.getElementById('scale-value').textContent = '100';
             document.getElementById('opacity-value').textContent = '90';
+            document.getElementById('rotation-value').textContent = '0';
 
             MainArtwork.insertArtwork(dataURL);
             document.getElementById('artwork-controls').style.display = 'block';
@@ -45,67 +57,134 @@ export class MainArtwork {
      */
     static insertArtwork(dataURL) {
         const svgDoc = appState.getSvgDoc();
+        const svgNS = "http://www.w3.org/2000/svg";
+        const xlinkNS = "http://www.w3.org/1999/xlink";
+
         // Remove existing artwork if present
         const existingArtwork = svgDoc.querySelector('#custom-artwork');
         if (existingArtwork) {
             existingArtwork.remove();
         }
+        // Remove existing pattern if present
+        const existingPattern = svgDoc.querySelector('#artwork-pattern');
+        if (existingPattern) {
+            existingPattern.remove();
+        }
+        const existingPatternRect = svgDoc.querySelector('#custom-artwork-tiled');
+        if (existingPatternRect) {
+            existingPatternRect.remove();
+        }
 
-        // Create new image element that fills the entire overlay
-        const svgNS = "http://www.w3.org/2000/svg";
-        const xlinkNS = "http://www.w3.org/1999/xlink";
-        const image = document.createElementNS(svgNS, 'image');
-
-        // Set all attributes BEFORE inserting into DOM for better compatibility
-        image.setAttributeNS(null, 'id', 'custom-artwork');
-        image.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
-
-        // Fill the entire overlay area (55.6mm x 90.4mm)
-        // The mask will handle transparency for rounded corners
         const artworkWidth = 55.6;
         const artworkHeight = 90.4;
-
-        // Use setAttributeNS(null, ...) to ensure attributes are properly serialized
-        image.setAttributeNS(null, 'x', '0');
-        image.setAttributeNS(null, 'y', '0');
-        image.setAttributeNS(null, 'width', artworkWidth.toString());
-        image.setAttributeNS(null, 'height', artworkHeight.toString());
-        // Preserve aspect ratio so artwork isn't distorted
-        image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
-        image.setAttributeNS(null, 'opacity', appState.getArtworkOpacity().toString());
-
-        // Apply position and scale transforms
-        const centerX = artworkWidth / 2;
-        const centerY = artworkHeight / 2;
         const position = appState.getArtworkPosition();
         const scale = appState.getArtworkScale();
+        const rotation = appState.getArtworkRotation();
+        const opacity = appState.getArtworkOpacity();
+        const isTiled = appState.getArtworkTiled();
 
-        // Build transform: translate to center, apply scale, translate back, then apply position offset
-        let transforms = [];
-        if (scale !== 1.0 || position.x !== 0 || position.y !== 0) {
-            transforms.push(`translate(${position.x}, ${position.y})`);
+        // Insert after background but before other elements
+        const background = svgDoc.querySelector('#overlay-background') ||
+                          svgDoc.querySelector('rect[x="0"][y="0"][width="55.6"][height="90.4"]');
+
+        if (isTiled) {
+            // Create a pattern for tiling
+            let defs = svgDoc.querySelector('defs');
+            if (!defs) {
+                defs = document.createElementNS(svgNS, 'defs');
+                svgDoc.insertBefore(defs, svgDoc.firstChild);
+            }
+
+            // Create pattern element
+            const pattern = document.createElementNS(svgNS, 'pattern');
+            pattern.setAttributeNS(null, 'id', 'artwork-pattern');
+            pattern.setAttributeNS(null, 'patternUnits', 'userSpaceOnUse');
+
+            // Pattern size based on scale (larger base for better default appearance)
+            const tileSize = 30 * scale; // Base tile size of 30mm (about half the overlay width)
+            pattern.setAttributeNS(null, 'width', tileSize.toString());
+            pattern.setAttributeNS(null, 'height', tileSize.toString());
+
+            // Build patternTransform for position and rotation
+            // Rotation is applied to entire pattern (like rotating a single bitmap)
+            const centerX = artworkWidth / 2;
+            const centerY = artworkHeight / 2;
+            let patternTransforms = [];
+
+            if (position.x !== 0 || position.y !== 0) {
+                patternTransforms.push(`translate(${position.x}, ${position.y})`);
+            }
+
+            if (rotation !== 0) {
+                // Rotate around the center of the overlay area
+                patternTransforms.push(`rotate(${rotation}, ${centerX}, ${centerY})`);
+            }
+
+            if (patternTransforms.length > 0) {
+                pattern.setAttributeNS(null, 'patternTransform', patternTransforms.join(' '));
+            }
+
+            // Create image inside pattern (no individual tile rotation)
+            const patternImage = document.createElementNS(svgNS, 'image');
+            patternImage.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
+            patternImage.setAttributeNS(null, 'width', tileSize.toString());
+            patternImage.setAttributeNS(null, 'height', tileSize.toString());
+            patternImage.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
+
+            pattern.appendChild(patternImage);
+            defs.appendChild(pattern);
+
+            // Create rect that uses the pattern
+            const tiledRect = document.createElementNS(svgNS, 'rect');
+            tiledRect.setAttributeNS(null, 'id', 'custom-artwork-tiled');
+            tiledRect.setAttributeNS(null, 'x', '0');
+            tiledRect.setAttributeNS(null, 'y', '0');
+            tiledRect.setAttributeNS(null, 'width', artworkWidth.toString());
+            tiledRect.setAttributeNS(null, 'height', artworkHeight.toString());
+            tiledRect.setAttributeNS(null, 'fill', 'url(#artwork-pattern)');
+            tiledRect.setAttributeNS(null, 'opacity', opacity.toString());
+
+            background.parentNode.insertBefore(tiledRect, background.nextSibling);
+        } else {
+            // Single image mode
+            const image = document.createElementNS(svgNS, 'image');
+            image.setAttributeNS(null, 'id', 'custom-artwork');
+            image.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
+            image.setAttributeNS(null, 'x', '0');
+            image.setAttributeNS(null, 'y', '0');
+            image.setAttributeNS(null, 'width', artworkWidth.toString());
+            image.setAttributeNS(null, 'height', artworkHeight.toString());
+            image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
+            image.setAttributeNS(null, 'opacity', opacity.toString());
+
+            // Build transform with position, scale, and rotation
+            const centerX = artworkWidth / 2;
+            const centerY = artworkHeight / 2;
+            let transforms = [];
+
+            // Apply position offset
+            if (position.x !== 0 || position.y !== 0) {
+                transforms.push(`translate(${position.x}, ${position.y})`);
+            }
+
+            // Apply rotation around center
+            if (rotation !== 0) {
+                transforms.push(`rotate(${rotation}, ${centerX}, ${centerY})`);
+            }
+
+            // Apply scale from center
             if (scale !== 1.0) {
                 transforms.push(`translate(${centerX}, ${centerY})`);
                 transforms.push(`scale(${scale})`);
                 transforms.push(`translate(${-centerX}, ${-centerY})`);
             }
+
+            if (transforms.length > 0) {
+                image.setAttributeNS(null, 'transform', transforms.join(' '));
+            }
+
+            background.parentNode.insertBefore(image, background.nextSibling);
         }
-
-        if (transforms.length > 0) {
-            image.setAttributeNS(null, 'transform', transforms.join(' '));
-        }
-
-        // Insert after background but before other elements
-        const background = svgDoc.querySelector('rect[fill="#FFFFFF"]');
-        background.parentNode.insertBefore(image, background.nextSibling);
-
-        // Debug: verify attributes were set
-        console.log('IMAGE INSERTED INTO DOM:');
-        console.log('  x:', image.getAttributeNS(null, 'x'));
-        console.log('  y:', image.getAttributeNS(null, 'y'));
-        console.log('  width:', image.getAttributeNS(null, 'width'));
-        console.log('  height:', image.getAttributeNS(null, 'height'));
-        console.log('  transform:', image.getAttributeNS(null, 'transform'));
     }
 
     /**
@@ -114,11 +193,19 @@ export class MainArtwork {
     static clearArtwork() {
         const svgDoc = appState.getSvgDoc();
         const artwork = svgDoc.querySelector('#custom-artwork');
-        if (artwork) {
-            artwork.remove();
+        const tiledArtwork = svgDoc.querySelector('#custom-artwork-tiled');
+        const pattern = svgDoc.querySelector('#artwork-pattern');
+
+        if (artwork) artwork.remove();
+        if (tiledArtwork) tiledArtwork.remove();
+        if (pattern) pattern.remove();
+
+        if (artwork || tiledArtwork) {
             appState.setArtworkData(null);
             appState.setArtworkPosition(0, 0);
             appState.setArtworkScale(1.0);
+            appState.setArtworkRotation(0);
+            appState.setArtworkTiled(false);
             document.getElementById('artwork-upload').value = '';
             document.getElementById('artwork-controls').style.display = 'none';
             UIManager.showStatus('Artwork cleared', 'success');
@@ -207,5 +294,140 @@ export class MainArtwork {
         if (dataURL) {
             MainArtwork.insertArtwork(dataURL);
         }
+    }
+
+    /**
+     * Rotate artwork by delta
+     * @param {number} delta - Change in rotation degrees
+     */
+    static rotateArtwork(delta) {
+        const slider = document.getElementById('artwork-rotation');
+        const newValue = parseFloat(slider.value) + delta;
+        slider.value = Math.max(-180, Math.min(180, newValue));
+        MainArtwork.updateArtworkRotation();
+    }
+
+    /**
+     * Update artwork rotation from UI controls
+     */
+    static updateArtworkRotation() {
+        const slider = document.getElementById('artwork-rotation');
+        const rotation = parseFloat(slider.value);
+
+        appState.setArtworkRotation(rotation);
+        document.getElementById('rotation-value').textContent = rotation;
+
+        const dataURL = appState.getArtworkData();
+        if (dataURL) {
+            MainArtwork.insertArtwork(dataURL);
+        }
+    }
+
+    /**
+     * Toggle artwork tiling
+     */
+    static toggleArtworkTile() {
+        const checkbox = document.getElementById('artwork-tile');
+        const isTiled = checkbox.checked;
+
+        appState.setArtworkTiled(isTiled);
+
+        const dataURL = appState.getArtworkData();
+        if (dataURL) {
+            MainArtwork.insertArtwork(dataURL);
+        }
+    }
+
+    /**
+     * Toggle white background removal
+     */
+    static toggleArtworkRemoveWhite() {
+        const checkbox = document.getElementById('artwork-remove-white');
+        const removeWhite = checkbox.checked;
+        const thresholdControl = document.getElementById('artwork-threshold-control');
+
+        appState.setArtworkRemoveWhite(removeWhite);
+
+        // Show/hide threshold slider
+        thresholdControl.style.display = removeWhite ? 'block' : 'none';
+
+        // Reprocess the artwork
+        MainArtwork.reprocessArtwork();
+    }
+
+    /**
+     * Update white detection threshold
+     */
+    static updateArtworkThreshold() {
+        const slider = document.getElementById('artwork-threshold');
+        const threshold = parseInt(slider.value);
+
+        appState.setArtworkWhiteThreshold(threshold);
+        document.getElementById('artwork-threshold-value').textContent = threshold;
+
+        // Reprocess the artwork
+        MainArtwork.reprocessArtwork();
+    }
+
+    /**
+     * Reprocess artwork with current white removal settings
+     */
+    static reprocessArtwork() {
+        const originalDataURL = appState.getArtworkOriginalData();
+        if (!originalDataURL) return;
+
+        const removeWhite = appState.getArtworkRemoveWhite();
+
+        if (removeWhite) {
+            const threshold = appState.getArtworkWhiteThreshold();
+            MainArtwork.removeWhiteBackground(originalDataURL, threshold, (processedDataURL) => {
+                appState.setArtworkData(processedDataURL);
+                MainArtwork.insertArtwork(processedDataURL);
+            });
+        } else {
+            appState.setArtworkData(originalDataURL);
+            MainArtwork.insertArtwork(originalDataURL);
+        }
+    }
+
+    /**
+     * Remove white/light background from image
+     * @param {string} dataURL - Original image data URL
+     * @param {number} threshold - White detection threshold (0-255)
+     * @param {Function} callback - Callback with processed data URL
+     */
+    static removeWhiteBackground(dataURL, threshold, callback) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Process each pixel
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Check if pixel is white/light (all RGB values above threshold)
+                if (r >= threshold && g >= threshold && b >= threshold) {
+                    // Make pixel transparent
+                    data[i + 3] = 0;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            const processedDataURL = canvas.toDataURL('image/png');
+            callback(processedDataURL);
+        };
+        img.src = dataURL;
     }
 }

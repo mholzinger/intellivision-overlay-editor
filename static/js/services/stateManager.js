@@ -10,10 +10,15 @@ export class StateManager {
 
         // Artwork state
         this.artworkDataURL = null;
+        this.artworkOriginalDataURL = null;  // Original unprocessed image
         this.artworkXOffset = 0;
         this.artworkYOffset = 0;
         this.artworkScale = 1.0;
         this.artworkOpacity = 0.9;
+        this.artworkRotation = 0;
+        this.artworkTiled = false;
+        this.artworkRemoveWhite = false;
+        this.artworkWhiteThreshold = 245;
 
         // Button artwork state
         this.buttonArtwork = {}; // Maps button IDs to artwork data
@@ -110,6 +115,86 @@ export class StateManager {
     }
 
     /**
+     * Set artwork rotation
+     * @param {number} rotation - Rotation in degrees
+     */
+    setArtworkRotation(rotation) {
+        this.artworkRotation = rotation;
+    }
+
+    /**
+     * Get artwork rotation
+     * @returns {number} Rotation in degrees
+     */
+    getArtworkRotation() {
+        return this.artworkRotation;
+    }
+
+    /**
+     * Set artwork tiled state
+     * @param {boolean} tiled - Whether artwork is tiled
+     */
+    setArtworkTiled(tiled) {
+        this.artworkTiled = tiled;
+    }
+
+    /**
+     * Get artwork tiled state
+     * @returns {boolean} Tiled state
+     */
+    getArtworkTiled() {
+        return this.artworkTiled;
+    }
+
+    /**
+     * Set original artwork data (unprocessed)
+     * @param {string} dataURL - Image data URL
+     */
+    setArtworkOriginalData(dataURL) {
+        this.artworkOriginalDataURL = dataURL;
+    }
+
+    /**
+     * Get original artwork data
+     * @returns {string} Image data URL
+     */
+    getArtworkOriginalData() {
+        return this.artworkOriginalDataURL;
+    }
+
+    /**
+     * Set artwork remove white state
+     * @param {boolean} removeWhite - Whether to remove white backgrounds
+     */
+    setArtworkRemoveWhite(removeWhite) {
+        this.artworkRemoveWhite = removeWhite;
+    }
+
+    /**
+     * Get artwork remove white state
+     * @returns {boolean} Remove white state
+     */
+    getArtworkRemoveWhite() {
+        return this.artworkRemoveWhite;
+    }
+
+    /**
+     * Set artwork white threshold
+     * @param {number} threshold - Threshold value (0-255)
+     */
+    setArtworkWhiteThreshold(threshold) {
+        this.artworkWhiteThreshold = threshold;
+    }
+
+    /**
+     * Get artwork white threshold
+     * @returns {number} Threshold value
+     */
+    getArtworkWhiteThreshold() {
+        return this.artworkWhiteThreshold;
+    }
+
+    /**
      * Set button artwork
      * @param {string} buttonId - Button identifier
      * @param {Object} artwork - Artwork data
@@ -198,10 +283,15 @@ export class StateManager {
     reset() {
         this.svgDoc = null;
         this.artworkDataURL = null;
+        this.artworkOriginalDataURL = null;
         this.artworkXOffset = 0;
         this.artworkYOffset = 0;
         this.artworkScale = 1.0;
         this.artworkOpacity = 0.9;
+        this.artworkRotation = 0;
+        this.artworkTiled = false;
+        this.artworkRemoveWhite = false;
+        this.artworkWhiteThreshold = 245;
         this.buttonArtwork = {};
         this.selectedButtonForArtwork = null;
         // Keep loaded fonts and available fonts

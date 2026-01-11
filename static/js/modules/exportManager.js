@@ -9,6 +9,272 @@ import { APIService } from '../services/api.js';
 
 export class ExportManager {
     /**
+     * Pre-render a text element to an image using the browser's font rendering
+     * This ensures fonts display correctly in export even if CairoSVG can't find them
+     * @param {SVGTextElement} textEl - The text element to render
+     * @param {number} scale - Scale factor for rendering quality
+     * @returns {Promise<{dataURL: string, x: number, y: number, width: number, height: number}|null>}
+     */
+    static async preRenderTextElement(textEl, scale = 10) {
+        if (!textEl || !textEl.textContent?.trim()) {
+            return null;
+        }
+
+        try {
+            // Get the bounding box in SVG coordinates after transforms are applied
+            // getBoundingClientRect gives us the actual rendered position including transforms
+            const svgEl = textEl.ownerSVGElement;
+            const ctm = svgEl.getScreenCTM();
+            const textCtm = textEl.getScreenCTM();
+
+            // Get the bounding box in local coordinates (before transform)
+            const localBbox = textEl.getBBox();
+
+            // Check if this element has a transform
+            const transform = textEl.getAttribute('transform');
+            const hasTransform = transform && transform.includes('rotate');
+
+            let renderBbox;
+            if (hasTransform) {
+                // For rotated text, we need to get the screen bounding box and convert back to SVG coords
+                const screenRect = textEl.getBoundingClientRect();
+                const svgRect = svgEl.getBoundingClientRect();
+
+                // Convert screen coordinates to SVG coordinates
+                const svgPoint1 = svgEl.createSVGPoint();
+                svgPoint1.x = screenRect.left;
+                svgPoint1.y = screenRect.top;
+                const svgCoord1 = svgPoint1.matrixTransform(ctm.inverse());
+
+                const svgPoint2 = svgEl.createSVGPoint();
+                svgPoint2.x = screenRect.right;
+                svgPoint2.y = screenRect.bottom;
+                const svgCoord2 = svgPoint2.matrixTransform(ctm.inverse());
+
+                renderBbox = {
+                    x: Math.min(svgCoord1.x, svgCoord2.x),
+                    y: Math.min(svgCoord1.y, svgCoord2.y),
+                    width: Math.abs(svgCoord2.x - svgCoord1.x),
+                    height: Math.abs(svgCoord2.y - svgCoord1.y)
+                };
+            } else {
+                renderBbox = localBbox;
+            }
+
+            // Create a temporary SVG to render just this text element
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const tempSvg = document.createElementNS(svgNS, 'svg');
+
+            // Set viewBox to match the rendered bbox with some padding
+            const padding = 0.5; // SVG units
+            tempSvg.setAttribute('viewBox', `${renderBbox.x - padding} ${renderBbox.y - padding} ${renderBbox.width + padding * 2} ${renderBbox.height + padding * 2}`);
+            tempSvg.setAttribute('width', (renderBbox.width + padding * 2) * scale);
+            tempSvg.setAttribute('height', (renderBbox.height + padding * 2) * scale);
+            tempSvg.setAttribute('xmlns', svgNS);
+
+            // Clone the text element with all its styles (including transform)
+            const clonedText = textEl.cloneNode(true);
+            tempSvg.appendChild(clonedText);
+
+            // Also copy any relevant style elements from the parent SVG
+            const parentSvg = textEl.ownerSVGElement;
+            if (parentSvg) {
+                const styleEls = parentSvg.querySelectorAll('style');
+                styleEls.forEach(style => {
+                    tempSvg.insertBefore(style.cloneNode(true), tempSvg.firstChild);
+                });
+            }
+
+            // Convert SVG to data URL
+            const svgString = new XMLSerializer().serializeToString(tempSvg);
+            const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+            // Render SVG to canvas
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    resolve({
+                        dataURL: canvas.toDataURL('image/png'),
+                        x: renderBbox.x - padding,
+                        y: renderBbox.y - padding,
+                        width: (renderBbox.width + padding * 2),
+                        height: (renderBbox.height + padding * 2),
+                        hasTransform: hasTransform
+                    });
+                };
+                img.onerror = function() {
+                    console.error('Failed to render text element to image');
+                    resolve(null);
+                };
+                img.src = svgDataUrl;
+            });
+        } catch (e) {
+            console.error('Error pre-rendering text element:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Pre-render all text elements to images for export
+     * @param {SVGElement} svgDoc - The SVG document
+     * @returns {Promise<Map<string, {dataURL: string, x: number, y: number, width: number, height: number}>>}
+     */
+    static async preRenderAllText(svgDoc) {
+        const textRenderings = new Map();
+        const scale = 10; // Render at 10x for quality
+
+        // List of text element IDs to pre-render
+        const textIds = [
+            'title-text',
+            'bottom-text',
+            'copyright-text',
+            'btn-1', 'btn-2', 'btn-3', 'btn-4', 'btn-5', 'btn-6',
+            'btn-7', 'btn-8', 'btn-9', 'btn-clear', 'btn-0', 'btn-enter',
+            'top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'
+        ];
+
+        for (const id of textIds) {
+            const textEl = svgDoc.querySelector(`#${id}`);
+            if (textEl && textEl.textContent?.trim()) {
+                const rendered = await ExportManager.preRenderTextElement(textEl, scale);
+                if (rendered) {
+                    textRenderings.set(id, rendered);
+                }
+            }
+        }
+
+        return textRenderings;
+    }
+
+    /**
+     * Replace text elements with pre-rendered images in the export copy
+     * @param {SVGElement} exportCopy - The cloned SVG for export
+     * @param {Map} textRenderings - Map of element IDs to rendered image data
+     */
+    static replaceTextWithImages(exportCopy, textRenderings) {
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const xlinkNS = 'http://www.w3.org/1999/xlink';
+
+        for (const [id, rendering] of textRenderings) {
+            const textEl = exportCopy.querySelector(`#${id}`);
+            if (!textEl) continue;
+
+            // Create an image element to replace the text
+            const img = document.createElementNS(svgNS, 'image');
+            img.setAttribute('id', `${id}-rendered`);
+            img.setAttributeNS(xlinkNS, 'xlink:href', rendering.dataURL);
+            img.setAttribute('x', rendering.x.toString());
+            img.setAttribute('y', rendering.y.toString());
+            img.setAttribute('width', rendering.width.toString());
+            img.setAttribute('height', rendering.height.toString());
+            img.setAttribute('preserveAspectRatio', 'none');
+
+            // Only copy transform if the element was NOT pre-rendered with transform applied
+            // For rotated text, the transform is already baked into the rendered image
+            if (!rendering.hasTransform) {
+                const transform = textEl.getAttribute('transform');
+                if (transform) {
+                    img.setAttribute('transform', transform);
+                }
+            }
+
+            // Insert the image and remove the text element
+            textEl.parentNode.insertBefore(img, textEl);
+            textEl.remove();
+        }
+    }
+
+    /**
+     * Pre-render tiled artwork to a single image for better export quality
+     * @returns {Promise<string|null>} Data URL of pre-rendered tiles, or null if not tiled
+     */
+    static async preRenderTiledArtwork() {
+        const isTiled = appState.getArtworkTiled();
+        const dataURL = appState.getArtworkData();
+
+        if (!isTiled || !dataURL) {
+            return null;
+        }
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                // SVG dimensions in mm
+                const artworkWidth = 55.6;
+                const artworkHeight = 90.4;
+
+                // Render at higher resolution for quality (pixels per mm)
+                const pixelsPerMm = 10; // 10 pixels per mm = ~254 DPI
+                const canvasWidth = Math.round(artworkWidth * pixelsPerMm);
+                const canvasHeight = Math.round(artworkHeight * pixelsPerMm);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                const ctx = canvas.getContext('2d');
+
+                // Get current artwork settings
+                const scale = appState.getArtworkScale();
+                const position = appState.getArtworkPosition();
+                const rotation = appState.getArtworkRotation();
+
+                // Tile size in pixels (30mm base * scale * pixelsPerMm)
+                const tileSizeMm = 30 * scale;
+                const tileSizePx = tileSizeMm * pixelsPerMm;
+
+                // Apply transforms
+                ctx.save();
+
+                // Apply position offset (convert mm to pixels)
+                ctx.translate(position.x * pixelsPerMm, position.y * pixelsPerMm);
+
+                // Apply rotation around center
+                if (rotation !== 0) {
+                    const centerX = canvasWidth / 2;
+                    const centerY = canvasHeight / 2;
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(rotation * Math.PI / 180);
+                    ctx.translate(-centerX, -centerY);
+                }
+
+                // Calculate how many tiles we need (with extra for rotation overflow)
+                const tilesX = Math.ceil(canvasWidth / tileSizePx) + 4;
+                const tilesY = Math.ceil(canvasHeight / tileSizePx) + 4;
+                const startX = -2 * tileSizePx;
+                const startY = -2 * tileSizePx;
+
+                // Draw tiles
+                for (let y = 0; y < tilesY; y++) {
+                    for (let x = 0; x < tilesX; x++) {
+                        ctx.drawImage(
+                            img,
+                            startX + x * tileSizePx,
+                            startY + y * tileSizePx,
+                            tileSizePx,
+                            tileSizePx
+                        );
+                    }
+                }
+
+                ctx.restore();
+
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = function() {
+                console.error('Failed to load artwork image for pre-rendering');
+                resolve(null);
+            };
+            img.src = dataURL;
+        });
+    }
+
+    /**
      * Export the overlay as PNG with all configured settings
      */
     static async exportPNG() {
@@ -19,8 +285,48 @@ export class ExportManager {
                 return;
             }
 
+            // Pre-render all text elements using browser fonts BEFORE cloning
+            // This captures the browser's font rendering as images
+            const textRenderings = await ExportManager.preRenderAllText(svgDoc);
+
+            // Pre-render tiled artwork if needed
+            const preRenderedTiles = await ExportManager.preRenderTiledArtwork();
+
             // Clone preview SVG and include page-level preview fonts (if any)
             const exportCopy = svgDoc.cloneNode(true);
+
+            // Replace text elements with pre-rendered images for reliable font display
+            ExportManager.replaceTextWithImages(exportCopy, textRenderings);
+
+            // If we have pre-rendered tiles, replace the pattern-based tiled rect with a simple image
+            if (preRenderedTiles) {
+                const tiledRect = exportCopy.querySelector('#custom-artwork-tiled');
+                const pattern = exportCopy.querySelector('#artwork-pattern');
+
+                if (tiledRect) {
+                    // Create a new image element to replace the pattern-filled rect
+                    const xlinkNS = 'http://www.w3.org/1999/xlink';
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const newImage = document.createElementNS(svgNS, 'image');
+                    newImage.setAttribute('id', 'custom-artwork-prerendered');
+                    newImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedTiles);
+                    newImage.setAttribute('x', '0');
+                    newImage.setAttribute('y', '0');
+                    newImage.setAttribute('width', '55.6');
+                    newImage.setAttribute('height', '90.4');
+                    newImage.setAttribute('preserveAspectRatio', 'none');
+                    newImage.setAttribute('opacity', appState.getArtworkOpacity().toString());
+
+                    // Replace the tiled rect with the pre-rendered image
+                    tiledRect.parentNode.insertBefore(newImage, tiledRect);
+                    tiledRect.remove();
+                }
+
+                // Remove the pattern definition as it's no longer needed
+                if (pattern) {
+                    pattern.remove();
+                }
+            }
             const headStyle = document.getElementById('preview-embedded-font-style');
             if (headStyle) {
                 let styleEl = exportCopy.querySelector('#embedded-font-style');
@@ -32,10 +338,20 @@ export class ExportManager {
                 styleEl.textContent = (styleEl.textContent || '') + '\n' + headStyle.textContent;
             }
 
-            // Ensure exported title uses selected color
+            // Ensure exported title uses selected color and font
             const exportTitle = exportCopy.querySelector('#title-text');
             if (exportTitle) {
                 exportTitle.setAttribute('fill', UIManager.getSelectedFontColor());
+                // Apply font from selector
+                const fontSelect = document.getElementById('font-select');
+                if (fontSelect.value) {
+                    try {
+                        const fontData = JSON.parse(fontSelect.value);
+                        exportTitle.setAttribute('font-family', fontData.family);
+                    } catch (e) {
+                        console.error('Error parsing title font for export:', e);
+                    }
+                }
             }
 
             // Ensure title background is applied if enabled

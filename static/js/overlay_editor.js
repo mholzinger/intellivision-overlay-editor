@@ -11,6 +11,7 @@ import { ButtonArtwork } from './modules/buttonArtwork.js';
 import { MainArtwork } from './modules/mainArtwork.js';
 import { ActionButtons } from './modules/actionButtons.js';
 import { BottomControls } from './modules/bottomControls.js';
+import { BackgroundControls } from './modules/backgroundControls.js';
 import { ExportManager } from './modules/exportManager.js';
 
 /**
@@ -187,6 +188,22 @@ function setupEventHandlers() {
         bottomArrowColor.addEventListener('input', () => BottomControls.updateBottomArrowColor());
     }
 
+    // Background fill controls
+    const bgFillEnabled = document.getElementById('bg-fill-enabled');
+    if (bgFillEnabled) {
+        bgFillEnabled.addEventListener('change', () => BackgroundControls.toggleBackgroundFill());
+    }
+
+    const bgFillColor = document.getElementById('bg-fill-color');
+    if (bgFillColor) {
+        bgFillColor.addEventListener('input', () => BackgroundControls.updateBackgroundFill());
+    }
+
+    const bgFillOpacity = document.getElementById('bg-fill-opacity');
+    if (bgFillOpacity) {
+        bgFillOpacity.addEventListener('input', () => BackgroundControls.updateBackgroundOpacity());
+    }
+
     // Main artwork controls
     const artworkUpload = document.getElementById('artwork-upload');
     if (artworkUpload) {
@@ -211,6 +228,16 @@ function setupEventHandlers() {
     const artworkOpacity = document.getElementById('artwork-opacity');
     if (artworkOpacity) {
         artworkOpacity.addEventListener('input', () => MainArtwork.updateArtworkOpacity());
+    }
+
+    const artworkRemoveWhite = document.getElementById('artwork-remove-white');
+    if (artworkRemoveWhite) {
+        artworkRemoveWhite.addEventListener('change', () => MainArtwork.toggleArtworkRemoveWhite());
+    }
+
+    const artworkThreshold = document.getElementById('artwork-threshold');
+    if (artworkThreshold) {
+        artworkThreshold.addEventListener('input', () => MainArtwork.updateArtworkThreshold());
     }
 
     // Button artwork controls
@@ -283,11 +310,19 @@ window.updateBottomTextFont = () => FontManager.updateBottomTextFont();
 window.updateBottomTextColor = () => BottomControls.updateBottomTextColor();
 window.updateBottomTextSize = () => BottomControls.updateBottomTextSize();
 window.toggleBottomArrowFill = () => BottomControls.toggleBottomArrowFill();
+window.toggleBackgroundFill = () => BackgroundControls.toggleBackgroundFill();
+window.updateBackgroundFill = () => BackgroundControls.updateBackgroundFill();
+window.updateBackgroundOpacity = () => BackgroundControls.updateBackgroundOpacity();
 window.handleArtworkUpload = (e) => MainArtwork.handleArtworkUpload(e);
 window.clearArtwork = () => MainArtwork.clearArtwork();
 window.moveArtworkX = (delta) => MainArtwork.moveArtworkX(delta);
 window.moveArtworkY = (delta) => MainArtwork.moveArtworkY(delta);
 window.scaleArtwork = (delta) => MainArtwork.scaleArtwork(delta);
+window.rotateArtwork = (delta) => MainArtwork.rotateArtwork(delta);
+window.updateArtworkRotation = () => MainArtwork.updateArtworkRotation();
+window.toggleArtworkTile = () => MainArtwork.toggleArtworkTile();
+window.toggleArtworkRemoveWhite = () => MainArtwork.toggleArtworkRemoveWhite();
+window.updateArtworkThreshold = () => MainArtwork.updateArtworkThreshold();
 window.selectButtonForArtwork = () => ButtonArtwork.selectButtonForArtwork();
 window.handleButtonArtworkUpload = (e) => ButtonArtwork.handleButtonArtworkUpload(e);
 window.reprocessButtonArtwork = () => ButtonArtwork.reprocessButtonArtwork();

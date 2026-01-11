@@ -95,6 +95,7 @@ export class FontManager {
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();
                 FontManager.updateActionFont();
+                FontManager.updateBottomTextFont();
                 FontManager.updateCopyrightFont();
             } else {
                 const opt = document.createElement('option');
@@ -160,6 +161,8 @@ export class FontManager {
         }
 
         if (titleElement) {
+            // Apply font-family directly as attribute for maximum priority
+            titleElement.setAttribute('font-family', family);
             titleElement.style.fontFamily = family;
             titleElement.style.fill = UIManager.getSelectedFontColor();
         }

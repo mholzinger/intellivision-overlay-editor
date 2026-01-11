@@ -102,6 +102,27 @@
                 </div>
 
                 <div class="control-section">
+                    <h2>Background Fill</h2>
+                    <div class="input-group">
+                        <label for="bg-fill-color">Background Color</label>
+                        <input type="color" id="bg-fill-color" value="#ffffff" oninput="updateBackgroundFill()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+                                <input type="checkbox" id="bg-fill-enabled" onchange="toggleBackgroundFill()">
+                                Enable background color fill
+                            </label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="bg-fill-opacity">Background Opacity</label>
+                        <input type="range" id="bg-fill-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateBackgroundOpacity()" style="width: 100%;">
+                        <div class="helper-text">
+                            Transparency: <span id="bg-opacity-value">100</span>%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
                     <h2>Artwork Upload</h2>
                     <div class="input-group">
                         <label class="file-upload">
@@ -120,6 +141,22 @@
                         <input type="range" id="artwork-opacity" min="0" max="1" value="0.9" step="0.05" oninput="updateArtworkOpacity()" style="width: 100%;">
                         <div class="helper-text">
                             Transparency: <span id="opacity-value">90</span>%
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="artwork-remove-white" onchange="toggleArtworkRemoveWhite()">
+                            Remove white/light backgrounds (make transparent)
+                        </label>
+                        <div class="helper-text" style="margin-top: 4px;">
+                            Automatically removes white or near-white pixels from the image
+                        </div>
+                    </div>
+                    <div class="input-group" id="artwork-threshold-control" style="display: none;">
+                        <label>White Detection Threshold</label>
+                        <input type="range" id="artwork-threshold" min="200" max="255" value="245" step="1" oninput="updateArtworkThreshold()" style="width: 100%;">
+                        <div class="helper-text">
+                            Threshold: <span id="artwork-threshold-value">245</span> (lower = more aggressive)
                         </div>
                     </div>
                     <div class="input-group">
@@ -157,6 +194,25 @@
                         <div class="helper-text" style="margin-top: 8px;">
                             Scale: <span id="scale-value">100</span>%
                         </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Rotation</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="rotateArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
+                            <input type="range" id="artwork-rotation" min="-180" max="180" value="0" step="1"
+                                   oninput="updateArtworkRotation()" style="flex: 1;">
+                            <button class="btn btn-secondary" onclick="rotateArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
+                        </div>
+                        <div class="helper-text" style="margin-top: 8px;">
+                            Angle: <span id="rotation-value">0</span>°
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="artwork-tile" onchange="toggleArtworkTile()">
+                            Tile artwork (repeat pattern)
+                        </label>
+                        <div class="helper-text">Repeats the image across the entire overlay area</div>
                     </div>
                 </div>
 
@@ -449,17 +505,17 @@
                     </div>
                     <div class="input-group">
                         <label for="action-top">Top (both left & right - shared action)</label>
-                        <input type="text" class="button-input" id="action-top" value="FIRE" oninput="updateActionButton('top')" style="width: 100%; padding: 10px;">
+                        <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')" style="width: 100%; padding: 10px;">
                         <div class="helper-text">Controls both top-left and top-right labels</div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div>
                             <div class="button-label">Bottom Left</div>
-                            <input type="text" class="button-input" id="action-bottom-left" value="FIRE" oninput="updateActionButton('bottom-left')">
+                            <input type="text" class="button-input" id="action-bottom-left" value="ACTION" oninput="updateActionButton('bottom-left')">
                         </div>
                         <div>
                             <div class="button-label">Bottom Right</div>
-                            <input type="text" class="button-input" id="action-bottom-right" value="FIRE" oninput="updateActionButton('bottom-right')">
+                            <input type="text" class="button-input" id="action-bottom-right" value="ACTION" oninput="updateActionButton('bottom-right')">
                         </div>
                     </div>
                 </div>
@@ -480,7 +536,7 @@
                     </div>
                     <div class="input-group">
                         <label for="bottom-text-color">Text Color</label>
-                        <input type="color" id="bottom-text-color" value="#666666" oninput="updateBottomTextColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <input type="color" id="bottom-text-color" value="#000000" oninput="updateBottomTextColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                     </div>
                     <div class="input-group">
                         <label for="bottom-text-size">Text Size: <span id="bottom-text-size-value">2</span>px</label>

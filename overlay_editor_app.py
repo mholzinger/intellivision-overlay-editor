@@ -46,8 +46,8 @@ def export_png():
 
     Behavior: when exporting PNG we apply the overlay mask (outer_boundary)
     so any artwork outside the overlay shape becomes transparent. The final
-    PNG is 300x478 pixels (big_overlay size) and preserves the overlay's
-    visible contents with transparency outside the shape.
+    PNG is rendered at 300 DPI for high quality print output and preserves
+    the overlay's visible contents with transparency outside the shape.
     Honors the 'include_template' flag to optionally remove template SVG elements.
     """
     try:
@@ -56,10 +56,14 @@ def export_png():
         filename = data.get('filename', 'overlay')
         include_template = data.get('include_template', True)
 
+        # Output dimensions for the overlay PNG
+        # Original "big_overlay" size matching physical dimensions
+        OUTPUT_WIDTH = 300
+        OUTPUT_HEIGHT = 478
+
         # No need to remove template overlay elements if we never merge them in the first place
         # Only use the template SVG to extract the mask (outer_boundary path and viewBox)
         # The incoming svg_content is the user's artwork/text only
-
 
         # Debug: check for font references before processing
         import re
@@ -123,13 +127,13 @@ def export_png():
         # Build mask image from the outer_boundary path if we have it; otherwise try a luminance fallback
         if d:
             mask_svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewbox}"><path d="{d}" fill="#ffffff" stroke="none"/></svg>'
-            mask_png = cairosvg.svg2png(bytestring=mask_svg.encode('utf-8'), output_width=300, output_height=478)
+            mask_png = cairosvg.svg2png(bytestring=mask_svg.encode('utf-8'), output_width=OUTPUT_WIDTH, output_height=OUTPUT_HEIGHT)
             mask_img = Image.open(BytesIO(mask_png)).convert('L')
             # Convert to strict binary mask (use small threshold to tolerate anti-aliasing)
             mask = mask_img.point(lambda p: 255 if p > 10 else 0)
         else:
             # Fallback: render the full SVG and derive mask by non-white pixels
-            rendered_png = cairosvg.svg2png(bytestring=(svg_content or '').encode('utf-8'), output_width=300, output_height=478)
+            rendered_png = cairosvg.svg2png(bytestring=(svg_content or '').encode('utf-8'), output_width=OUTPUT_WIDTH, output_height=OUTPUT_HEIGHT)
             rendered = Image.open(BytesIO(rendered_png)).convert('RGBA')
             lumin = rendered.convert('L')
             # Non-nearly-white pixels become opaque in mask
@@ -137,8 +141,8 @@ def export_png():
 
         # Render full SVG using CairoSVG (handles transforms correctly, artwork won't be clipped)
         # NOTE: Custom fonts won't render with CairoSVG, will fall back to system fonts
-        print("Rendering SVG with CairoSVG (artwork transforms work, fonts may differ)...", file=sys.stderr)
-        full_png = cairosvg.svg2png(bytestring=(svg_content or '').encode('utf-8'), output_width=300, output_height=478)
+        print(f"Rendering SVG with CairoSVG at {OUTPUT_WIDTH}x{OUTPUT_HEIGHT}...", file=sys.stderr)
+        full_png = cairosvg.svg2png(bytestring=(svg_content or '').encode('utf-8'), output_width=OUTPUT_WIDTH, output_height=OUTPUT_HEIGHT)
         full_img = Image.open(BytesIO(full_png)).convert('RGBA')
 
         # Ensure mask matches image size

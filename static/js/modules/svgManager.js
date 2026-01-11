@@ -11,6 +11,7 @@ import { TitleEditor } from './titleEditor.js';
 import { ButtonEditor } from './buttonEditor.js';
 import { ActionButtons } from './actionButtons.js';
 import { BottomControls } from './bottomControls.js';
+import { BackgroundControls } from './backgroundControls.js';
 
 export class SVGManager {
     /**
@@ -40,7 +41,10 @@ export class SVGManager {
                     TitleEditor.toggleTitleBackground();  // Apply default blue title background
                     ButtonEditor.updateAllButtonLabels();  // Apply button label styling on load
                     ActionButtons.toggleActionArrowFill();  // Apply default brown arrow fill
+                    BottomControls.updateBottomTextColor();  // Apply default bottom text color
+                    BottomControls.updateBottomTextSize();   // Apply default bottom text size
                     BottomControls.toggleBottomArrowFill();  // Apply default brown bottom arrow fill
+                    BackgroundControls.initBackground();     // Initialize background element reference
                 }
 
                 UIManager.showStatus('Template loaded successfully!', 'success');
