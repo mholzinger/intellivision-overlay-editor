@@ -9,6 +9,81 @@ import { APIService } from '../services/api.js';
 
 export class ExportManager {
     /**
+     * Cache for fetched font data URLs to avoid re-fetching
+     */
+    static fontCache = new Map();
+
+    /**
+     * Fetch a font file and convert it to a base64 data URL
+     * @param {string} fontUrl - The URL of the font file (e.g., '/fonts/SomeFont.ttf')
+     * @returns {Promise<string>} Base64 data URL of the font
+     */
+    static async fetchFontAsDataURL(fontUrl) {
+        // Check cache first
+        if (ExportManager.fontCache.has(fontUrl)) {
+            return ExportManager.fontCache.get(fontUrl);
+        }
+
+        try {
+            const response = await fetch(fontUrl);
+            if (!response.ok) {
+                console.error(`Failed to fetch font: ${fontUrl}`);
+                return null;
+            }
+
+            const blob = await response.blob();
+            const mimeType = fontUrl.toLowerCase().endsWith('.otf') ? 'font/otf' : 'font/ttf';
+
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const dataUrl = reader.result;
+                    // Cache the result
+                    ExportManager.fontCache.set(fontUrl, dataUrl);
+                    resolve(dataUrl);
+                };
+                reader.onerror = () => {
+                    console.error(`Failed to read font blob: ${fontUrl}`);
+                    resolve(null);
+                };
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.error(`Error fetching font ${fontUrl}:`, e);
+            return null;
+        }
+    }
+
+    /**
+     * Replace font URL references in CSS with inline base64 data URLs
+     * @param {string} cssText - The CSS text containing @font-face rules
+     * @returns {Promise<string>} CSS text with inlined fonts
+     */
+    static async inlineFontsInCSS(cssText) {
+        if (!cssText) return cssText;
+
+        // Find all url('/fonts/...') references
+        const fontUrlRegex = /url\(['"]?(\/fonts\/[^'")]+)['"]?\)/g;
+        const matches = [...cssText.matchAll(fontUrlRegex)];
+
+        if (matches.length === 0) {
+            return cssText;
+        }
+
+        let result = cssText;
+        for (const match of matches) {
+            const fontUrl = match[1];
+            const dataUrl = await ExportManager.fetchFontAsDataURL(fontUrl);
+            if (dataUrl) {
+                // Replace the url('/fonts/...') with url('data:...')
+                result = result.replace(match[0], `url('${dataUrl}')`);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Pre-render a text element to an image using the browser's font rendering
      * This ensures fonts display correctly in export even if CairoSVG can't find them
      * @param {SVGTextElement} textEl - The text element to render
@@ -77,12 +152,16 @@ export class ExportManager {
             tempSvg.appendChild(clonedText);
 
             // Also copy any relevant style elements from the parent SVG
+            // and inline any font references as base64
             const parentSvg = textEl.ownerSVGElement;
             if (parentSvg) {
                 const styleEls = parentSvg.querySelectorAll('style');
-                styleEls.forEach(style => {
-                    tempSvg.insertBefore(style.cloneNode(true), tempSvg.firstChild);
-                });
+                for (const style of styleEls) {
+                    const clonedStyle = style.cloneNode(true);
+                    // Inline fonts referenced in the style
+                    clonedStyle.textContent = await ExportManager.inlineFontsInCSS(clonedStyle.textContent);
+                    tempSvg.insertBefore(clonedStyle, tempSvg.firstChild);
+                }
             }
 
             // Convert SVG to data URL
