@@ -5,7 +5,39 @@
 
 import { appState } from '../services/stateManager.js';
 
+// Default line spacing multiplier for multiline text
+const DEFAULT_LINE_SPACING = 1.2;
+
 export class BottomControls {
+    /**
+     * Set multiline text content on an SVG text element using tspan elements
+     * @param {SVGTextElement} textElement - The text element to update
+     * @param {string} text - Text with | as line separator
+     * @param {number} fontSize - Current font size for calculating line spacing
+     */
+    static setMultilineText(textElement, text, fontSize) {
+        // Clear existing content
+        textElement.textContent = '';
+
+        const lines = text.split('|').map(line => line.trim());
+        const lineSpacing = fontSize * DEFAULT_LINE_SPACING;
+
+        lines.forEach((line, index) => {
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+            tspan.textContent = line;
+            tspan.setAttribute('x', textElement.getAttribute('x'));
+
+            if (index === 0) {
+                tspan.setAttribute('dy', '0');
+            } else {
+                // For horizontal text, dy moves down (positive = downward)
+                tspan.setAttribute('dy', lineSpacing + 'px');
+            }
+
+            textElement.appendChild(tspan);
+        });
+    }
+
     /**
      * Update bottom text
      */
@@ -13,21 +45,37 @@ export class BottomControls {
         const value = document.getElementById('bottom-text-input').value;
         const svgDoc = appState.getSvgDoc();
         const textElement = svgDoc?.querySelector('#bottom-text');
+        const fontSize = parseFloat(document.getElementById('bottom-text-size')?.value || '1.2');
+
         if (textElement) {
-            textElement.textContent = value || 'DIRECTION';
+            BottomControls.setMultilineText(textElement, value || 'DIRECTION', fontSize);
+            BottomControls.applyBottomTextStyling(textElement);
         }
+    }
+
+    /**
+     * Apply styling to bottom text element
+     * @param {SVGTextElement} textElement - The text element to style
+     */
+    static applyBottomTextStyling(textElement) {
+        if (!textElement) return;
+
+        const color = document.getElementById('bottom-text-color')?.value || '#666666';
+        const size = parseFloat(document.getElementById('bottom-text-size')?.value || '1.2');
+
+        textElement.style.fill = color;
+        textElement.style.fontSize = size + 'px';
+        textElement.style.dominantBaseline = 'central';
     }
 
     /**
      * Update bottom text color
      */
     static updateBottomTextColor() {
-        const color = document.getElementById('bottom-text-color').value;
         const svgDoc = appState.getSvgDoc();
         const textElement = svgDoc?.querySelector('#bottom-text');
         if (textElement) {
-            textElement.style.fill = color;
-            textElement.style.dominantBaseline = 'central';
+            BottomControls.applyBottomTextStyling(textElement);
         }
     }
 
@@ -37,11 +85,15 @@ export class BottomControls {
     static updateBottomTextSize() {
         const size = parseFloat(document.getElementById('bottom-text-size').value);
         document.getElementById('bottom-text-size-value').textContent = size;
+
+        // Re-render multiline text with new spacing and apply styling
+        const value = document.getElementById('bottom-text-input').value;
         const svgDoc = appState.getSvgDoc();
         const textElement = svgDoc?.querySelector('#bottom-text');
+
         if (textElement) {
-            textElement.style.fontSize = size + 'px';
-            textElement.style.dominantBaseline = 'central';
+            BottomControls.setMultilineText(textElement, value || 'DIRECTION', size);
+            BottomControls.applyBottomTextStyling(textElement);
         }
     }
 

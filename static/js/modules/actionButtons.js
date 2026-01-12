@@ -5,7 +5,50 @@
 
 import { appState } from '../services/stateManager.js';
 
+// Default line spacing in pixels for multiline text
+const DEFAULT_LINE_SPACING = 1.2;
+
 export class ActionButtons {
+    /**
+     * Set multiline text content on an SVG text element using tspan elements
+     * @param {SVGTextElement} textElement - The text element to update
+     * @param {string} text - Text with | as line separator
+     * @param {string} side - 'left' or 'right' to determine line stacking direction
+     * @param {number} fontSize - Current font size for calculating line spacing
+     */
+    static setMultilineText(textElement, text, side, fontSize) {
+        // Clear existing content
+        textElement.textContent = '';
+
+        const lines = text.split('|').map(line => line.trim());
+        const lineSpacing = fontSize * DEFAULT_LINE_SPACING;
+
+        // For rotated text on the sides:
+        // Left side (rotate 90°): dy moves text perpendicular to reading direction
+        // Right side (rotate -90°): dy moves text perpendicular to reading direction
+        // Since text is rotated, we use dy to create horizontal spacing in final view
+
+        lines.forEach((line, index) => {
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+            tspan.textContent = line;
+
+            // For the first line, no offset. For subsequent lines, add spacing
+            if (index === 0) {
+                tspan.setAttribute('x', textElement.getAttribute('x'));
+                tspan.setAttribute('dy', '0');
+            } else {
+                tspan.setAttribute('x', textElement.getAttribute('x'));
+                // dy shifts perpendicular to the text baseline
+                // For left side (90° rotation), positive dy moves right (toward edge)
+                // For right side (-90° rotation), positive dy moves left (toward edge)
+                // Both should expand toward the edges (away from center)
+                tspan.setAttribute('dy', lineSpacing + 'px');
+            }
+
+            textElement.appendChild(tspan);
+        });
+    }
+
     /**
      * Update action button label
      * @param {string} position - Position ('top', 'bottom-left', 'bottom-right')
@@ -13,24 +56,28 @@ export class ActionButtons {
     static updateActionButton(position) {
         const value = document.getElementById(`action-${position}`).value;
         const svgDoc = appState.getSvgDoc();
+        const fontSize = parseFloat(document.getElementById('action-label-size').value);
 
         if (position === 'top') {
             // Update both top-left and top-right labels
             const topLeftLabel = svgDoc?.querySelector('#top-left-label');
             const topRightLabel = svgDoc?.querySelector('#top-right-label');
+            const text = value || 'FIRE';
+
             if (topLeftLabel) {
-                topLeftLabel.textContent = value || 'FIRE';
+                ActionButtons.setMultilineText(topLeftLabel, text, 'left', fontSize);
                 ActionButtons.applyActionButtonStyling(topLeftLabel);
             }
             if (topRightLabel) {
-                topRightLabel.textContent = value || 'FIRE';
+                ActionButtons.setMultilineText(topRightLabel, text, 'right', fontSize);
                 ActionButtons.applyActionButtonStyling(topRightLabel);
             }
         } else {
             // Update individual bottom labels
             const labelElement = svgDoc?.querySelector(`#${position}-label`);
+            const side = position.includes('left') ? 'left' : 'right';
             if (labelElement) {
-                labelElement.textContent = value || 'FIRE';
+                ActionButtons.setMultilineText(labelElement, value || 'FIRE', side, fontSize);
                 ActionButtons.applyActionButtonStyling(labelElement);
             }
         }

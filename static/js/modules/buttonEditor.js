@@ -5,7 +5,45 @@
 
 import { appState } from '../services/stateManager.js';
 
+// Default line spacing multiplier for multiline text
+const DEFAULT_LINE_SPACING = 1.2;
+
 export class ButtonEditor {
+    /**
+     * Set multiline text content on an SVG text element using tspan elements
+     * @param {SVGTextElement} textElement - The text element to update
+     * @param {string} text - Text with | as line separator
+     * @param {number} fontSize - Current font size for calculating line spacing
+     */
+    static setMultilineText(textElement, text, fontSize) {
+        // Clear existing content
+        textElement.textContent = '';
+
+        const lines = text.split('|').map(line => line.trim());
+        const lineSpacing = fontSize * DEFAULT_LINE_SPACING;
+
+        // Calculate vertical offset to center multiple lines
+        // For n lines, offset the first line upward by (n-1)/2 * lineSpacing
+        const totalHeight = (lines.length - 1) * lineSpacing;
+        const startOffset = -totalHeight / 2;
+
+        lines.forEach((line, index) => {
+            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+            tspan.textContent = line;
+            tspan.setAttribute('x', textElement.getAttribute('x'));
+
+            if (index === 0) {
+                // First line: apply centering offset
+                tspan.setAttribute('dy', startOffset + 'px');
+            } else {
+                // Subsequent lines: move down by line spacing
+                tspan.setAttribute('dy', lineSpacing + 'px');
+            }
+
+            textElement.appendChild(tspan);
+        });
+    }
+
     /**
      * Update a single button label
      * @param {string|number} num - Button number or ID
@@ -17,10 +55,9 @@ export class ButtonEditor {
         console.log('updateButton called:', num, 'value:', value, 'element:', btnElement);
 
         if (btnElement) {
-            btnElement.textContent = value;
             // Apply global button label styling (color, size, AND font)
             const color = document.getElementById('button-label-color').value;
-            const size = document.getElementById('button-label-size').value;
+            const size = parseFloat(document.getElementById('button-label-size').value);
             const fontSelect = document.getElementById('button-font-select');
             const fontValue = fontSelect.value;
             let fontFamily = 'Arial, sans-serif';
@@ -32,6 +69,9 @@ export class ButtonEditor {
                     console.error('Error parsing button font:', e);
                 }
             }
+
+            // Set multiline text with | separator
+            ButtonEditor.setMultilineText(btnElement, value, size);
 
             // Use inline style to override CSS class styles
             btnElement.style.fill = color;
@@ -70,6 +110,12 @@ export class ButtonEditor {
         buttons.forEach(num => {
             const btnElement = svgDoc?.querySelector(`#btn-${num}`);
             if (btnElement) {
+                // Re-render multiline text with new spacing
+                const input = document.getElementById(`btn-input-${num}`);
+                if (input) {
+                    ButtonEditor.setMultilineText(btnElement, input.value, size);
+                }
+
                 // Use inline style to override CSS class styles
                 btnElement.style.fill = color;
                 btnElement.style.fontSize = size + 'px';
