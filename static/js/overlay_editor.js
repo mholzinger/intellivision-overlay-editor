@@ -13,6 +13,7 @@ import { ActionButtons } from './modules/actionButtons.js';
 import { BottomControls } from './modules/bottomControls.js';
 import { BackgroundControls } from './modules/backgroundControls.js';
 import { ExportManager } from './modules/exportManager.js';
+import { RowDescriptions } from './modules/rowDescriptions.js';
 
 /**
  * Initialize the application
@@ -95,6 +96,30 @@ function setupEventHandlers() {
     const buttonFontSelect = document.getElementById('button-font-select');
     if (buttonFontSelect) {
         buttonFontSelect.addEventListener('change', () => FontManager.updateButtonFont());
+    }
+
+    // Row description controls
+    const rowDescColor = document.getElementById('row-desc-color');
+    if (rowDescColor) {
+        rowDescColor.addEventListener('input', () => RowDescriptions.updateAllRowDescriptions());
+    }
+
+    const rowDescSize = document.getElementById('row-desc-size');
+    if (rowDescSize) {
+        rowDescSize.addEventListener('input', () => RowDescriptions.updateAllRowDescriptions());
+    }
+
+    const rowDescFontSelect = document.getElementById('row-desc-font-select');
+    if (rowDescFontSelect) {
+        rowDescFontSelect.addEventListener('change', () => RowDescriptions.updateRowDescFont());
+    }
+
+    // Individual row description inputs
+    for (let i = 1; i <= 4; i++) {
+        const input = document.getElementById(`row-desc-input-${i}`);
+        if (input) {
+            input.addEventListener('input', () => RowDescriptions.updateRowDescription(i));
+        }
     }
 
     // Individual button inputs
@@ -333,6 +358,9 @@ window.scaleButtonArtwork = (delta) => ButtonArtwork.scaleButtonArtwork(delta);
 window.clearButtonArtwork = () => ButtonArtwork.clearButtonArtwork();
 window.exportPNG = () => ExportManager.exportPNG();
 window.resetOverlay = () => ExportManager.resetOverlay();
+window.updateRowDescription = (rowNum) => RowDescriptions.updateRowDescription(rowNum);
+window.updateAllRowDescriptions = () => RowDescriptions.updateAllRowDescriptions();
+window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

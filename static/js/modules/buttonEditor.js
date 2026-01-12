@@ -37,6 +37,7 @@ export class ButtonEditor {
             btnElement.style.fill = color;
             btnElement.style.fontSize = size + 'px';
             btnElement.style.fontFamily = fontFamily;
+            btnElement.style.dominantBaseline = 'central';
             console.log('Button updated - text:', value, 'color:', color, 'size:', size, 'font:', fontFamily);
         } else {
             console.error('Button element not found for:', num);
@@ -73,6 +74,7 @@ export class ButtonEditor {
                 btnElement.style.fill = color;
                 btnElement.style.fontSize = size + 'px';
                 btnElement.style.fontFamily = fontFamily;
+                btnElement.style.dominantBaseline = 'central';
             }
         });
     }

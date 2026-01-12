@@ -235,10 +235,34 @@
                     </div>
                 </div>
 
+                <div class="control-section">
+                    <h2>Row Description Styling</h2>
+                    <div class="input-group">
+                        <label for="row-desc-color">Row Description Color</label>
+                        <input type="color" id="row-desc-color" value="#333333" oninput="updateAllRowDescriptions()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="helper-text">Color for row description text</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="row-desc-font-select">Row Description Font</label>
+                        <select id="row-desc-font-select" onchange="updateRowDescFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
+                        <div class="helper-text">Choose a font for row descriptions</div>
+                    </div>
+                    <div class="input-group">
+                        <label for="row-desc-size">Row Description Size</label>
+                        <input type="range" id="row-desc-size" min="1" max="6" value="2" step="0.25" oninput="updateAllRowDescriptions()">
+                        <div class="helper-text">Size: <span id="row-desc-size-value">2</span>px</div>
+                    </div>
+                </div>
+
                 <div class="control-section full-width">
                     <h2>Button Labels</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
-                        Customize the label for each button
+                        Customize the label for each button. Optional row descriptions appear above each row.
+                    </div>
+
+                    <!-- Row 1 Description -->
+                    <div class="row-description-input" style="margin-bottom: 8px;">
+                        <input type="text" id="row-desc-input-1" placeholder="Row 1 Description (optional)" oninput="updateRowDescription(1)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                     </div>
                     <div class="button-grid">
                         <div>
@@ -268,6 +292,13 @@
                                 <input type="color" id="btn-bg-color-3" value="#ff0000" oninput="updateButtonBackground(3)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Row 2 Description -->
+                    <div class="row-description-input" style="margin: 12px 0 8px 0;">
+                        <input type="text" id="row-desc-input-2" placeholder="Row 2 Description (optional)" oninput="updateRowDescription(2)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                    </div>
+                    <div class="button-grid">
                         <div>
                             <div class="button-label">Button 4</div>
                             <input type="text" class="button-input" id="btn-input-4" value="4" oninput="updateButton(4)">
@@ -295,6 +326,13 @@
                                 <input type="color" id="btn-bg-color-6" value="#ff0000" oninput="updateButtonBackground(6)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Row 3 Description -->
+                    <div class="row-description-input" style="margin: 12px 0 8px 0;">
+                        <input type="text" id="row-desc-input-3" placeholder="Row 3 Description (optional)" oninput="updateRowDescription(3)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                    </div>
+                    <div class="button-grid">
                         <div>
                             <div class="button-label">Button 7</div>
                             <input type="text" class="button-input" id="btn-input-7" value="7" oninput="updateButton(7)">
@@ -322,6 +360,13 @@
                                 <input type="color" id="btn-bg-color-9" value="#ff0000" oninput="updateButtonBackground(9)" style="width: 30px; height: 20px; padding: 0; border: 1px solid #ddd; border-radius: 3px;">
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Row 4 Description -->
+                    <div class="row-description-input" style="margin: 12px 0 8px 0;">
+                        <input type="text" id="row-desc-input-4" placeholder="Row 4 Description (optional)" oninput="updateRowDescription(4)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                    </div>
+                    <div class="button-grid">
                         <div>
                             <div class="button-label">Clear</div>
                             <input type="text" class="button-input" id="btn-input-clear" value="CLR" oninput="updateButton('clear')">

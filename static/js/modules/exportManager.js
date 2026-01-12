@@ -14,6 +14,22 @@ export class ExportManager {
     static fontCache = new Map();
 
     /**
+     * Convert hex color and opacity to RGBA string
+     * This bakes opacity into the color for better CairoSVG compatibility
+     * @param {string} hexColor - Hex color (e.g., '#3fe628')
+     * @param {number} opacity - Opacity value (0-1)
+     * @returns {string} RGBA color string (e.g., 'rgba(63, 230, 40, 0.4)')
+     */
+    static hexToRGBA(hexColor, opacity) {
+        // Remove # if present
+        const hex = hexColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
+    /**
      * Fetch a font file and convert it to a base64 data URL
      * @param {string} fontUrl - The URL of the font file (e.g., '/fonts/SomeFont.ttf')
      * @returns {Promise<string>} Base64 data URL of the font
@@ -215,7 +231,8 @@ export class ExportManager {
             'copyright-text',
             'btn-1', 'btn-2', 'btn-3', 'btn-4', 'btn-5', 'btn-6',
             'btn-7', 'btn-8', 'btn-9', 'btn-clear', 'btn-0', 'btn-enter',
-            'top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'
+            'top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label',
+            'row-desc-1', 'row-desc-2', 'row-desc-3', 'row-desc-4'
         ];
 
         for (const id of textIds) {
@@ -267,6 +284,51 @@ export class ExportManager {
             textEl.parentNode.insertBefore(img, textEl);
             textEl.remove();
         }
+    }
+
+    /**
+     * Pre-render background fill with opacity to a flat image
+     * This ensures CairoSVG renders the opacity correctly by baking it in
+     * @returns {Promise<{dataURL: string, enabled: boolean}|null>}
+     */
+    static async preRenderBackground() {
+        const bgFillEnabled = document.getElementById('bg-fill-enabled')?.checked;
+        const bgFillColor = document.getElementById('bg-fill-color')?.value || '#FFFFFF';
+        const bgFillOpacity = parseFloat(document.getElementById('bg-fill-opacity')?.value || '1');
+
+        // Always return info, even if disabled (so we know to use white)
+        // SVG dimensions in mm
+        const width = 55.6;
+        const height = 90.4;
+
+        // Render at higher resolution (pixels per mm)
+        const pixelsPerMm = 10;
+        const canvasWidth = Math.round(width * pixelsPerMm);
+        const canvasHeight = Math.round(height * pixelsPerMm);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (bgFillEnabled) {
+            // Parse hex color and apply opacity
+            const hex = bgFillColor.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${bgFillOpacity})`;
+        } else {
+            ctx.fillStyle = '#FFFFFF';
+        }
+
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        return {
+            dataURL: canvas.toDataURL('image/png'),
+            enabled: bgFillEnabled,
+            opacity: bgFillOpacity
+        };
     }
 
     /**
@@ -371,8 +433,31 @@ export class ExportManager {
             // Pre-render tiled artwork if needed
             const preRenderedTiles = await ExportManager.preRenderTiledArtwork();
 
+            // Pre-render background with opacity baked in
+            const preRenderedBg = await ExportManager.preRenderBackground();
+
             // Clone preview SVG and include page-level preview fonts (if any)
             const exportCopy = svgDoc.cloneNode(true);
+
+            // Replace background rect with pre-rendered image to ensure opacity works
+            const bgRect = exportCopy.querySelector('#overlay-background');
+            if (bgRect && preRenderedBg) {
+                const xlinkNS = 'http://www.w3.org/1999/xlink';
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const bgImage = document.createElementNS(svgNS, 'image');
+                bgImage.setAttribute('id', 'overlay-background-rendered');
+                bgImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedBg.dataURL);
+                bgImage.setAttribute('x', '0');
+                bgImage.setAttribute('y', '0');
+                bgImage.setAttribute('width', '55.6');
+                bgImage.setAttribute('height', '90.4');
+                bgImage.setAttribute('preserveAspectRatio', 'none');
+
+                // Replace the rect with the image
+                bgRect.parentNode.insertBefore(bgImage, bgRect);
+                bgRect.remove();
+                console.log('Replaced background rect with pre-rendered image, opacity:', preRenderedBg.opacity);
+            }
 
             // Replace text elements with pre-rendered images for reliable font display
             ExportManager.replaceTextWithImages(exportCopy, textRenderings);

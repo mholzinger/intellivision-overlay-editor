@@ -21,12 +21,14 @@ export class FontManager {
             const actionSelect = document.getElementById('action-font-select');
             const bottomSelect = document.getElementById('bottom-text-font-select');
             const copyrightSelect = document.getElementById('copyright-font-select');
+            const rowDescSelect = document.getElementById('row-desc-font-select');
 
             select.innerHTML = '';
             buttonSelect.innerHTML = '';
             actionSelect.innerHTML = '';
             bottomSelect.innerHTML = '';
             copyrightSelect.innerHTML = '';
+            if (rowDescSelect) rowDescSelect.innerHTML = '';
 
             if (data.fonts && data.fonts.length > 0) {
                 let arialBlackIndex = -1;
@@ -63,6 +65,14 @@ export class FontManager {
                     copyrightOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
                     copyrightSelect.appendChild(copyrightOpt);
 
+                    // Create option for row description font selector
+                    if (rowDescSelect) {
+                        const rowDescOpt = document.createElement('option');
+                        rowDescOpt.value = JSON.stringify(f);
+                        rowDescOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        rowDescSelect.appendChild(rowDescOpt);
+                    }
+
                     // Track indices for different default fonts
                     if (f.family === 'Arial Black' && f.type === 'system') {
                         arialBlackIndex = index;
@@ -89,6 +99,10 @@ export class FontManager {
                 actionSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
                 // Bottom text: Eurostile BQ
                 bottomSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                // Row descriptions: Eurostile BQ
+                if (rowDescSelect) {
+                    rowDescSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                }
 
                 console.log('Font indices - Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex);
 
