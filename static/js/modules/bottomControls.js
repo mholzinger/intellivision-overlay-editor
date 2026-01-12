@@ -27,6 +27,7 @@ export class BottomControls {
         const textElement = svgDoc?.querySelector('#bottom-text');
         if (textElement) {
             textElement.style.fill = color;
+            textElement.style.dominantBaseline = 'central';
         }
     }
 
@@ -40,6 +41,7 @@ export class BottomControls {
         const textElement = svgDoc?.querySelector('#bottom-text');
         if (textElement) {
             textElement.style.fontSize = size + 'px';
+            textElement.style.dominantBaseline = 'central';
         }
     }
 

@@ -61,6 +61,7 @@ export class ActionButtons {
         element.style.fill = color;
         element.style.fontSize = size + 'px';
         element.style.fontFamily = fontFamily;
+        element.style.dominantBaseline = 'central';
     }
 
     /**
