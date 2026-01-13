@@ -312,6 +312,7 @@ export class ExportManager {
      * Pre-render background fill with opacity to a flat image
      * This ensures CairoSVG renders the opacity correctly by baking it in
      * Supports both solid colors and gradients
+     * The opacity is simulated by compositing against white, resulting in a solid opaque image
      * @returns {Promise<{dataURL: string, enabled: boolean}|null>}
      */
     static async preRenderBackground() {
@@ -336,9 +337,16 @@ export class ExportManager {
         canvas.height = canvasHeight;
         const ctx = canvas.getContext('2d');
 
+        // Always start with white background - opacity will be composited on top
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
         if (bgFillEnabled) {
+            // Set global alpha for opacity effect
+            ctx.globalAlpha = bgFillOpacity;
+
             if (gradientEnabled) {
-                // Create gradient fill with opacity baked into color stops
+                // Create gradient fill
                 let gradient;
                 if (gradientDirection === 'center-h' || gradientDirection === 'center-v') {
                     // Radial gradient from center
@@ -352,19 +360,17 @@ export class ExportManager {
                     // left-to-right (default)
                     gradient = ctx.createLinearGradient(0, 0, canvasWidth, 0);
                 }
-                // Bake opacity into the gradient color stops
-                gradient.addColorStop(0, ExportManager.hexToRGBAString(bgFillColor, bgFillOpacity));
-                gradient.addColorStop(1, ExportManager.hexToRGBAString(gradientEnd, bgFillOpacity));
+                gradient.addColorStop(0, bgFillColor);
+                gradient.addColorStop(1, gradientEnd);
                 ctx.fillStyle = gradient;
             } else {
-                // Solid color with opacity
-                ctx.fillStyle = ExportManager.hexToRGBAString(bgFillColor, bgFillOpacity);
+                // Solid color
+                ctx.fillStyle = bgFillColor;
             }
-        } else {
-            ctx.fillStyle = '#FFFFFF';
-        }
 
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            ctx.globalAlpha = 1.0; // Reset
+        }
 
         return {
             dataURL: canvas.toDataURL('image/png'),
