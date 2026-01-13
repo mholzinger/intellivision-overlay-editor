@@ -14,6 +14,7 @@ import { BottomControls } from './modules/bottomControls.js';
 import { BackgroundControls } from './modules/backgroundControls.js';
 import { ExportManager } from './modules/exportManager.js';
 import { RowDescriptions } from './modules/rowDescriptions.js';
+import { UIManager } from './modules/uiManager.js';
 
 /**
  * Initialize the application
@@ -182,6 +183,17 @@ function setupEventHandlers() {
         actionArrowColor.addEventListener('input', () => ActionButtons.updateActionArrowColor());
     }
 
+    // Action button description inputs
+    const actionDescLeftInput = document.getElementById('action-desc-left-input');
+    if (actionDescLeftInput) {
+        actionDescLeftInput.addEventListener('input', () => ActionButtons.updateActionDescription('left'));
+    }
+
+    const actionDescRightInput = document.getElementById('action-desc-right-input');
+    if (actionDescRightInput) {
+        actionDescRightInput.addEventListener('input', () => ActionButtons.updateActionDescription('right'));
+    }
+
     // Bottom controls
     const bottomTextInput = document.getElementById('bottom-text-input');
     if (bottomTextInput) {
@@ -318,6 +330,7 @@ window.updateTitleColor = () => TitleEditor.updateTitleColor();
 window.updateTitleFont = () => FontManager.updateTitleFont();
 window.updateTitleSize = () => TitleEditor.updateTitleSize();
 window.toggleTitleBackground = () => TitleEditor.toggleTitleBackground();
+window.toggleGradientControls = (baseId) => UIManager.toggleGradientControls(baseId);
 window.updateCopyrightText = () => TitleEditor.updateCopyrightText();
 window.updateCopyrightColor = () => TitleEditor.updateCopyrightColor();
 window.updateCopyrightFont = () => FontManager.updateCopyrightFont();
@@ -330,6 +343,7 @@ window.updateActionButton = (position) => ActionButtons.updateActionButton(posit
 window.updateAllActionButtons = () => ActionButtons.updateAllActionButtons();
 window.updateActionFont = () => FontManager.updateActionFont();
 window.toggleActionArrowFill = () => ActionButtons.toggleActionArrowFill();
+window.updateActionDescription = (side) => ActionButtons.updateActionDescription(side);
 window.updateBottomText = () => BottomControls.updateBottomText();
 window.updateBottomTextFont = () => FontManager.updateBottomTextFont();
 window.updateBottomTextColor = () => BottomControls.updateBottomTextColor();

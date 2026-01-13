@@ -56,6 +56,34 @@
                         <label for="font-color">Font Color</label>
                         <input type="color" id="font-color" value="#ffffff" oninput="updateTitleColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                         <div class="helper-text">Pick any color for the game title</div>
+                        <div class="gradient-controls" id="title-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="title-gradient-enabled" onchange="updateTitleColor()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="title-gradient-end" value="#000000"
+                                        oninput="updateTitleColor()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="title-gradient-direction" onchange="updateTitleColor()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="title-show-gradient" onchange="toggleGradientControls('title')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="font-select">Font</label>
@@ -76,6 +104,33 @@
                                 Enable background fill (like official overlays)
                             </label>
                         </div>
+                        <div class="gradient-controls" id="title-bg-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="title-bg-gradient-enabled" onchange="updateTitleBackground()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="title-bg-gradient-end" value="#000000" oninput="updateTitleBackground()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="title-bg-gradient-direction" onchange="updateTitleBackground()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="title-bg-show-gradient" onchange="toggleGradientControls('title-bg')">
+                            Show gradient options
+                        </label>
                     </div>
                 </div>
 
@@ -89,6 +144,33 @@
                     <div class="input-group">
                         <label for="copyright-color">Font Color</label>
                         <input type="color" id="copyright-color" value="#333333" oninput="updateCopyrightColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="gradient-controls" id="copyright-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="copyright-gradient-enabled" onchange="updateCopyrightColor()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="copyright-gradient-end" value="#000000" oninput="updateCopyrightColor()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="copyright-gradient-direction" onchange="updateCopyrightColor()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="copyright-show-gradient" onchange="toggleGradientControls('copyright')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="copyright-font-select">Font</label>
@@ -112,6 +194,33 @@
                                 Enable background color fill
                             </label>
                         </div>
+                        <div class="gradient-controls" id="bg-fill-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="bg-fill-gradient-enabled" onchange="updateBackgroundFill()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="bg-fill-gradient-end" value="#000000" oninput="updateBackgroundFill()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="bg-fill-gradient-direction" onchange="updateBackgroundFill()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="bg-fill-show-gradient" onchange="toggleGradientControls('bg-fill')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="bg-fill-opacity">Background Opacity</label>
@@ -222,6 +331,33 @@
                         <label for="button-label-color">Button Label Color</label>
                         <input type="color" id="button-label-color" value="#000000" oninput="updateAllButtonLabels()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                         <div class="helper-text">Color for all button text</div>
+                        <div class="gradient-controls" id="button-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="button-label-gradient-enabled" onchange="updateAllButtonLabels()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="button-label-gradient-end" value="#000000" oninput="updateAllButtonLabels()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="button-label-gradient-direction" onchange="updateAllButtonLabels()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="button-label-show-gradient" onchange="toggleGradientControls('button-label')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="button-font-select">Button Font</label>
@@ -241,6 +377,33 @@
                         <label for="row-desc-color">Row Description Color</label>
                         <input type="color" id="row-desc-color" value="#333333" oninput="updateAllRowDescriptions()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                         <div class="helper-text">Color for row description text</div>
+                        <div class="gradient-controls" id="row-desc-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="row-desc-gradient-enabled" onchange="updateAllRowDescriptions()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="row-desc-gradient-end" value="#000000" oninput="updateAllRowDescriptions()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="row-desc-gradient-direction" onchange="updateAllRowDescriptions()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="row-desc-show-gradient" onchange="toggleGradientControls('row-desc')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="row-desc-font-select">Row Description Font</label>
@@ -527,6 +690,33 @@
                         <label for="action-label-color">Action Button Color</label>
                         <input type="color" id="action-label-color" value="#000000" oninput="updateAllActionButtons()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                         <div class="helper-text">Color for all action button text</div>
+                        <div class="gradient-controls" id="action-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="action-label-gradient-enabled" onchange="updateAllActionButtons()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="action-label-gradient-end" value="#000000" oninput="updateAllActionButtons()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="action-label-gradient-direction" onchange="updateAllActionButtons()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="action-label-show-gradient" onchange="toggleGradientControls('action-label')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="action-font-select">Action Button Font</label>
@@ -563,6 +753,18 @@
                             <input type="text" class="button-input" id="action-bottom-right" value="ACTION" oninput="updateActionButton('bottom-right')">
                         </div>
                     </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div>
+                            <div class="button-label">Left Side Description</div>
+                            <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional description" oninput="updateActionDescription('left')">
+                            <div class="helper-text">Runs vertically along left edge</div>
+                        </div>
+                        <div>
+                            <div class="button-label">Right Side Description</div>
+                            <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional description" oninput="updateActionDescription('right')">
+                            <div class="helper-text">Runs vertically along right edge</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="control-section">
@@ -582,6 +784,33 @@
                     <div class="input-group">
                         <label for="bottom-text-color">Text Color</label>
                         <input type="color" id="bottom-text-color" value="#000000" oninput="updateBottomTextColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <div class="gradient-controls" id="bottom-text-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <input type="checkbox" id="bottom-text-gradient-enabled" onchange="updateBottomTextColor()">
+                                Enable gradient
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">End Color</label>
+                                    <input type="color" id="bottom-text-gradient-end" value="#000000" oninput="updateBottomTextColor()"
+                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666;">Direction</label>
+                                    <select id="bottom-text-gradient-direction" onchange="updateBottomTextColor()"
+                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="left-to-right">Left to Right</option>
+                                        <option value="top-to-bottom">Top to Bottom</option>
+                                        <option value="center-h">Center to Edges (H)</option>
+                                        <option value="center-v">Center to Edges (V)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
+                            <input type="checkbox" id="bottom-text-show-gradient" onchange="toggleGradientControls('bottom-text')">
+                            Show gradient options
+                        </label>
                     </div>
                     <div class="input-group">
                         <label for="bottom-text-size">Text Size: <span id="bottom-text-size-value">2</span>px</label>

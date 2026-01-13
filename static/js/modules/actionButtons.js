@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../services/stateManager.js';
+import { UIManager } from './uiManager.js';
 
 // Default line spacing in pixels for multiline text
 const DEFAULT_LINE_SPACING = 1.2;
@@ -84,13 +85,12 @@ export class ActionButtons {
     }
 
     /**
-     * Apply styling to action button element
+     * Apply styling to action button element (supports gradient)
      * @param {Element} element - SVG element to style
      */
     static applyActionButtonStyling(element) {
         if (!element) return;
 
-        const color = document.getElementById('action-label-color').value;
         const size = parseFloat(document.getElementById('action-label-size').value);
         const fontSelect = document.getElementById('action-font-select');
         const fontValue = fontSelect.value;
@@ -105,7 +105,7 @@ export class ActionButtons {
             }
         }
 
-        element.style.fill = color;
+        element.style.fill = UIManager.getActionLabelFillValue();
         element.style.fontSize = size + 'px';
         element.style.fontFamily = fontFamily;
         element.style.dominantBaseline = 'central';
@@ -125,6 +125,16 @@ export class ActionButtons {
             const labelElement = svgDoc?.querySelector(`#${labelId}`);
             if (labelElement) {
                 ActionButtons.applyActionButtonStyling(labelElement);
+            }
+        });
+
+        // Also update action descriptions with new size/styling
+        ['left', 'right'].forEach(side => {
+            const descElement = svgDoc?.querySelector(`#action-desc-${side}`);
+            const input = document.getElementById(`action-desc-${side}-input`);
+            if (descElement && input) {
+                ActionButtons.setMultilineText(descElement, input.value, side, size);
+                ActionButtons.applyActionButtonStyling(descElement);
             }
         });
     }
@@ -156,6 +166,38 @@ export class ActionButtons {
                 } else {
                     arrow.setAttribute('fill', 'none');
                 }
+            }
+        });
+    }
+
+    /**
+     * Update action button description text
+     * @param {string} side - 'left' or 'right'
+     */
+    static updateActionDescription(side) {
+        const input = document.getElementById(`action-desc-${side}-input`);
+        const value = input ? input.value : '';
+        const svgDoc = appState.getSvgDoc();
+        const descElement = svgDoc?.querySelector(`#action-desc-${side}`);
+        const fontSize = parseFloat(document.getElementById('action-label-size')?.value || '2');
+
+        if (descElement) {
+            ActionButtons.setMultilineText(descElement, value, side, fontSize);
+            ActionButtons.applyActionButtonStyling(descElement);
+        }
+    }
+
+    /**
+     * Initialize action descriptions (clear placeholder text)
+     */
+    static initActionDescriptions() {
+        const svgDoc = appState.getSvgDoc();
+        if (!svgDoc) return;
+
+        ['left', 'right'].forEach(side => {
+            const descElement = svgDoc.querySelector(`#action-desc-${side}`);
+            if (descElement) {
+                descElement.textContent = '';
             }
         });
     }

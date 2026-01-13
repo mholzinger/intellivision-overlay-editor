@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../services/stateManager.js';
+import { UIManager } from './uiManager.js';
 
 // Store reference to background element and its original state
 let backgroundElement = null;
@@ -61,9 +62,9 @@ export class BackgroundControls {
     }
 
     /**
-     * Apply background fill to SVG
+     * Apply background fill to SVG (supports gradient)
      * @param {boolean} enabled - Whether fill is enabled
-     * @param {string} color - Fill color
+     * @param {string} color - Fill color (unused when gradient enabled)
      * @param {number} opacity - Opacity value (0-1)
      */
     static applyBackgroundFill(enabled, color, opacity) {
@@ -79,7 +80,7 @@ export class BackgroundControls {
         if (!backgroundElement) return;
 
         if (enabled) {
-            backgroundElement.setAttribute('fill', color);
+            backgroundElement.setAttribute('fill', UIManager.getBgFillValue());
             backgroundElement.setAttribute('fill-opacity', opacity.toString());
         } else {
             backgroundElement.setAttribute('fill', '#FFFFFF');

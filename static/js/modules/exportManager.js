@@ -167,10 +167,17 @@ export class ExportManager {
             const clonedText = textEl.cloneNode(true);
             tempSvg.appendChild(clonedText);
 
-            // Also copy any relevant style elements from the parent SVG
+            // Also copy any relevant style elements and defs (for gradients) from the parent SVG
             // and inline any font references as base64
             const parentSvg = textEl.ownerSVGElement;
             if (parentSvg) {
+                // Copy defs section (contains gradient definitions)
+                const defsEl = parentSvg.querySelector('defs');
+                if (defsEl) {
+                    const clonedDefs = defsEl.cloneNode(true);
+                    tempSvg.insertBefore(clonedDefs, tempSvg.firstChild);
+                }
+
                 const styleEls = parentSvg.querySelectorAll('style');
                 for (const style of styleEls) {
                     const clonedStyle = style.cloneNode(true);
@@ -232,7 +239,8 @@ export class ExportManager {
             'btn-1', 'btn-2', 'btn-3', 'btn-4', 'btn-5', 'btn-6',
             'btn-7', 'btn-8', 'btn-9', 'btn-clear', 'btn-0', 'btn-enter',
             'top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label',
-            'row-desc-1', 'row-desc-2', 'row-desc-3', 'row-desc-4'
+            'row-desc-1', 'row-desc-2', 'row-desc-3', 'row-desc-4',
+            'action-desc-left', 'action-desc-right'
         ];
 
         for (const id of textIds) {
@@ -287,16 +295,33 @@ export class ExportManager {
     }
 
     /**
+     * Convert hex color to RGBA with opacity
+     * @param {string} hexColor - Hex color string
+     * @param {number} opacity - Opacity value 0-1
+     * @returns {string} RGBA color string
+     */
+    static hexToRGBAString(hexColor, opacity) {
+        const hex = hexColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
+    /**
      * Pre-render background fill with opacity to a flat image
      * This ensures CairoSVG renders the opacity correctly by baking it in
+     * Supports both solid colors and gradients
      * @returns {Promise<{dataURL: string, enabled: boolean}|null>}
      */
     static async preRenderBackground() {
         const bgFillEnabled = document.getElementById('bg-fill-enabled')?.checked;
         const bgFillColor = document.getElementById('bg-fill-color')?.value || '#FFFFFF';
         const bgFillOpacity = parseFloat(document.getElementById('bg-fill-opacity')?.value || '1');
+        const gradientEnabled = document.getElementById('bg-fill-gradient-enabled')?.checked;
+        const gradientEnd = document.getElementById('bg-fill-gradient-end')?.value || '#000000';
+        const gradientDirection = document.getElementById('bg-fill-gradient-direction')?.value || 'left-to-right';
 
-        // Always return info, even if disabled (so we know to use white)
         // SVG dimensions in mm
         const width = 55.6;
         const height = 90.4;
@@ -312,12 +337,29 @@ export class ExportManager {
         const ctx = canvas.getContext('2d');
 
         if (bgFillEnabled) {
-            // Parse hex color and apply opacity
-            const hex = bgFillColor.replace('#', '');
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${bgFillOpacity})`;
+            if (gradientEnabled) {
+                // Create gradient fill with opacity baked into color stops
+                let gradient;
+                if (gradientDirection === 'center-h' || gradientDirection === 'center-v') {
+                    // Radial gradient from center
+                    const centerX = canvasWidth / 2;
+                    const centerY = canvasHeight / 2;
+                    const radius = Math.max(canvasWidth, canvasHeight) / 2;
+                    gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                } else if (gradientDirection === 'top-to-bottom') {
+                    gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+                } else {
+                    // left-to-right (default)
+                    gradient = ctx.createLinearGradient(0, 0, canvasWidth, 0);
+                }
+                // Bake opacity into the gradient color stops
+                gradient.addColorStop(0, ExportManager.hexToRGBAString(bgFillColor, bgFillOpacity));
+                gradient.addColorStop(1, ExportManager.hexToRGBAString(gradientEnd, bgFillOpacity));
+                ctx.fillStyle = gradient;
+            } else {
+                // Solid color with opacity
+                ctx.fillStyle = ExportManager.hexToRGBAString(bgFillColor, bgFillOpacity);
+            }
         } else {
             ctx.fillStyle = '#FFFFFF';
         }
@@ -328,6 +370,65 @@ export class ExportManager {
             dataURL: canvas.toDataURL('image/png'),
             enabled: bgFillEnabled,
             opacity: bgFillOpacity
+        };
+    }
+
+    /**
+     * Pre-render title background with gradient support
+     * @returns {Promise<{dataURL: string, x: number, y: number, width: number, height: number}|null>}
+     */
+    static async preRenderTitleBackground() {
+        const bgEnabled = document.getElementById('title-bg-enabled')?.checked;
+        if (!bgEnabled) return null;
+
+        const bgColor = document.getElementById('title-bg-color')?.value || '#0000ff';
+        const gradientEnabled = document.getElementById('title-bg-gradient-enabled')?.checked;
+        const gradientEnd = document.getElementById('title-bg-gradient-end')?.value || '#000000';
+        const gradientDirection = document.getElementById('title-bg-gradient-direction')?.value || 'left-to-right';
+
+        // Title background dimensions (from SVG template)
+        const x = 2.5;
+        const y = 2.5;
+        const width = 50.6;
+        const height = 10.5;
+
+        // Render at higher resolution
+        const pixelsPerMm = 10;
+        const canvasWidth = Math.round(width * pixelsPerMm);
+        const canvasHeight = Math.round(height * pixelsPerMm);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (gradientEnabled) {
+            let gradient;
+            if (gradientDirection === 'center-h' || gradientDirection === 'center-v') {
+                const centerX = canvasWidth / 2;
+                const centerY = canvasHeight / 2;
+                const radius = Math.max(canvasWidth, canvasHeight) / 2;
+                gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            } else if (gradientDirection === 'top-to-bottom') {
+                gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            } else {
+                gradient = ctx.createLinearGradient(0, 0, canvasWidth, 0);
+            }
+            gradient.addColorStop(0, bgColor);
+            gradient.addColorStop(1, gradientEnd);
+            ctx.fillStyle = gradient;
+        } else {
+            ctx.fillStyle = bgColor;
+        }
+
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        return {
+            dataURL: canvas.toDataURL('image/png'),
+            x: x,
+            y: y,
+            width: width,
+            height: height
         };
     }
 
@@ -433,8 +534,11 @@ export class ExportManager {
             // Pre-render tiled artwork if needed
             const preRenderedTiles = await ExportManager.preRenderTiledArtwork();
 
-            // Pre-render background with opacity baked in
+            // Pre-render background with opacity baked in (supports gradients)
             const preRenderedBg = await ExportManager.preRenderBackground();
+
+            // Pre-render title background with gradient support
+            const preRenderedTitleBg = await ExportManager.preRenderTitleBackground();
 
             // Clone preview SVG and include page-level preview fonts (if any)
             const exportCopy = svgDoc.cloneNode(true);
@@ -518,12 +622,23 @@ export class ExportManager {
                 }
             }
 
-            // Ensure title background is applied if enabled
+            // Ensure title background is applied if enabled (with gradient support)
             const exportTitleBg = exportCopy.querySelector('#title-background');
-            const bgEnabled = document.getElementById('title-bg-enabled').checked;
-            if (exportTitleBg && bgEnabled) {
-                const bgColor = document.getElementById('title-bg-color').value;
-                exportTitleBg.setAttribute('fill', bgColor);
+            const titleBgEnabled = document.getElementById('title-bg-enabled').checked;
+            if (exportTitleBg && titleBgEnabled && preRenderedTitleBg) {
+                // Replace the rect with a pre-rendered image to support gradients
+                const xlinkNS = 'http://www.w3.org/1999/xlink';
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const titleBgImage = document.createElementNS(svgNS, 'image');
+                titleBgImage.setAttribute('id', 'title-background-rendered');
+                titleBgImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedTitleBg.dataURL);
+                titleBgImage.setAttribute('x', preRenderedTitleBg.x.toString());
+                titleBgImage.setAttribute('y', preRenderedTitleBg.y.toString());
+                titleBgImage.setAttribute('width', preRenderedTitleBg.width.toString());
+                titleBgImage.setAttribute('height', preRenderedTitleBg.height.toString());
+                titleBgImage.setAttribute('preserveAspectRatio', 'none');
+                exportTitleBg.parentNode.insertBefore(titleBgImage, exportTitleBg);
+                exportTitleBg.remove();
             } else if (exportTitleBg) {
                 exportTitleBg.setAttribute('fill', 'none');
             }

@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../services/stateManager.js';
+import { UIManager } from './uiManager.js';
 
 // Default line spacing multiplier for multiline text
 const DEFAULT_LINE_SPACING = 1.2;
@@ -56,7 +57,6 @@ export class ButtonEditor {
 
         if (btnElement) {
             // Apply global button label styling (color, size, AND font)
-            const color = document.getElementById('button-label-color').value;
             const size = parseFloat(document.getElementById('button-label-size').value);
             const fontSelect = document.getElementById('button-font-select');
             const fontValue = fontSelect.value;
@@ -73,22 +73,20 @@ export class ButtonEditor {
             // Set multiline text with | separator
             ButtonEditor.setMultilineText(btnElement, value, size);
 
-            // Use inline style to override CSS class styles
-            btnElement.style.fill = color;
+            // Use inline style to override CSS class styles (supports gradient)
+            btnElement.style.fill = UIManager.getButtonLabelFillValue();
             btnElement.style.fontSize = size + 'px';
             btnElement.style.fontFamily = fontFamily;
             btnElement.style.dominantBaseline = 'central';
-            console.log('Button updated - text:', value, 'color:', color, 'size:', size, 'font:', fontFamily);
         } else {
             console.error('Button element not found for:', num);
         }
     }
 
     /**
-     * Update all button labels with current styling
+     * Update all button labels with current styling (supports gradient)
      */
     static updateAllButtonLabels() {
-        const color = document.getElementById('button-label-color').value;
         const size = parseFloat(document.getElementById('button-label-size').value);
         const fontSelect = document.getElementById('button-font-select');
         const fontValue = fontSelect.value;
@@ -104,6 +102,9 @@ export class ButtonEditor {
 
         document.getElementById('button-label-size-value').textContent = size;
 
+        // Get fill value (supports gradient)
+        const fillValue = UIManager.getButtonLabelFillValue();
+
         // Update all 12 button labels
         const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'clear', 0, 'enter'];
         const svgDoc = appState.getSvgDoc();
@@ -117,7 +118,7 @@ export class ButtonEditor {
                 }
 
                 // Use inline style to override CSS class styles
-                btnElement.style.fill = color;
+                btnElement.style.fill = fillValue;
                 btnElement.style.fontSize = size + 'px';
                 btnElement.style.fontFamily = fontFamily;
                 btnElement.style.dominantBaseline = 'central';

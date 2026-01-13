@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../services/stateManager.js';
+import { UIManager } from './uiManager.js';
 
 // Default line spacing multiplier for multiline text
 const DEFAULT_LINE_SPACING = 1.2;
@@ -54,16 +55,15 @@ export class BottomControls {
     }
 
     /**
-     * Apply styling to bottom text element
+     * Apply styling to bottom text element (supports gradient)
      * @param {SVGTextElement} textElement - The text element to style
      */
     static applyBottomTextStyling(textElement) {
         if (!textElement) return;
 
-        const color = document.getElementById('bottom-text-color')?.value || '#666666';
         const size = parseFloat(document.getElementById('bottom-text-size')?.value || '1.2');
 
-        textElement.style.fill = color;
+        textElement.style.fill = UIManager.getBottomTextFillValue();
         textElement.style.fontSize = size + 'px';
         textElement.style.dominantBaseline = 'central';
     }

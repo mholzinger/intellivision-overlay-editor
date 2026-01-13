@@ -160,6 +160,10 @@
       <text id="bottom-left-label" x="4.0" y="66.03" text-anchor="start"
           transform="rotate(90, 4.0, 66.03)" class="label_small">ACTION</text>
     </g>
+
+    <!-- Left side description (centered vertically between top and bottom action buttons) -->
+    <text id="action-desc-left" x="2.0" y="55.0" text-anchor="middle"
+        transform="rotate(90, 2.0, 55.0)" class="label_small"></text>
   </g>
 
   <!-- Right side action buttons (text runs vertically along right edge) -->
@@ -177,6 +181,10 @@
       <text id="bottom-right-label" x="50.48" y="66.03" text-anchor="end"
           transform="rotate(-90, 50.48, 66.03)" class="label_small">ACTION</text>
     </g>
+
+    <!-- Right side description (centered vertically between top and bottom action buttons) -->
+    <text id="action-desc-right" x="53.6" y="55.0" text-anchor="middle"
+        transform="rotate(-90, 53.6, 55.0)" class="label_small"></text>
   </g>
 
   <!-- BOTTOM ARROWS (for disc controller direction indication) -->

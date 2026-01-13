@@ -97,6 +97,9 @@ export class ButtonArtwork {
 
             // Apply transparency if checkbox is enabled
             ButtonArtwork.reprocessButtonArtwork();
+
+            // Clear the file input so the same file can be uploaded again for another button
+            event.target.value = '';
         };
         reader.readAsDataURL(file);
     }

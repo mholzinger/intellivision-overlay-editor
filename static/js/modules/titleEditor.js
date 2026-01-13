@@ -56,19 +56,19 @@ export class TitleEditor {
 
         if (titleElement) {
             TitleEditor.setMultilineText(titleElement, title || 'TITLE', fontSize);
-            titleElement.style.fill = UIManager.getSelectedFontColor();
+            titleElement.style.fill = UIManager.getTitleFillValue();
             titleElement.style.dominantBaseline = 'central';
         }
     }
 
     /**
-     * Update title color
+     * Update title color (supports gradient)
      */
     static updateTitleColor() {
         const svgDoc = appState.getSvgDoc();
         const titleElement = svgDoc?.querySelector('#title-text');
         if (titleElement) {
-            titleElement.style.fill = UIManager.getSelectedFontColor();
+            titleElement.style.fill = UIManager.getTitleFillValue();
         }
     }
 
@@ -86,7 +86,7 @@ export class TitleEditor {
             // Re-render multiline text with new spacing
             TitleEditor.setMultilineText(titleElement, title, size);
             titleElement.style.fontSize = size + 'px';
-            titleElement.style.fill = UIManager.getSelectedFontColor();
+            titleElement.style.fill = UIManager.getTitleFillValue();
             titleElement.style.dominantBaseline = 'central';
 
             // Center the text vertically in the title box
@@ -115,10 +115,9 @@ export class TitleEditor {
         if (!bgElement) return;
 
         const enabled = document.getElementById('title-bg-enabled').checked;
-        const color = document.getElementById('title-bg-color').value;
 
         if (enabled) {
-            bgElement.setAttribute('fill', color);
+            bgElement.setAttribute('fill', UIManager.getTitleBgFillValue());
         } else {
             bgElement.setAttribute('fill', 'none');
         }
@@ -140,14 +139,13 @@ export class TitleEditor {
     }
 
     /**
-     * Update copyright text color
+     * Update copyright text color (supports gradient)
      */
     static updateCopyrightColor() {
-        const color = document.getElementById('copyright-color').value;
         const svgDoc = appState.getSvgDoc();
         const copyrightElement = svgDoc?.querySelector('#copyright-text');
         if (copyrightElement) {
-            copyrightElement.style.fill = color;
+            copyrightElement.style.fill = UIManager.getCopyrightFillValue();
         }
     }
 
