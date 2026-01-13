@@ -325,103 +325,105 @@
                     </div>
                 </div>
 
-                <div class="control-section">
-                    <h2>Button Label Styling</h2>
-                    <div class="input-group">
-                        <label for="button-label-color">Button Label Color</label>
-                        <input type="color" id="button-label-color" value="#000000" oninput="updateAllButtonLabels()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="helper-text">Color for all button text</div>
-                        <div class="gradient-controls" id="button-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                                <input type="checkbox" id="button-label-gradient-enabled" onchange="updateAllButtonLabels()">
-                                Enable gradient
-                            </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">End Color</label>
-                                    <input type="color" id="button-label-gradient-end" value="#000000" oninput="updateAllButtonLabels()"
-                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">Direction</label>
-                                    <select id="button-label-gradient-direction" onchange="updateAllButtonLabels()"
-                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                                        <option value="left-to-right">Left to Right</option>
-                                        <option value="top-to-bottom">Top to Bottom</option>
-                                        <option value="center-h">Center to Edges (H)</option>
-                                        <option value="center-v">Center to Edges (V)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
-                            <input type="checkbox" id="button-label-show-gradient" onchange="toggleGradientControls('button-label')">
-                            Show gradient options
-                        </label>
-                    </div>
-                    <div class="input-group">
-                        <label for="button-font-select">Button Font</label>
-                        <select id="button-font-select" onchange="updateButtonFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
-                        <div class="helper-text">Choose a font for button labels</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="button-label-size">Button Label Size</label>
-                        <input type="range" id="button-label-size" min="1" max="10" value="3" step="0.25" oninput="updateAllButtonLabels()">
-                        <div class="helper-text">Size: <span id="button-label-size-value">3</span>px</div>
-                    </div>
-                </div>
-
-                <div class="control-section">
-                    <h2>Row Description Styling</h2>
-                    <div class="input-group">
-                        <label for="row-desc-color">Row Description Color</label>
-                        <input type="color" id="row-desc-color" value="#333333" oninput="updateAllRowDescriptions()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="helper-text">Color for row description text</div>
-                        <div class="gradient-controls" id="row-desc-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                                <input type="checkbox" id="row-desc-gradient-enabled" onchange="updateAllRowDescriptions()">
-                                Enable gradient
-                            </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">End Color</label>
-                                    <input type="color" id="row-desc-gradient-end" value="#000000" oninput="updateAllRowDescriptions()"
-                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">Direction</label>
-                                    <select id="row-desc-gradient-direction" onchange="updateAllRowDescriptions()"
-                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                                        <option value="left-to-right">Left to Right</option>
-                                        <option value="top-to-bottom">Top to Bottom</option>
-                                        <option value="center-h">Center to Edges (H)</option>
-                                        <option value="center-v">Center to Edges (V)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
-                            <input type="checkbox" id="row-desc-show-gradient" onchange="toggleGradientControls('row-desc')">
-                            Show gradient options
-                        </label>
-                    </div>
-                    <div class="input-group">
-                        <label for="row-desc-font-select">Row Description Font</label>
-                        <select id="row-desc-font-select" onchange="updateRowDescFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
-                        <div class="helper-text">Choose a font for row descriptions</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="row-desc-size">Row Description Size</label>
-                        <input type="range" id="row-desc-size" min="1" max="6" value="2" step="0.25" oninput="updateAllRowDescriptions()">
-                        <div class="helper-text">Size: <span id="row-desc-size-value">2</span>px</div>
-                    </div>
-                </div>
-
                 <div class="control-section full-width">
-                    <h2>Button Labels</h2>
+                    <h2>Keypad Labels</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
-                        Customize the label for each button. Optional row descriptions appear above each row.
+                        Customize labels for the 12 keypad buttons and optional row descriptions.
                     </div>
+
+                    <!-- Styling Options - Collapsible -->
+                    <details style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #333; user-select: none;">Text Styling Options</summary>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                            <!-- Button Label Styling -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Button Labels</h3>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="button-label-color" style="font-size: 12px;">Color</label>
+                                    <input type="color" id="button-label-color" value="#000000" oninput="updateAllButtonLabels()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    <div class="gradient-controls" id="button-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px;">
+                                            <input type="checkbox" id="button-label-gradient-enabled" onchange="updateAllButtonLabels()">
+                                            Enable gradient
+                                        </label>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">End Color</label>
+                                                <input type="color" id="button-label-gradient-end" value="#000000" oninput="updateAllButtonLabels()"
+                                                    style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">Direction</label>
+                                                <select id="button-label-gradient-direction" onchange="updateAllButtonLabels()"
+                                                    style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    <option value="left-to-right">Left to Right</option>
+                                                    <option value="top-to-bottom">Top to Bottom</option>
+                                                    <option value="center-h">Center to Edges (H)</option>
+                                                    <option value="center-v">Center to Edges (V)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: #666;">
+                                        <input type="checkbox" id="button-label-show-gradient" onchange="toggleGradientControls('button-label')">
+                                        Gradient
+                                    </label>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="button-font-select" style="font-size: 12px;">Font</label>
+                                    <select id="button-font-select" onchange="updateButtonFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 12px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="button-label-size" style="font-size: 12px;">Size: <span id="button-label-size-value">3</span>px</label>
+                                    <input type="range" id="button-label-size" min="1" max="10" value="3" step="0.25" oninput="updateAllButtonLabels()">
+                                </div>
+                            </div>
+
+                            <!-- Row Description Styling -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Row Descriptions</h3>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="row-desc-color" style="font-size: 12px;">Color</label>
+                                    <input type="color" id="row-desc-color" value="#333333" oninput="updateAllRowDescriptions()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    <div class="gradient-controls" id="row-desc-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px;">
+                                            <input type="checkbox" id="row-desc-gradient-enabled" onchange="updateAllRowDescriptions()">
+                                            Enable gradient
+                                        </label>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">End Color</label>
+                                                <input type="color" id="row-desc-gradient-end" value="#000000" oninput="updateAllRowDescriptions()"
+                                                    style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">Direction</label>
+                                                <select id="row-desc-gradient-direction" onchange="updateAllRowDescriptions()"
+                                                    style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    <option value="left-to-right">Left to Right</option>
+                                                    <option value="top-to-bottom">Top to Bottom</option>
+                                                    <option value="center-h">Center to Edges (H)</option>
+                                                    <option value="center-v">Center to Edges (V)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: #666;">
+                                        <input type="checkbox" id="row-desc-show-gradient" onchange="toggleGradientControls('row-desc')">
+                                        Gradient
+                                    </label>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="row-desc-font-select" style="font-size: 12px;">Font</label>
+                                    <select id="row-desc-font-select" onchange="updateRowDescFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 12px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="row-desc-size" style="font-size: 12px;">Size: <span id="row-desc-size-value">2</span>px</label>
+                                    <input type="range" id="row-desc-size" min="1" max="6" value="2" step="0.25" oninput="updateAllRowDescriptions()">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
 
                     <!-- Row 1 Description -->
                     <div class="row-description-input" style="margin-bottom: 8px;">
@@ -563,187 +565,182 @@
                 <div class="control-section full-width">
                     <h2>Button Artwork</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
-                        Upload individual artwork for each button. Artwork appears between button background and text.
+                        Add custom artwork to individual buttons. Select a button, upload an image, then adjust position and scale.
                     </div>
 
-                    <div class="input-group">
-                        <label for="button-artwork-select">Select Button</label>
-                        <select id="button-artwork-select" onchange="selectButtonForArtwork()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;">
-                            <option value="">-- Select a button --</option>
-                            <option value="1">Button 1</option>
-                            <option value="2">Button 2</option>
-                            <option value="3">Button 3</option>
-                            <option value="4">Button 4</option>
-                            <option value="5">Button 5</option>
-                            <option value="6">Button 6</option>
-                            <option value="7">Button 7</option>
-                            <option value="8">Button 8</option>
-                            <option value="9">Button 9</option>
-                            <option value="clear">Clear</option>
-                            <option value="0">0</option>
-                            <option value="enter">Enter</option>
-                        </select>
+                    <!-- Top row: Button select, upload, and clear -->
+                    <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px;">
+                        <div style="flex: 0 0 180px;">
+                            <label for="button-artwork-select" style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Select Button</label>
+                            <select id="button-artwork-select" onchange="selectButtonForArtwork()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 13px;">
+                                <option value="">-- Choose --</option>
+                                <option value="1">Button 1</option>
+                                <option value="2">Button 2</option>
+                                <option value="3">Button 3</option>
+                                <option value="4">Button 4</option>
+                                <option value="5">Button 5</option>
+                                <option value="6">Button 6</option>
+                                <option value="7">Button 7</option>
+                                <option value="8">Button 8</option>
+                                <option value="9">Button 9</option>
+                                <option value="clear">Clear</option>
+                                <option value="0">0</option>
+                                <option value="enter">Enter</option>
+                            </select>
+                        </div>
+                        <label class="file-upload" style="flex: 0 0 auto; padding: 8px 16px; margin: 0;">
+                            <span style="font-size: 16px;">🎨</span>
+                            <span style="font-size: 12px; margin-left: 6px;"><strong>Upload Artwork</strong></span>
+                            <input type="file" id="button-artwork-upload" accept="image/*" onchange="handleButtonArtworkUpload(event)">
+                        </label>
+                        <button class="btn btn-secondary" onclick="clearButtonArtwork()" style="padding: 8px 12px; font-size: 12px;">
+                            🗑️ Clear
+                        </button>
                     </div>
 
+                    <!-- Transform Controls (shown when button selected) -->
                     <div id="button-artwork-controls" style="display: none;">
-                        <div class="input-group">
-                            <label class="file-upload" style="margin-top: 15px;">
-                                <div class="upload-icon">🎨</div>
-                                <div><strong>Upload Button Artwork</strong></div>
-                                <div style="font-size: 12px; color: #666;">PNG, JPG, or GIF</div>
-                                <input type="file" id="button-artwork-upload" accept="image/*" onchange="handleButtonArtworkUpload(event)">
-                            </label>
-                        </div>
-
-                        <div class="input-group">
-                            <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                        <!-- Image Options -->
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
                                 <input type="checkbox" id="btn-art-remove-white" onchange="reprocessButtonArtwork()">
-                                Remove white/light backgrounds (make transparent)
+                                Remove white background
                             </label>
-                            <div class="helper-text" style="margin-top: 4px;">
-                                Automatically removes white or near-white pixels from the image
+                            <div id="btn-art-threshold-control" style="display: none; flex: 1; min-width: 150px; max-width: 250px;">
+                                <label style="font-size: 11px; color: #666;">Threshold: <span id="btn-art-threshold-value">245</span></label>
+                                <input type="range" id="btn-art-threshold" min="200" max="255" value="245" step="1" oninput="reprocessButtonArtwork()" style="width: 100%;">
                             </div>
                         </div>
 
-                        <div class="input-group" id="btn-art-threshold-control" style="display: none;">
-                            <label>White Detection Threshold</label>
-                            <input type="range" id="btn-art-threshold" min="200" max="255" value="245" step="1" oninput="reprocessButtonArtwork()" style="width: 100%;">
-                            <div class="helper-text">
-                                Threshold: <span id="btn-art-threshold-value">245</span> (lower = more aggressive)
+                        <!-- Transform Controls Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                            <!-- X Position -->
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                                <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">X: <span id="btn-art-x-value">0.0</span>mm</label>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <button class="btn btn-secondary" onclick="moveButtonArtworkX(-0.5)" style="padding: 2px 8px; font-size: 12px;">⬅</button>
+                                    <input type="range" id="btn-art-x-pos" min="-11.4" max="11.4" value="0" step="0.1"
+                                           oninput="updateButtonArtwork()" style="flex: 1; min-width: 40px;">
+                                    <button class="btn btn-secondary" onclick="moveButtonArtworkX(0.5)" style="padding: 2px 8px; font-size: 12px;">➡</button>
+                                </div>
+                            </div>
+
+                            <!-- Y Position -->
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                                <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Y: <span id="btn-art-y-value">0.0</span>mm</label>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <button class="btn btn-secondary" onclick="moveButtonArtworkY(-0.5)" style="padding: 2px 8px; font-size: 12px;">⬆</button>
+                                    <input type="range" id="btn-art-y-pos" min="-11.4" max="11.4" value="0" step="0.1"
+                                           oninput="updateButtonArtwork()" style="flex: 1; min-width: 40px;">
+                                    <button class="btn btn-secondary" onclick="moveButtonArtworkY(0.5)" style="padding: 2px 8px; font-size: 12px;">⬇</button>
+                                </div>
+                            </div>
+
+                            <!-- Rotation -->
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                                <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Rotate: <span id="btn-art-rotation-value">0</span>°</label>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <button class="btn btn-secondary" onclick="rotateButtonArtwork(-5)" style="padding: 2px 8px; font-size: 12px;">↺</button>
+                                    <input type="range" id="btn-art-rotation" min="-180" max="180" value="0" step="1"
+                                           oninput="updateButtonArtwork()" style="flex: 1; min-width: 40px;">
+                                    <button class="btn btn-secondary" onclick="rotateButtonArtwork(5)" style="padding: 2px 8px; font-size: 12px;">↻</button>
+                                </div>
+                            </div>
+
+                            <!-- Scale -->
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                                <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Scale: <span id="btn-art-scale-value">100</span>%</label>
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <button class="btn btn-secondary" onclick="scaleButtonArtwork(-0.1)" style="padding: 2px 8px; font-size: 12px;">−</button>
+                                    <input type="range" id="btn-art-scale" min="0.1" max="3.0" value="1.0" step="0.05"
+                                           oninput="updateButtonArtwork()" style="flex: 1; min-width: 40px;">
+                                    <button class="btn btn-secondary" onclick="scaleButtonArtwork(0.1)" style="padding: 2px 8px; font-size: 12px;">+</button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="input-group">
-                            <label>Artwork Opacity</label>
-                            <input type="range" id="btn-art-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateButtonArtwork()" style="width: 100%;">
-                            <div class="helper-text">
-                                Transparency: <span id="btn-art-opacity-value">100</span>%
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label>X-axis Position (Horizontal)</label>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="btn btn-secondary" onclick="moveButtonArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
-                                <input type="range" id="btn-art-x-pos" min="-11.4" max="11.4" value="0" step="0.1"
-                                       oninput="updateButtonArtwork()" style="flex: 1;">
-                                <button class="btn btn-secondary" onclick="moveButtonArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
-                            </div>
-                            <div class="helper-text" style="margin-top: 8px;">
-                                Position: <span id="btn-art-x-value">0.0</span>mm
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Y-axis Position (Vertical)</label>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="btn btn-secondary" onclick="moveButtonArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
-                                <input type="range" id="btn-art-y-pos" min="-11.4" max="11.4" value="0" step="0.1"
-                                       oninput="updateButtonArtwork()" style="flex: 1;">
-                                <button class="btn btn-secondary" onclick="moveButtonArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
-                            </div>
-                            <div class="helper-text" style="margin-top: 8px;">
-                                Position: <span id="btn-art-y-value">0.0</span>mm
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Rotation</label>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="btn btn-secondary" onclick="rotateButtonArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
-                                <input type="range" id="btn-art-rotation" min="-180" max="180" value="0" step="1"
-                                       oninput="updateButtonArtwork()" style="flex: 1;">
-                                <button class="btn btn-secondary" onclick="rotateButtonArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
-                            </div>
-                            <div class="helper-text" style="margin-top: 8px;">
-                                Angle: <span id="btn-art-rotation-value">0</span>°
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Scale / Zoom</label>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button class="btn btn-secondary" onclick="scaleButtonArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
-                                <input type="range" id="btn-art-scale" min="0.1" max="3.0" value="1.0" step="0.05"
-                                       oninput="updateButtonArtwork()" style="flex: 1;">
-                                <button class="btn btn-secondary" onclick="scaleButtonArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
-                            </div>
-                            <div class="helper-text" style="margin-top: 8px;">
-                                Scale: <span id="btn-art-scale-value">100</span>%
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <button class="btn btn-secondary" onclick="clearButtonArtwork()" style="width: 100%; margin-top: 10px;">
-                                <span>🗑️</span> Clear Button Artwork
-                            </button>
+                        <!-- Opacity -->
+                        <div style="margin-top: 12px; max-width: 300px;">
+                            <label style="font-size: 11px; font-weight: 500;">Opacity: <span id="btn-art-opacity-value">100</span>%</label>
+                            <input type="range" id="btn-art-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateButtonArtwork()" style="width: 100%; margin-top: 4px;">
                         </div>
                     </div>
                 </div>
 
-                <div class="control-section">
+                <div class="control-section full-width">
                     <h2>Action Buttons</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
-                        Customize labels for the side action buttons (text runs vertically along edges)
+                        Labels for the side action buttons (text runs vertically along edges).
                     </div>
-                    <div class="input-group">
-                        <label for="action-label-color">Action Button Color</label>
-                        <input type="color" id="action-label-color" value="#000000" oninput="updateAllActionButtons()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="helper-text">Color for all action button text</div>
-                        <div class="gradient-controls" id="action-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                                <input type="checkbox" id="action-label-gradient-enabled" onchange="updateAllActionButtons()">
-                                Enable gradient
-                            </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">End Color</label>
-                                    <input type="color" id="action-label-gradient-end" value="#000000" oninput="updateAllActionButtons()"
-                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+
+                    <!-- Styling Options - Collapsible -->
+                    <details style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #333; user-select: none;">Text & Arrow Styling</summary>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                            <!-- Text Styling -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Label Text</h3>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="action-label-color" style="font-size: 12px;">Color</label>
+                                    <input type="color" id="action-label-color" value="#000000" oninput="updateAllActionButtons()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    <div class="gradient-controls" id="action-label-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
+                                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px;">
+                                            <input type="checkbox" id="action-label-gradient-enabled" onchange="updateAllActionButtons()">
+                                            Enable gradient
+                                        </label>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">End Color</label>
+                                                <input type="color" id="action-label-gradient-end" value="#000000" oninput="updateAllActionButtons()"
+                                                    style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 11px; color: #666;">Direction</label>
+                                                <select id="action-label-gradient-direction" onchange="updateAllActionButtons()"
+                                                    style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                                                    <option value="left-to-right">Left to Right</option>
+                                                    <option value="top-to-bottom">Top to Bottom</option>
+                                                    <option value="center-h">Center to Edges (H)</option>
+                                                    <option value="center-v">Center to Edges (V)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: #666;">
+                                        <input type="checkbox" id="action-label-show-gradient" onchange="toggleGradientControls('action-label')">
+                                        Gradient
+                                    </label>
                                 </div>
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">Direction</label>
-                                    <select id="action-label-gradient-direction" onchange="updateAllActionButtons()"
-                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                                        <option value="left-to-right">Left to Right</option>
-                                        <option value="top-to-bottom">Top to Bottom</option>
-                                        <option value="center-h">Center to Edges (H)</option>
-                                        <option value="center-v">Center to Edges (V)</option>
-                                    </select>
+                                <div class="input-group" style="margin-bottom: 10px;">
+                                    <label for="action-font-select" style="font-size: 12px;">Font</label>
+                                    <select id="action-font-select" onchange="updateActionFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 12px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="action-label-size" style="font-size: 12px;">Size: <span id="action-label-size-value">2</span>px</label>
+                                    <input type="range" id="action-label-size" min="1" max="10" value="2" step="0.1" oninput="updateAllActionButtons()">
+                                </div>
+                            </div>
+
+                            <!-- Arrow Styling -->
+                            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Arrow Fill</h3>
+                                <div class="input-group">
+                                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
+                                        Enable arrow fill
+                                    </label>
+                                    <input type="color" id="action-arrow-color" value="#8B4513" oninput="updateActionArrowColor()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
                                 </div>
                             </div>
                         </div>
-                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
-                            <input type="checkbox" id="action-label-show-gradient" onchange="toggleGradientControls('action-label')">
-                            Show gradient options
-                        </label>
-                    </div>
-                    <div class="input-group">
-                        <label for="action-font-select">Action Button Font</label>
-                        <select id="action-font-select" onchange="updateActionFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;"></select>
-                        <div class="helper-text">Choose a font for action button labels</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="action-label-size">Action Button Size</label>
-                        <input type="range" id="action-label-size" min="1" max="10" value="2" step="0.1" oninput="updateAllActionButtons()">
-                        <div class="helper-text">Size: <span id="action-label-size-value">2</span>px</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="action-arrow-color">Arrow Fill Color</label>
-                        <input type="color" id="action-arrow-color" value="#8B4513" oninput="updateActionArrowColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="helper-text">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
-                                <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
-                                Enable arrow fill color
-                            </label>
+                    </details>
+
+                    <!-- Labels Content -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div class="button-label">Top (Both Sides)</div>
+                            <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')">
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label for="action-top">Top (both left & right - shared action)</label>
-                        <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')" style="width: 100%; padding: 10px;">
-                        <div class="helper-text">Controls both top-left and top-right labels</div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div>
                             <div class="button-label">Bottom Left</div>
                             <input type="text" class="button-input" id="action-bottom-left" value="ACTION" oninput="updateActionButton('bottom-left')">
@@ -756,75 +753,92 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div>
                             <div class="button-label">Left Side Description</div>
-                            <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional description" oninput="updateActionDescription('left')">
-                            <div class="helper-text">Runs vertically along left edge</div>
+                            <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('left')">
                         </div>
                         <div>
                             <div class="button-label">Right Side Description</div>
-                            <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional description" oninput="updateActionDescription('right')">
-                            <div class="helper-text">Runs vertically along right edge</div>
+                            <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('right')">
                         </div>
                     </div>
                 </div>
 
-                <div class="control-section">
+                <div class="control-section full-width">
                     <h2>Bottom Arrows</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
-                        Customize the text label between the two downward arrows at the bottom
+                        Text label between the two downward arrows at the bottom of the overlay.
                     </div>
-                    <div class="input-group">
-                        <label for="bottom-text-input">Bottom Text</label>
-                        <input type="text" class="button-input" id="bottom-text-input" value="DIRECTION" oninput="updateBottomText()" style="text-align: center;">
-                        <div class="helper-text">Common labels: DIRECTION, AIM, MOVE, etc.</div>
-                    </div>
-                    <div class="input-group">
-                        <label for="bottom-text-font-select">Font</label>
-                        <select id="bottom-text-font-select" onchange="updateBottomTextFont()" class="button-input"></select>
-                    </div>
-                    <div class="input-group">
-                        <label for="bottom-text-color">Text Color</label>
-                        <input type="color" id="bottom-text-color" value="#000000" oninput="updateBottomTextColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="gradient-controls" id="bottom-text-gradient-controls" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 6px; display: none;">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                                <input type="checkbox" id="bottom-text-gradient-enabled" onchange="updateBottomTextColor()">
-                                Enable gradient
-                            </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">End Color</label>
-                                    <input type="color" id="bottom-text-gradient-end" value="#000000" oninput="updateBottomTextColor()"
-                                        style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 11px; color: #666;">Direction</label>
-                                    <select id="bottom-text-gradient-direction" onchange="updateBottomTextColor()"
-                                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                                        <option value="left-to-right">Left to Right</option>
-                                        <option value="top-to-bottom">Top to Bottom</option>
-                                        <option value="center-h">Center to Edges (H)</option>
-                                        <option value="center-v">Center to Edges (V)</option>
-                                    </select>
-                                </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+                        <!-- Left: Text Input -->
+                        <div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label for="bottom-text-input" style="font-weight: 600;">Label Text</label>
+                                <input type="text" class="button-input" id="bottom-text-input" value="DIRECTION" oninput="updateBottomText()" style="text-align: center;">
+                                <div class="helper-text">Common: DIRECTION, AIM, MOVE, etc.</div>
                             </div>
                         </div>
-                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #666;">
-                            <input type="checkbox" id="bottom-text-show-gradient" onchange="toggleGradientControls('bottom-text')">
-                            Show gradient options
-                        </label>
-                    </div>
-                    <div class="input-group">
-                        <label for="bottom-text-size">Text Size: <span id="bottom-text-size-value">2</span>px</label>
-                        <input type="range" id="bottom-text-size" min="0.8" max="3" step="0.1" value="2" oninput="updateBottomTextSize()" style="width: 100%;">
-                    </div>
-                    <div class="input-group">
-                        <label for="bottom-arrow-color">Arrow Fill Color</label>
-                        <input type="color" id="bottom-arrow-color" value="#8B4513" oninput="updateBottomArrowColor()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
-                        <div class="helper-text">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
-                                <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
-                                Enable arrow fill color
-                            </label>
-                        </div>
+
+                        <!-- Right: Styling Options - Collapsible -->
+                        <details style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                            <summary style="cursor: pointer; font-weight: 600; color: #333; user-select: none;">Text & Arrow Styling</summary>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <!-- Text Styling -->
+                                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                    <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Text</h3>
+                                    <div class="input-group" style="margin-bottom: 8px;">
+                                        <label for="bottom-text-font-select" style="font-size: 11px;">Font</label>
+                                        <select id="bottom-text-font-select" onchange="updateBottomTextFont()" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px; font-size: 11px;"></select>
+                                    </div>
+                                    <div class="input-group" style="margin-bottom: 8px;">
+                                        <label style="font-size: 11px;">Size: <span id="bottom-text-size-value">2</span>px</label>
+                                        <input type="range" id="bottom-text-size" min="0.8" max="3" step="0.1" value="2" oninput="updateBottomTextSize()" style="width: 100%;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="bottom-text-color" style="font-size: 11px;">Color</label>
+                                        <input type="color" id="bottom-text-color" value="#000000" oninput="updateBottomTextColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                        <div class="gradient-controls" id="bottom-text-gradient-controls" style="margin-top: 6px; padding: 6px; background: #f5f5f5; border-radius: 4px; display: none;">
+                                            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 11px;">
+                                                <input type="checkbox" id="bottom-text-gradient-enabled" onchange="updateBottomTextColor()">
+                                                Enable gradient
+                                            </label>
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                                <div>
+                                                    <label style="font-size: 10px; color: #666;">End</label>
+                                                    <input type="color" id="bottom-text-gradient-end" value="#000000" oninput="updateBottomTextColor()"
+                                                        style="width: 100%; height: 24px; padding: 1px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer;">
+                                                </div>
+                                                <div>
+                                                    <label style="font-size: 10px; color: #666;">Dir</label>
+                                                    <select id="bottom-text-gradient-direction" onchange="updateBottomTextColor()"
+                                                        style="width: 100%; padding: 4px; font-size: 10px; border: 1px solid #ddd; border-radius: 3px;">
+                                                        <option value="left-to-right">L-R</option>
+                                                        <option value="top-to-bottom">T-B</option>
+                                                        <option value="center-h">C-H</option>
+                                                        <option value="center-v">C-V</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <label style="display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 10px; color: #666;">
+                                            <input type="checkbox" id="bottom-text-show-gradient" onchange="toggleGradientControls('bottom-text')">
+                                            Gradient
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Arrow Styling -->
+                                <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                    <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Arrow Fill</h3>
+                                    <div class="input-group">
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 6px;">
+                                            <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
+                                            Enable fill
+                                        </label>
+                                        <input type="color" id="bottom-arrow-color" value="#8B4513" oninput="updateBottomArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 </div>
