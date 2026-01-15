@@ -380,7 +380,7 @@ export class ExportManager {
     }
 
     /**
-     * Pre-render title background with gradient support
+     * Pre-render title background with gradient support and rounded corners
      * @returns {Promise<{dataURL: string, x: number, y: number, width: number, height: number}|null>}
      */
     static async preRenderTitleBackground() {
@@ -393,15 +393,18 @@ export class ExportManager {
         const gradientDirection = document.getElementById('title-bg-gradient-direction')?.value || 'left-to-right';
 
         // Title background dimensions (from SVG template)
-        const x = 2.5;
+        // SVG rect: x="4" y="2.5" width="47.6" height="10.5" rx="1.5" ry="1.5"
+        const x = 4;
         const y = 2.5;
-        const width = 50.6;
+        const width = 47.6;
         const height = 10.5;
+        const cornerRadius = 1.5; // rx and ry from SVG
 
         // Render at higher resolution
         const pixelsPerMm = 10;
         const canvasWidth = Math.round(width * pixelsPerMm);
         const canvasHeight = Math.round(height * pixelsPerMm);
+        const scaledRadius = cornerRadius * pixelsPerMm;
 
         const canvas = document.createElement('canvas');
         canvas.width = canvasWidth;
@@ -427,7 +430,19 @@ export class ExportManager {
             ctx.fillStyle = bgColor;
         }
 
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        // Draw rounded rectangle
+        ctx.beginPath();
+        ctx.moveTo(scaledRadius, 0);
+        ctx.lineTo(canvasWidth - scaledRadius, 0);
+        ctx.quadraticCurveTo(canvasWidth, 0, canvasWidth, scaledRadius);
+        ctx.lineTo(canvasWidth, canvasHeight - scaledRadius);
+        ctx.quadraticCurveTo(canvasWidth, canvasHeight, canvasWidth - scaledRadius, canvasHeight);
+        ctx.lineTo(scaledRadius, canvasHeight);
+        ctx.quadraticCurveTo(0, canvasHeight, 0, canvasHeight - scaledRadius);
+        ctx.lineTo(0, scaledRadius);
+        ctx.quadraticCurveTo(0, 0, scaledRadius, 0);
+        ctx.closePath();
+        ctx.fill();
 
         return {
             dataURL: canvas.toDataURL('image/png'),
