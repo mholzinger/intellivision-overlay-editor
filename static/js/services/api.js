@@ -57,6 +57,42 @@ export class APIService {
     }
 
     /**
+     * Get list of available shape templates
+     * @returns {Promise<Array>} Array of shape objects with name and file
+     */
+    static async listShapeTemplates() {
+        try {
+            const response = await fetch('/get_shape_templates');
+            if (!response.ok) {
+                throw new Error(`Failed to load shape templates: ${response.statusText}`);
+            }
+            const data = await response.json();
+            return data.shapes || [];
+        } catch (error) {
+            console.error('Error fetching shape templates:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get a specific shape template SVG content
+     * @param {string} shapeName - Shape name (without .svg extension)
+     * @returns {Promise<Object>} Object with svg content and name
+     */
+    static async getShapeTemplate(shapeName) {
+        try {
+            const response = await fetch(`/get_shape/${shapeName}`);
+            if (!response.ok) {
+                throw new Error(`Failed to load shape ${shapeName}: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`Error fetching shape ${shapeName}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Export SVG as PNG
      * @param {string} svgContent - SVG content to export
      * @returns {Promise<Blob>} PNG image blob

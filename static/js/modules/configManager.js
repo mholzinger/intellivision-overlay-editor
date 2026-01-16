@@ -4,6 +4,8 @@
  */
 
 import { appState } from '../services/stateManager.js';
+import { ButtonShape } from './buttonShape.js';
+import { APIService } from '../services/api.js';
 
 export class ConfigManager {
     static CONFIG_VERSION = '1.0';
@@ -116,6 +118,9 @@ export class ConfigManager {
             // Button artwork transforms (no image data)
             buttonArtwork: this.collectButtonArtworkSettings(),
 
+            // Button shapes (SVG shape overlays)
+            buttonShapes: this.collectButtonShapeSettings(),
+
             // Action buttons
             actionButtons: {
                 font: document.getElementById('action-font-select')?.value || '',
@@ -216,6 +221,34 @@ export class ConfigManager {
         }
 
         return artwork;
+    }
+
+    /**
+     * Collect button shape settings
+     * @returns {Object} Button shape settings keyed by button ID
+     */
+    static collectButtonShapeSettings() {
+        const buttonIds = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'enter'];
+        const shapes = {};
+
+        for (const id of buttonIds) {
+            const shape = appState.getButtonShape(id);
+            if (shape && shape.template) {
+                shapes[id] = {
+                    template: shape.template,
+                    strokeColor: shape.strokeColor || '#ffffff',
+                    strokeWidth: shape.strokeWidth || 0.5,
+                    fillEnabled: shape.fillEnabled || false,
+                    fillColor: shape.fillColor || '#ff0000',
+                    scale: shape.scale || 1.0,
+                    rotation: shape.rotation || 0,
+                    x: shape.x || 0,
+                    y: shape.y || 0
+                };
+            }
+        }
+
+        return shapes;
     }
 
     /**
@@ -407,6 +440,16 @@ export class ConfigManager {
             this.setInputValue('row-desc-input-4', config.rowDescriptionTexts.row4);
         }
 
+        // Button shapes - restore shape configs to state
+        // (actual rendering happens in triggerAllUpdates via ButtonShape.renderAllShapes)
+        if (config.buttonShapes) {
+            for (const [id, shape] of Object.entries(config.buttonShapes)) {
+                if (shape && shape.template) {
+                    appState.setButtonShape(id, shape);
+                }
+            }
+        }
+
         // Action buttons
         if (config.actionButtons) {
             this.setInputValue('action-label-color', config.actionButtons.color);
@@ -530,6 +573,9 @@ export class ConfigManager {
             if (window.toggleButtonBackground) window.toggleButtonBackground(id);
         }
 
+        // Button shape updates - load templates and render shapes
+        await this.renderButtonShapes();
+
         // Row description updates
         if (window.updateAllRowDescriptions) window.updateAllRowDescriptions();
         if (window.updateRowDescFont) window.updateRowDescFont();
@@ -600,6 +646,38 @@ export class ConfigManager {
         const bgOpacity = document.getElementById('bg-fill-opacity');
         const bgOpacityVal = document.getElementById('bg-fill-opacity-value');
         if (bgOpacity && bgOpacityVal) bgOpacityVal.textContent = Math.round(bgOpacity.value * 100) + '%';
+    }
+
+    /**
+     * Load shape templates and render all button shapes
+     * Called during config restore to ensure shapes are rendered
+     */
+    static async renderButtonShapes() {
+        const allShapes = appState.getAllButtonShapes();
+        if (!allShapes || Object.keys(allShapes).length === 0) {
+            return;
+        }
+
+        // Collect unique template names that need to be loaded
+        const templatesToLoad = new Set();
+        for (const shape of Object.values(allShapes)) {
+            if (shape && shape.template && !appState.getShapeTemplate(shape.template)) {
+                templatesToLoad.add(shape.template);
+            }
+        }
+
+        // Load any missing templates
+        for (const templateName of templatesToLoad) {
+            try {
+                const data = await APIService.getShapeTemplate(templateName);
+                appState.addShapeTemplate(templateName, data.svg);
+            } catch (error) {
+                console.error(`Failed to load shape template ${templateName}:`, error);
+            }
+        }
+
+        // Render all shapes
+        ButtonShape.renderAllShapes();
     }
 
     /**

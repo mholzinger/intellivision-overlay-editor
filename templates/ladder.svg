@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+  viewBox="-70 13 125 170" height="175" width="130"
+  >
+
+  <!-- FIRST ladder (your perfect one) -->
+  <g transform="skewX(-23)">
+    <path fill="rgb(202,200,5)" stroke-linejoin="miter"
+      d="M 9,14 h 10 v 58 h -9 Z
+         M 44,14 h 10 v 58 h -9 Z
+         M 12,28 h 38 v 10 h -38 Z
+         M 11,50 h 37 v 10 h -37 Z"/>
+  </g>
+
+  <!-- SECOND ladder: exact copy, shifted down -->
+  <g transform="translate(-46,110) skewX(-23)">
+    <path fill="rgb(202,200,5)" stroke-linejoin="miter"
+      d="M 9,14 h 10 v 58 h -9 Z
+         M 44,14 h 10 v 58 h -9 Z
+         M 12,28 h 38 v 10 h -38 Z
+         M 11,50 h 37 v 10 h -37 Z"/>
+  </g>
+
+</svg>

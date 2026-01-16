@@ -674,6 +674,131 @@
                 </div>
 
                 <div class="control-section full-width">
+                    <h2>Button Shape</h2>
+                    <div class="helper-text" style="margin-bottom: 15px;">
+                        Add custom SVG shapes to buttons. Select a button, choose a shape template, then customize stroke, fill, and transforms.
+                    </div>
+
+                    <!-- Top row: Button select and shape template -->
+                    <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px;">
+                        <div style="flex: 0 0 180px;">
+                            <label for="btn-shape-select" style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Select Button</label>
+                            <select id="btn-shape-select" onchange="selectButtonForShape()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 13px;">
+                                <option value="">-- Choose --</option>
+                                <option value="1">Button 1</option>
+                                <option value="2">Button 2</option>
+                                <option value="3">Button 3</option>
+                                <option value="4">Button 4</option>
+                                <option value="5">Button 5</option>
+                                <option value="6">Button 6</option>
+                                <option value="7">Button 7</option>
+                                <option value="8">Button 8</option>
+                                <option value="9">Button 9</option>
+                                <option value="clear">Clear</option>
+                                <option value="0">0</option>
+                                <option value="enter">Enter</option>
+                            </select>
+                        </div>
+                        <div style="flex: 0 0 150px;">
+                            <label for="btn-shape-template" style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Shape Template</label>
+                            <select id="btn-shape-template" onchange="onShapeTemplateChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 13px;">
+                                <option value="">None</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="clearButtonShape()" style="padding: 8px 12px; font-size: 12px;">
+                            🗑️ Clear Shape
+                        </button>
+                    </div>
+
+                    <!-- Shape Controls (shown when button selected) -->
+                    <div id="btn-shape-controls" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Stroke & Fill -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 12px 0; color: #555;">Stroke & Fill</h3>
+
+                                <!-- Stroke Color -->
+                                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                                    <div style="flex: 1;">
+                                        <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Stroke Color</label>
+                                        <input type="color" id="btn-shape-stroke-color" value="#ffffff" oninput="updateButtonShape()"
+                                            style="width: 100%; height: 32px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Width: <span id="btn-shape-stroke-width-value">0.5</span>px</label>
+                                        <input type="range" id="btn-shape-stroke-width" min="0.1" max="2.0" value="0.5" step="0.1"
+                                            oninput="updateButtonShape()" style="width: 100%; margin-top: 6px;">
+                                    </div>
+                                </div>
+
+                                <!-- Fill -->
+                                <div>
+                                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="btn-shape-fill-enabled" onchange="toggleShapeFill()">
+                                        Enable fill
+                                    </label>
+                                    <div id="btn-shape-fill-color-container" style="display: none;">
+                                        <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Fill Color</label>
+                                        <input type="color" id="btn-shape-fill-color" value="#ff0000" oninput="updateButtonShape()"
+                                            style="width: 100%; height: 32px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Transforms -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 12px 0; color: #555;">Transform</h3>
+
+                                <!-- Scale -->
+                                <div style="margin-bottom: 12px;">
+                                    <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Scale: <span id="btn-shape-scale-value">100</span>%</label>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <button class="btn btn-secondary" onclick="scaleShape(-0.1)" style="padding: 2px 8px; font-size: 12px;">−</button>
+                                        <input type="range" id="btn-shape-scale" min="0.1" max="3.0" value="1.0" step="0.05"
+                                            oninput="updateButtonShape()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="scaleShape(0.1)" style="padding: 2px 8px; font-size: 12px;">+</button>
+                                    </div>
+                                </div>
+
+                                <!-- Rotation -->
+                                <div style="margin-bottom: 12px;">
+                                    <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Rotate: <span id="btn-shape-rotation-value">0</span>°</label>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <button class="btn btn-secondary" onclick="rotateShape(-15)" style="padding: 2px 8px; font-size: 12px;">↺</button>
+                                        <input type="range" id="btn-shape-rotation" min="-180" max="180" value="0" step="1"
+                                            oninput="updateButtonShape()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="rotateShape(15)" style="padding: 2px 8px; font-size: 12px;">↻</button>
+                                    </div>
+                                </div>
+
+                                <!-- Position -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">X: <span id="btn-shape-x-value">0.0</span>mm</label>
+                                        <div style="display: flex; align-items: center; gap: 2px;">
+                                            <button class="btn btn-secondary" onclick="moveShapeX(-0.5)" style="padding: 2px 6px; font-size: 11px;">⬅</button>
+                                            <input type="range" id="btn-shape-x" min="-5.7" max="5.7" value="0" step="0.1"
+                                                oninput="updateButtonShape()" style="flex: 1; min-width: 40px;">
+                                            <button class="btn btn-secondary" onclick="moveShapeX(0.5)" style="padding: 2px 6px; font-size: 11px;">➡</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; font-weight: 500; display: block; margin-bottom: 4px;">Y: <span id="btn-shape-y-value">0.0</span>mm</label>
+                                        <div style="display: flex; align-items: center; gap: 2px;">
+                                            <button class="btn btn-secondary" onclick="moveShapeY(-0.5)" style="padding: 2px 6px; font-size: 11px;">⬆</button>
+                                            <input type="range" id="btn-shape-y" min="-5.7" max="5.7" value="0" step="0.1"
+                                                oninput="updateButtonShape()" style="flex: 1; min-width: 40px;">
+                                            <button class="btn btn-secondary" onclick="moveShapeY(0.5)" style="padding: 2px 6px; font-size: 11px;">⬇</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section full-width">
                     <h2>Action Buttons</h2>
                     <div class="helper-text" style="margin-bottom: 15px;">
                         Labels for the side action buttons (text runs vertically along edges).

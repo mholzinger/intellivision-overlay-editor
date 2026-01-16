@@ -27,6 +27,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 # Path to the SVG template
 TEMPLATE_PATH = Path(__file__).parent / "intellivision_overlay_RECTANGULAR.svg"
 
+# Path to shape templates
+SHAPES_DIR = Path(__file__).parent / "templates"
+
 
 def get_git_info():
     """Get git commit hash and date for version display.
@@ -73,6 +76,44 @@ def get_template():
         with open(TEMPLATE_PATH, 'r') as f:
             return jsonify({'svg': f.read()})
     return jsonify({'error': 'Template not found'}), 404
+
+
+@app.route('/get_shape_templates')
+def get_shape_templates():
+    """Return list of available button shape templates"""
+    shapes = []
+    if SHAPES_DIR.exists():
+        for p in sorted(SHAPES_DIR.iterdir()):
+            if p.suffix.lower() == '.svg' and p.is_file():
+                # Use filename without extension as the shape name
+                shapes.append({
+                    'name': p.stem,
+                    'file': p.name
+                })
+    return jsonify({'shapes': shapes}), 200
+
+
+@app.route('/get_shape/<name>')
+def get_shape(name):
+    """Return SVG content for a specific shape template"""
+    # Sanitize name to prevent path traversal
+    safe_name = Path(name).name
+    if not safe_name.endswith('.svg'):
+        safe_name += '.svg'
+
+    shape_path = (SHAPES_DIR / safe_name).resolve()
+
+    # Security check: ensure path is within SHAPES_DIR
+    try:
+        if not str(shape_path).startswith(str(SHAPES_DIR.resolve())):
+            return jsonify({'error': 'Invalid shape path'}), 400
+        if not shape_path.exists() or not shape_path.is_file():
+            return jsonify({'error': 'Shape not found'}), 404
+
+        with open(shape_path, 'r') as f:
+            return jsonify({'svg': f.read(), 'name': Path(safe_name).stem})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/export_png', methods=['POST'])

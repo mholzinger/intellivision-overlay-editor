@@ -24,6 +24,11 @@ export class StateManager {
         this.buttonArtwork = {}; // Maps button IDs to artwork data
         this.selectedButtonForArtwork = null;
 
+        // Button shape state
+        this.buttonShapes = {}; // Maps button IDs to shape config
+        this.selectedButtonForShape = null;
+        this.shapeTemplates = {}; // Cache of loaded SVG shape templates
+
         // Font state
         this.loadedFonts = new Set();
         this.availableFonts = [];
@@ -244,6 +249,92 @@ export class StateManager {
         return this.selectedButtonForArtwork;
     }
 
+    // ========== Button Shape Methods ==========
+
+    /**
+     * Set button shape configuration
+     * @param {string} buttonId - Button identifier
+     * @param {Object} shapeConfig - Shape configuration
+     */
+    setButtonShape(buttonId, shapeConfig) {
+        this.buttonShapes[buttonId] = shapeConfig;
+    }
+
+    /**
+     * Get button shape configuration
+     * @param {string} buttonId - Button identifier
+     * @returns {Object} Shape configuration
+     */
+    getButtonShape(buttonId) {
+        return this.buttonShapes[buttonId];
+    }
+
+    /**
+     * Remove button shape
+     * @param {string} buttonId - Button identifier
+     */
+    removeButtonShape(buttonId) {
+        delete this.buttonShapes[buttonId];
+    }
+
+    /**
+     * Get all button shapes
+     * @returns {Object} All button shape configurations
+     */
+    getAllButtonShapes() {
+        return this.buttonShapes;
+    }
+
+    /**
+     * Set selected button for shape editing
+     * @param {string} buttonId - Button identifier
+     */
+    setSelectedButtonForShape(buttonId) {
+        this.selectedButtonForShape = buttonId;
+    }
+
+    /**
+     * Get selected button for shape editing
+     * @returns {string} Button identifier
+     */
+    getSelectedButtonForShape() {
+        return this.selectedButtonForShape;
+    }
+
+    /**
+     * Set shape templates (cached from API)
+     * @param {Object} templates - Map of shape name to SVG content
+     */
+    setShapeTemplates(templates) {
+        this.shapeTemplates = templates;
+    }
+
+    /**
+     * Get shape templates
+     * @returns {Object} Map of shape name to SVG content
+     */
+    getShapeTemplates() {
+        return this.shapeTemplates;
+    }
+
+    /**
+     * Get a specific shape template
+     * @param {string} name - Shape name
+     * @returns {string} SVG content
+     */
+    getShapeTemplate(name) {
+        return this.shapeTemplates[name];
+    }
+
+    /**
+     * Add a shape template to cache
+     * @param {string} name - Shape name
+     * @param {string} svgContent - SVG content
+     */
+    addShapeTemplate(name, svgContent) {
+        this.shapeTemplates[name] = svgContent;
+    }
+
     /**
      * Add a loaded font
      * @param {string} fontName - Font name
@@ -294,7 +385,9 @@ export class StateManager {
         this.artworkWhiteThreshold = 245;
         this.buttonArtwork = {};
         this.selectedButtonForArtwork = null;
-        // Keep loaded fonts and available fonts
+        this.buttonShapes = {};
+        this.selectedButtonForShape = null;
+        // Keep loaded fonts, available fonts, and shape templates (they're static)
     }
 }
 

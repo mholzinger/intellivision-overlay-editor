@@ -8,6 +8,7 @@ import { FontManager } from './modules/fontManager.js';
 import { TitleEditor } from './modules/titleEditor.js';
 import { ButtonEditor } from './modules/buttonEditor.js';
 import { ButtonArtwork } from './modules/buttonArtwork.js';
+import { ButtonShape } from './modules/buttonShape.js';
 import { MainArtwork } from './modules/mainArtwork.js';
 import { ActionButtons } from './modules/actionButtons.js';
 import { BottomControls } from './modules/bottomControls.js';
@@ -24,6 +25,9 @@ import { ImageProcessor } from './modules/imageProcessor.js';
 function initializeApp() {
     // Load the SVG template
     SVGManager.loadTemplate();
+
+    // Initialize button shape templates
+    ButtonShape.initialize();
 
     // Set up event handlers
     setupEventHandlers();
@@ -375,6 +379,15 @@ window.scaleButtonArtwork = (delta) => ButtonArtwork.scaleButtonArtwork(delta);
 window.clearButtonArtwork = () => ButtonArtwork.clearButtonArtwork();
 window.insertArtwork = (dataURL) => MainArtwork.insertArtwork(dataURL);
 window.insertButtonArtwork = (buttonNum) => ButtonArtwork.insertButtonArtwork(buttonNum);
+window.selectButtonForShape = () => ButtonShape.selectButtonForShape();
+window.onShapeTemplateChange = () => ButtonShape.onTemplateChange();
+window.updateButtonShape = () => ButtonShape.updateButtonShape();
+window.toggleShapeFill = () => ButtonShape.toggleFillEnabled();
+window.clearButtonShape = () => ButtonShape.clearButtonShape();
+window.moveShapeX = (delta) => ButtonShape.moveShapeX(delta);
+window.moveShapeY = (delta) => ButtonShape.moveShapeY(delta);
+window.scaleShape = (delta) => ButtonShape.scaleShape(delta);
+window.rotateShape = (delta) => ButtonShape.rotateShape(delta);
 window.exportPNG = () => ExportManager.exportPNG();
 window.resetOverlay = () => ExportManager.resetOverlay();
 window.updateRowDescription = (rowNum) => RowDescriptions.updateRowDescription(rowNum);
