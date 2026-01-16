@@ -117,6 +117,10 @@ export class ButtonArtwork {
         const removeWhite = document.getElementById('btn-art-remove-white').checked;
         const threshold = parseInt(document.getElementById('btn-art-threshold').value);
 
+        // Store removeWhite and threshold in the artwork object for export
+        art.removeWhite = removeWhite;
+        art.threshold = threshold;
+
         // Update threshold display and show/hide threshold control
         document.getElementById('btn-art-threshold-value').textContent = threshold;
         document.getElementById('btn-art-threshold-control').style.display = removeWhite ? 'block' : 'none';

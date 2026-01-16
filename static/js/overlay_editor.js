@@ -15,6 +15,8 @@ import { BackgroundControls } from './modules/backgroundControls.js';
 import { ExportManager } from './modules/exportManager.js';
 import { RowDescriptions } from './modules/rowDescriptions.js';
 import { UIManager } from './modules/uiManager.js';
+import { ConfigManager } from './modules/configManager.js';
+import { ImageProcessor } from './modules/imageProcessor.js';
 
 /**
  * Initialize the application
@@ -330,6 +332,7 @@ window.updateTitleColor = () => TitleEditor.updateTitleColor();
 window.updateTitleFont = () => FontManager.updateTitleFont();
 window.updateTitleSize = () => TitleEditor.updateTitleSize();
 window.toggleTitleBackground = () => TitleEditor.toggleTitleBackground();
+window.updateTitleBackground = () => TitleEditor.updateTitleBackground();
 window.toggleGradientControls = (baseId) => UIManager.toggleGradientControls(baseId);
 window.updateCopyrightText = () => TitleEditor.updateCopyrightText();
 window.updateCopyrightColor = () => TitleEditor.updateCopyrightColor();
@@ -370,11 +373,14 @@ window.moveButtonArtworkY = (delta) => ButtonArtwork.moveButtonArtworkY(delta);
 window.rotateButtonArtwork = (delta) => ButtonArtwork.rotateButtonArtwork(delta);
 window.scaleButtonArtwork = (delta) => ButtonArtwork.scaleButtonArtwork(delta);
 window.clearButtonArtwork = () => ButtonArtwork.clearButtonArtwork();
+window.insertArtwork = (dataURL) => MainArtwork.insertArtwork(dataURL);
+window.insertButtonArtwork = (buttonNum) => ButtonArtwork.insertButtonArtwork(buttonNum);
 window.exportPNG = () => ExportManager.exportPNG();
 window.resetOverlay = () => ExportManager.resetOverlay();
 window.updateRowDescription = (rowNum) => RowDescriptions.updateRowDescription(rowNum);
 window.updateAllRowDescriptions = () => RowDescriptions.updateAllRowDescriptions();
 window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
+window.ImageProcessor = ImageProcessor;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

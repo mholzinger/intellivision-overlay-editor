@@ -26,6 +26,12 @@
                     <button class="btn btn-success btn-sm" onclick="exportPNG()" style="padding: 8px 12px; font-size: 13px;">
                         📥 Download PNG
                     </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
+                        💾 Export Overlay
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
+                        📂 Import Overlay
+                    </button>
                     <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" style="padding: 8px 12px; font-size: 13px;">
                         🔄 Reset
                     </button>
@@ -846,6 +852,8 @@
         </div>
     </div>
 
+    <!-- JSZip for project export/import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/static/js/overlay_editor.js"></script>
 </body>
 </html>
