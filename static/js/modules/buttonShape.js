@@ -6,6 +6,7 @@
 import { appState } from '../services/stateManager.js';
 import { APIService } from '../services/api.js';
 import { UIManager } from './uiManager.js';
+import { ButtonEditor } from './buttonEditor.js';
 
 export class ButtonShape {
     // Button center coordinates (same as buttonArtwork)
@@ -173,6 +174,8 @@ export class ButtonShape {
         if (!templateName) {
             this.removeShapeFromSVG(selectedButton);
             appState.removeButtonShape(selectedButton);
+            // Refresh background to use default rect if enabled
+            this.refreshButtonBackground(selectedButton);
             return;
         }
 
@@ -197,6 +200,21 @@ export class ButtonShape {
 
         // Render shape to SVG
         this.renderShapeToButton(selectedButton, shapeConfig);
+
+        // Refresh background to use new shape if enabled
+        this.refreshButtonBackground(selectedButton);
+    }
+
+    /**
+     * Refresh button background when shape changes
+     * @param {string} buttonId - Button identifier
+     */
+    static refreshButtonBackground(buttonId) {
+        const bgEnabled = document.getElementById(`btn-bg-enabled-${buttonId}`)?.checked;
+        if (bgEnabled) {
+            // Re-create the background with the current/new shape
+            ButtonEditor.createButtonBackground(buttonId);
+        }
     }
 
     /**
