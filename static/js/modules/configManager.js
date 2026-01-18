@@ -85,6 +85,7 @@ export class ConfigManager {
                 font: document.getElementById('button-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('button-label-size')?.value) || 3,
                 color: document.getElementById('button-label-color')?.value || '#000000',
+                autoFit: document.getElementById('button-label-autofit')?.checked ?? true,
                 gradient: {
                     enabled: document.getElementById('button-label-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('button-label-gradient-end')?.value || '#000000',
@@ -435,6 +436,7 @@ export class ConfigManager {
             this.setInputValue('button-label-color', config.buttonLabels.color);
             this.setInputValue('button-label-size', config.buttonLabels.fontSize);
             this.setSelectValue('button-font-select', config.buttonLabels.font);
+            this.setCheckbox('button-label-autofit', config.buttonLabels.autoFit ?? true);
 
             if (config.buttonLabels.gradient) {
                 this.setCheckbox('button-label-gradient-enabled', config.buttonLabels.gradient.enabled);

@@ -10,7 +10,72 @@ import { ButtonShape } from './buttonShape.js';
 // Default line spacing multiplier for multiline text
 const DEFAULT_LINE_SPACING = 1.2;
 
+// Button boundary width (with some padding for text)
+// Buttons are 11.4mm wide, we use ~9mm as usable text area
+const BUTTON_TEXT_MAX_WIDTH = 9.0;
+
 export class ButtonEditor {
+    /**
+     * Calculate the fitted font size for text to stay within button boundary
+     * @param {SVGTextElement} textElement - The text element to measure
+     * @param {string} text - The text content (may contain | for multiline)
+     * @param {number} targetSize - The target/maximum font size
+     * @param {string} fontFamily - The font family to use
+     * @param {number} maxWidth - Maximum width in mm
+     * @returns {number} The fitted font size
+     */
+    static calculateFittedFontSize(textElement, text, targetSize, fontFamily, maxWidth = BUTTON_TEXT_MAX_WIDTH) {
+        // For multiline text, check the widest line
+        const lines = text.split('|').map(line => line.trim());
+
+        // Start with target size
+        let fontSize = targetSize;
+
+        // Temporarily set the font properties to measure
+        const originalFontSize = textElement.style.fontSize;
+        const originalFontFamily = textElement.style.fontFamily;
+        const originalContent = textElement.textContent;
+
+        textElement.style.fontFamily = fontFamily;
+
+        // Binary search for the best font size
+        let minSize = 0.5;
+        let maxSize = targetSize;
+
+        // Check if target size fits
+        textElement.style.fontSize = targetSize + 'px';
+
+        let maxLineWidth = 0;
+        for (const line of lines) {
+            textElement.textContent = line;
+            try {
+                const bbox = textElement.getBBox();
+                maxLineWidth = Math.max(maxLineWidth, bbox.width);
+            } catch (e) {
+                // getBBox can fail if element is not rendered
+                maxLineWidth = line.length * targetSize * 0.6; // Rough estimate
+            }
+        }
+
+        if (maxLineWidth <= maxWidth) {
+            // Target size fits, restore and return
+            textElement.style.fontSize = originalFontSize;
+            textElement.style.fontFamily = originalFontFamily;
+            textElement.textContent = originalContent;
+            return targetSize;
+        }
+
+        // Need to shrink - use ratio to estimate
+        fontSize = targetSize * (maxWidth / maxLineWidth) * 0.95; // 5% safety margin
+        fontSize = Math.max(fontSize, minSize);
+
+        // Restore original state
+        textElement.style.fontSize = originalFontSize;
+        textElement.style.fontFamily = originalFontFamily;
+        textElement.textContent = originalContent;
+
+        return fontSize;
+    }
     /**
      * Set multiline text content on an SVG text element using tspan elements
      * @param {SVGTextElement} textElement - The text element to update
@@ -88,7 +153,7 @@ export class ButtonEditor {
      * Update all button labels with current styling (supports gradient)
      */
     static updateAllButtonLabels() {
-        const size = parseFloat(document.getElementById('button-label-size').value);
+        const targetSize = parseFloat(document.getElementById('button-label-size').value);
         const fontSelect = document.getElementById('button-font-select');
         const fontValue = fontSelect.value;
         let fontFamily = 'Arial, sans-serif';
@@ -101,7 +166,7 @@ export class ButtonEditor {
             }
         }
 
-        document.getElementById('button-label-size-value').textContent = size;
+        document.getElementById('button-label-size-value').textContent = targetSize;
 
         // Get position offsets
         const offsetX = parseFloat(document.getElementById('button-label-offset-x')?.value || 0);
@@ -112,6 +177,9 @@ export class ButtonEditor {
         const yValueEl = document.getElementById('button-label-offset-y-value');
         if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
         if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+
+        // Check if auto-fit is enabled
+        const autoFitEnabled = document.getElementById('button-label-autofit')?.checked ?? true;
 
         // Get fill value (supports gradient)
         const fillValue = UIManager.getButtonLabelFillValue();
@@ -139,10 +207,19 @@ export class ButtonEditor {
                 btnElement.setAttribute('x', newX);
                 btnElement.setAttribute('y', newY);
 
-                // Re-render multiline text with new spacing
+                // Get the text content
                 const input = document.getElementById(`btn-input-${num}`);
+                const text = input?.value || '';
+
+                // Calculate fitted font size if auto-fit is enabled
+                let effectiveSize = targetSize;
+                if (autoFitEnabled && text) {
+                    effectiveSize = ButtonEditor.calculateFittedFontSize(btnElement, text, targetSize, fontFamily);
+                }
+
+                // Re-render multiline text with calculated size
                 if (input) {
-                    ButtonEditor.setMultilineText(btnElement, input.value, size);
+                    ButtonEditor.setMultilineText(btnElement, text, effectiveSize);
                     // Update tspan x coordinates
                     btnElement.querySelectorAll('tspan').forEach(tspan => {
                         tspan.setAttribute('x', newX);
@@ -151,7 +228,7 @@ export class ButtonEditor {
 
                 // Use inline style to override CSS class styles
                 btnElement.style.fill = fillValue;
-                btnElement.style.fontSize = size + 'px';
+                btnElement.style.fontSize = effectiveSize + 'px';
                 btnElement.style.fontFamily = fontFamily;
                 btnElement.style.dominantBaseline = 'central';
             }
