@@ -149,14 +149,14 @@
   <g id="left_action_buttons">
     <!-- Top Left Action Button (aligned with rows 2-3, Y ~54.5mm) -->
     <g id="top-left-action">
-      <polygon id="top-left-arrow" points="5.12,46.89 3.08,48.39 5.12,49.89" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+      <polygon id="top-left-arrow" points="5.12,46.89 3.08,48.39 5.12,49.89" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
       <text id="top-left-label" x="4.0" y="44.89" text-anchor="end"
           transform="rotate(90, 4.0, 44.89)" class="label_small">ACTION</text>
     </g>
 
     <!-- Bottom Left Action Button (aligned with rows 3-4, Y ~69.6mm) -->
     <g id="bottom-left-action">
-      <polygon id="bottom-left-arrow" points="5.12,62.03 3.08,63.53 5.12,65.03" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+      <polygon id="bottom-left-arrow" points="5.12,62.03 3.08,63.53 5.12,65.03" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
       <text id="bottom-left-label" x="4.0" y="66.03" text-anchor="start"
           transform="rotate(90, 4.0, 66.03)" class="label_small">ACTION</text>
     </g>
@@ -170,14 +170,14 @@
   <g id="right_action_buttons">
     <!-- Top Right Action Button (aligned with rows 2-3, Y ~54.5mm) -->
     <g id="top-right-action">
-      <polygon id="top-right-arrow" points="48.93,46.89 51.15,48.39 48.93,49.89" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+      <polygon id="top-right-arrow" points="48.93,46.89 51.15,48.39 48.93,49.89" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
       <text id="top-right-label" x="50.48" y="44.89" text-anchor="start"
           transform="rotate(-90, 50.48, 44.89)" class="label_small">ACTION</text>
     </g>
 
     <!-- Bottom Right Action Button (aligned with rows 3-4, Y ~69.6mm) -->
     <g id="bottom-right-action">
-      <polygon id="bottom-right-arrow" points="48.93,62.03 50.97,63.53 48.93,65.03" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+      <polygon id="bottom-right-arrow" points="48.93,62.03 50.97,63.53 48.93,65.03" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
       <text id="bottom-right-label" x="50.48" y="66.03" text-anchor="end"
           transform="rotate(-90, 50.48, 66.03)" class="label_small">ACTION</text>
     </g>
@@ -191,13 +191,13 @@
   <!-- Two downward-facing arrows with text label between them -->
   <g id="bottom_arrows">
     <!-- Left arrow -->
-    <polygon id="disc-left-arrow" points="15.5,87 17,85.5 14,85.5" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+    <polygon id="disc-left-arrow" points="15.5,87 17,85.5 14,85.5" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
 
     <!-- Center text label -->
     <text id="bottom-text" x="26.8" y="87" text-anchor="middle" class="label_small">DIRECTION</text>
 
     <!-- Right arrow -->
-    <polygon id="disc-right-arrow" points="38.1,87 39.6,85.5 36.6,85.5" fill="none" stroke="#8B4513" stroke-width="0.2" opacity="0.6"/>
+    <polygon id="disc-right-arrow" points="38.1,87 39.6,85.5 36.6,85.5" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
   </g>
 
 </svg>
