@@ -885,30 +885,97 @@
                                     <label for="action-label-size" style="font-size: 12px;">Size: <span id="action-label-size-value">2</span>px</label>
                                     <input type="range" id="action-label-size" min="1" max="10" value="2" step="0.1" oninput="updateAllActionButtons()">
                                 </div>
-                                <div class="input-group" style="margin-top: 10px;">
-                                    <label style="font-size: 12px;">Position Offset</label>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
-                                        <div>
-                                            <label style="font-size: 10px; color: #666;">X: <span id="action-label-offset-x-value">0.0</span>mm</label>
-                                            <input type="range" id="action-label-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
-                                        </div>
-                                        <div>
-                                            <label style="font-size: 10px; color: #666;">Y: <span id="action-label-offset-y-value">0.0</span>mm</label>
-                                            <input type="range" id="action-label-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             <!-- Arrow Styling -->
                             <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
-                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Arrow Fill</h3>
-                                <div class="input-group">
+                                <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Arrow Styling</h3>
+                                <div class="input-group" style="margin-bottom: 12px;">
                                     <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;">
                                         <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
                                         Enable arrow fill
                                     </label>
                                     <input type="color" id="action-arrow-color" value="#8B4513" oninput="updateActionArrowColor()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+
+                                <!-- Arrow Transform Controls -->
+                                <div style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
+                                    <h4 style="font-size: 12px; margin: 0 0 10px 0; color: #666;">Arrow Transforms</h4>
+
+                                    <!-- Top Arrows (linked) -->
+                                    <div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border-radius: 4px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 11px; font-weight: 600;">Top Arrows</span>
+                                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px;">
+                                                <input type="checkbox" id="top-arrows-visible" checked onchange="updateActionArrowTransforms()">
+                                                Visible
+                                            </label>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Scale: <span id="top-arrows-scale-value">100</span>%</label>
+                                                <input type="range" id="top-arrows-scale" min="50" max="300" value="100" step="10" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">X: <span id="top-arrows-x-value">0.0</span></label>
+                                                <input type="range" id="top-arrows-x" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Y: <span id="top-arrows-y-value">0.0</span></label>
+                                                <input type="range" id="top-arrows-y" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom-Left Arrow -->
+                                    <div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border-radius: 4px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 11px; font-weight: 600;">Bottom-Left Arrow</span>
+                                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px;">
+                                                <input type="checkbox" id="bottom-left-arrow-visible" checked onchange="updateActionArrowTransforms()">
+                                                Visible
+                                            </label>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Scale: <span id="bottom-left-arrow-scale-value">100</span>%</label>
+                                                <input type="range" id="bottom-left-arrow-scale" min="50" max="300" value="100" step="10" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">X: <span id="bottom-left-arrow-x-value">0.0</span></label>
+                                                <input type="range" id="bottom-left-arrow-x" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Y: <span id="bottom-left-arrow-y-value">0.0</span></label>
+                                                <input type="range" id="bottom-left-arrow-y" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom-Right Arrow -->
+                                    <div style="padding: 8px; background: #f9f9f9; border-radius: 4px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <span style="font-size: 11px; font-weight: 600;">Bottom-Right Arrow</span>
+                                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px;">
+                                                <input type="checkbox" id="bottom-right-arrow-visible" checked onchange="updateActionArrowTransforms()">
+                                                Visible
+                                            </label>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Scale: <span id="bottom-right-arrow-scale-value">100</span>%</label>
+                                                <input type="range" id="bottom-right-arrow-scale" min="50" max="300" value="100" step="10" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">X: <span id="bottom-right-arrow-x-value">0.0</span></label>
+                                                <input type="range" id="bottom-right-arrow-x" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Y: <span id="bottom-right-arrow-y-value">0.0</span></label>
+                                                <input type="range" id="bottom-right-arrow-y" min="-5" max="5" value="0" step="0.2" oninput="updateActionArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -919,24 +986,74 @@
                         <div>
                             <div class="button-label">Top (Both Sides)</div>
                             <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">X: <span id="action-top-offset-x-value">0.0</span>mm</label>
+                                    <input type="range" id="action-top-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">Y: <span id="action-top-offset-y-value">0.0</span>mm</label>
+                                    <input type="range" id="action-top-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <div class="button-label">Bottom Left</div>
                             <input type="text" class="button-input" id="action-bottom-left" value="ACTION" oninput="updateActionButton('bottom-left')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">X: <span id="action-bottom-left-offset-x-value">0.0</span>mm</label>
+                                    <input type="range" id="action-bottom-left-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">Y: <span id="action-bottom-left-offset-y-value">0.0</span>mm</label>
+                                    <input type="range" id="action-bottom-left-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <div class="button-label">Bottom Right</div>
                             <input type="text" class="button-input" id="action-bottom-right" value="ACTION" oninput="updateActionButton('bottom-right')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">X: <span id="action-bottom-right-offset-x-value">0.0</span>mm</label>
+                                    <input type="range" id="action-bottom-right-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">Y: <span id="action-bottom-right-offset-y-value">0.0</span>mm</label>
+                                    <input type="range" id="action-bottom-right-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div>
                             <div class="button-label">Left Side Description</div>
                             <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('left')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">X: <span id="action-desc-left-offset-x-value">0.0</span>mm</label>
+                                    <input type="range" id="action-desc-left-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">Y: <span id="action-desc-left-offset-y-value">0.0</span>mm</label>
+                                    <input type="range" id="action-desc-left-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <div class="button-label">Right Side Description</div>
                             <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('right')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">X: <span id="action-desc-right-offset-x-value">0.0</span>mm</label>
+                                    <input type="range" id="action-desc-right-offset-x" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 9px; color: #666;">Y: <span id="action-desc-right-offset-y-value">0.0</span>mm</label>
+                                    <input type="range" id="action-desc-right-offset-y" min="-5" max="5" value="0" step="0.1" oninput="updateAllActionButtons()" style="width: 100%;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1021,12 +1138,41 @@
                                 <!-- Arrow Styling -->
                                 <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
                                     <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Arrow Fill</h3>
-                                    <div class="input-group">
+                                    <div class="input-group" style="margin-bottom: 10px;">
                                         <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 6px;">
                                             <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
                                             Enable fill
                                         </label>
                                         <input type="color" id="bottom-arrow-color" value="#8B4513" oninput="updateBottomArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    </div>
+
+                                    <!-- Disc Arrow Transform Controls -->
+                                    <div style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <h4 style="font-size: 11px; margin: 0; color: #666;">Arrow Transforms</h4>
+                                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px;">
+                                                <input type="checkbox" id="disc-arrows-visible" checked onchange="updateDiscArrowTransforms()">
+                                                Visible
+                                            </label>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Scale: <span id="disc-arrows-scale-value">100</span>%</label>
+                                                <input type="range" id="disc-arrows-scale" min="50" max="300" value="100" step="10" oninput="updateDiscArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Spacing: <span id="disc-arrows-spacing-value">0.0</span></label>
+                                                <input type="range" id="disc-arrows-spacing" min="-10" max="10" value="0" step="0.2" oninput="updateDiscArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">X: <span id="disc-arrows-x-value">0.0</span></label>
+                                                <input type="range" id="disc-arrows-x" min="-5" max="5" value="0" step="0.2" oninput="updateDiscArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size: 9px; color: #666;">Y: <span id="disc-arrows-y-value">0.0</span></label>
+                                                <input type="range" id="disc-arrows-y" min="-5" max="5" value="0" step="0.2" oninput="updateDiscArrowTransforms()" style="width: 100%;">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

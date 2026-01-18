@@ -118,18 +118,10 @@ export class ActionButtons {
         const size = parseFloat(document.getElementById('action-label-size').value);
         document.getElementById('action-label-size-value').textContent = size.toFixed(1);
 
-        // Get position offsets
-        const offsetX = parseFloat(document.getElementById('action-label-offset-x')?.value || 0);
-        const offsetY = parseFloat(document.getElementById('action-label-offset-y')?.value || 0);
-
-        // Update display values
-        const xValueEl = document.getElementById('action-label-offset-x-value');
-        const yValueEl = document.getElementById('action-label-offset-y-value');
-        if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
-        if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+        const svgDoc = appState.getSvgDoc();
+        if (!svgDoc) return;
 
         // Base positions for action labels (rotated text along edges)
-        // Note: For rotated text, X offset affects vertical position and Y offset affects horizontal
         const labelPositions = {
             'top-left-label': {x: 4.0, y: 44.89},
             'top-right-label': {x: 50.48, y: 44.89},
@@ -137,19 +129,47 @@ export class ActionButtons {
             'bottom-right-label': {x: 50.48, y: 66.03}
         };
 
+        // Get individual offsets for each action label group
+        // Top (both sides share the same offset)
+        const topOffsetX = parseFloat(document.getElementById('action-top-offset-x')?.value || 0);
+        const topOffsetY = parseFloat(document.getElementById('action-top-offset-y')?.value || 0);
+        ActionButtons.updateOffsetDisplay('action-top-offset-x-value', topOffsetX);
+        ActionButtons.updateOffsetDisplay('action-top-offset-y-value', topOffsetY);
+
+        // Bottom-left (independent)
+        const bottomLeftOffsetX = parseFloat(document.getElementById('action-bottom-left-offset-x')?.value || 0);
+        const bottomLeftOffsetY = parseFloat(document.getElementById('action-bottom-left-offset-y')?.value || 0);
+        ActionButtons.updateOffsetDisplay('action-bottom-left-offset-x-value', bottomLeftOffsetX);
+        ActionButtons.updateOffsetDisplay('action-bottom-left-offset-y-value', bottomLeftOffsetY);
+
+        // Bottom-right (independent)
+        const bottomRightOffsetX = parseFloat(document.getElementById('action-bottom-right-offset-x')?.value || 0);
+        const bottomRightOffsetY = parseFloat(document.getElementById('action-bottom-right-offset-y')?.value || 0);
+        ActionButtons.updateOffsetDisplay('action-bottom-right-offset-x-value', bottomRightOffsetX);
+        ActionButtons.updateOffsetDisplay('action-bottom-right-offset-y-value', bottomRightOffsetY);
+
+        // Map label IDs to their offset values
+        const labelOffsets = {
+            'top-left-label': {x: topOffsetX, y: topOffsetY},
+            'top-right-label': {x: topOffsetX, y: topOffsetY},
+            'bottom-left-label': {x: bottomLeftOffsetX, y: bottomLeftOffsetY},
+            'bottom-right-label': {x: bottomRightOffsetX, y: bottomRightOffsetY}
+        };
+
         // Update all four action button labels
         const actionLabels = ['top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'];
-        const svgDoc = appState.getSvgDoc();
         actionLabels.forEach(labelId => {
-            const labelElement = svgDoc?.querySelector(`#${labelId}`);
+            const labelElement = svgDoc.querySelector(`#${labelId}`);
             if (labelElement) {
                 const pos = labelPositions[labelId];
+                const offset = labelOffsets[labelId];
                 const isLeft = labelId.includes('left');
 
-                // For left labels (rotated 90°), X goes down/up, Y goes left/right
-                // For right labels (rotated -90°), X goes up/down, Y goes left/right
-                const newX = (pos.x + (isLeft ? offsetY : -offsetY)).toFixed(2);
-                const newY = (pos.y + offsetX).toFixed(2);
+                // For rotated text: X offset affects vertical position, Y offset affects horizontal
+                // For left labels (rotated 90°), positive Y moves right (toward edge)
+                // For right labels (rotated -90°), positive Y moves left (toward edge)
+                const newX = (pos.x + (isLeft ? offset.y : -offset.y)).toFixed(2);
+                const newY = (pos.y + offset.x).toFixed(2);
 
                 labelElement.setAttribute('x', newX);
                 labelElement.setAttribute('y', newY);
@@ -169,16 +189,34 @@ export class ActionButtons {
             'right': {x: 53.6, y: 55.0}
         };
 
-        // Also update action descriptions with new size/styling
+        // Get individual offsets for action descriptions
+        const descLeftOffsetX = parseFloat(document.getElementById('action-desc-left-offset-x')?.value || 0);
+        const descLeftOffsetY = parseFloat(document.getElementById('action-desc-left-offset-y')?.value || 0);
+        ActionButtons.updateOffsetDisplay('action-desc-left-offset-x-value', descLeftOffsetX);
+        ActionButtons.updateOffsetDisplay('action-desc-left-offset-y-value', descLeftOffsetY);
+
+        const descRightOffsetX = parseFloat(document.getElementById('action-desc-right-offset-x')?.value || 0);
+        const descRightOffsetY = parseFloat(document.getElementById('action-desc-right-offset-y')?.value || 0);
+        ActionButtons.updateOffsetDisplay('action-desc-right-offset-x-value', descRightOffsetX);
+        ActionButtons.updateOffsetDisplay('action-desc-right-offset-y-value', descRightOffsetY);
+
+        const descOffsets = {
+            'left': {x: descLeftOffsetX, y: descLeftOffsetY},
+            'right': {x: descRightOffsetX, y: descRightOffsetY}
+        };
+
+        // Update action descriptions with individual offsets
         ['left', 'right'].forEach(side => {
-            const descElement = svgDoc?.querySelector(`#action-desc-${side}`);
+            const descElement = svgDoc.querySelector(`#action-desc-${side}`);
             const input = document.getElementById(`action-desc-${side}-input`);
             if (descElement && input) {
                 const pos = descPositions[side];
+                const offset = descOffsets[side];
                 const isLeft = side === 'left';
 
-                const newX = (pos.x + (isLeft ? offsetY : -offsetY)).toFixed(2);
-                const newY = (pos.y + offsetX).toFixed(2);
+                // Same rotation logic as labels
+                const newX = (pos.x + (isLeft ? offset.y : -offset.y)).toFixed(2);
+                const newY = (pos.y + offset.x).toFixed(2);
 
                 descElement.setAttribute('x', newX);
                 descElement.setAttribute('y', newY);
@@ -193,6 +231,16 @@ export class ActionButtons {
                 ActionButtons.applyActionButtonStyling(descElement);
             }
         });
+    }
+
+    /**
+     * Helper to update offset display value
+     * @param {string} elementId - ID of the display element
+     * @param {number} value - Offset value
+     */
+    static updateOffsetDisplay(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) el.textContent = value.toFixed(1);
     }
 
     /**
@@ -224,6 +272,104 @@ export class ActionButtons {
                 }
             }
         });
+    }
+
+    /**
+     * Arrow center positions for transform origin calculation
+     * These are the geometric centers of each arrow polygon
+     */
+    static ARROW_CENTERS = {
+        'top-left-arrow': { x: 4.1, y: 48.39 },
+        'top-right-arrow': { x: 50.04, y: 48.39 },
+        'bottom-left-arrow': { x: 4.1, y: 63.53 },
+        'bottom-right-arrow': { x: 49.95, y: 63.53 }
+    };
+
+    /**
+     * Update action arrow transforms (scale, position, visibility)
+     * Top arrows are linked, bottom-left and bottom-right are independent
+     */
+    static updateActionArrowTransforms() {
+        const svgDoc = appState.getSvgDoc();
+        if (!svgDoc) return;
+
+        // Top arrows (linked controls)
+        const topVisible = document.getElementById('top-arrows-visible')?.checked ?? true;
+        const topScale = parseFloat(document.getElementById('top-arrows-scale')?.value || 100) / 100;
+        const topX = parseFloat(document.getElementById('top-arrows-x')?.value || 0);
+        const topY = parseFloat(document.getElementById('top-arrows-y')?.value || 0);
+
+        // Update display values
+        ActionButtons.updateOffsetDisplay('top-arrows-scale-value', topScale * 100);
+        ActionButtons.updateOffsetDisplay('top-arrows-x-value', topX);
+        ActionButtons.updateOffsetDisplay('top-arrows-y-value', topY);
+
+        // Apply to top-left and top-right arrows
+        ['top-left-arrow', 'top-right-arrow'].forEach(arrowId => {
+            const arrow = svgDoc.querySelector(`#${arrowId}`);
+            if (arrow) {
+                ActionButtons.applyArrowTransform(arrow, arrowId, topScale, topX, topY, topVisible);
+            }
+        });
+
+        // Bottom-left arrow (independent controls)
+        const bottomLeftVisible = document.getElementById('bottom-left-arrow-visible')?.checked ?? true;
+        const bottomLeftScale = parseFloat(document.getElementById('bottom-left-arrow-scale')?.value || 100) / 100;
+        const bottomLeftX = parseFloat(document.getElementById('bottom-left-arrow-x')?.value || 0);
+        const bottomLeftY = parseFloat(document.getElementById('bottom-left-arrow-y')?.value || 0);
+
+        ActionButtons.updateOffsetDisplay('bottom-left-arrow-scale-value', bottomLeftScale * 100);
+        ActionButtons.updateOffsetDisplay('bottom-left-arrow-x-value', bottomLeftX);
+        ActionButtons.updateOffsetDisplay('bottom-left-arrow-y-value', bottomLeftY);
+
+        const bottomLeftArrow = svgDoc.querySelector('#bottom-left-arrow');
+        if (bottomLeftArrow) {
+            ActionButtons.applyArrowTransform(bottomLeftArrow, 'bottom-left-arrow', bottomLeftScale, bottomLeftX, bottomLeftY, bottomLeftVisible);
+        }
+
+        // Bottom-right arrow (independent controls)
+        const bottomRightVisible = document.getElementById('bottom-right-arrow-visible')?.checked ?? true;
+        const bottomRightScale = parseFloat(document.getElementById('bottom-right-arrow-scale')?.value || 100) / 100;
+        const bottomRightX = parseFloat(document.getElementById('bottom-right-arrow-x')?.value || 0);
+        const bottomRightY = parseFloat(document.getElementById('bottom-right-arrow-y')?.value || 0);
+
+        ActionButtons.updateOffsetDisplay('bottom-right-arrow-scale-value', bottomRightScale * 100);
+        ActionButtons.updateOffsetDisplay('bottom-right-arrow-x-value', bottomRightX);
+        ActionButtons.updateOffsetDisplay('bottom-right-arrow-y-value', bottomRightY);
+
+        const bottomRightArrow = svgDoc.querySelector('#bottom-right-arrow');
+        if (bottomRightArrow) {
+            ActionButtons.applyArrowTransform(bottomRightArrow, 'bottom-right-arrow', bottomRightScale, bottomRightX, bottomRightY, bottomRightVisible);
+        }
+    }
+
+    /**
+     * Apply transform to an arrow element
+     * @param {Element} arrow - The arrow SVG element
+     * @param {string} arrowId - The arrow ID for center lookup
+     * @param {number} scale - Scale factor (1.0 = 100%)
+     * @param {number} offsetX - X offset in mm
+     * @param {number} offsetY - Y offset in mm
+     * @param {boolean} visible - Whether the arrow should be visible
+     */
+    static applyArrowTransform(arrow, arrowId, scale, offsetX, offsetY, visible) {
+        if (!arrow) return;
+
+        // Handle visibility
+        arrow.style.display = visible ? '' : 'none';
+
+        if (!visible) return;
+
+        const center = ActionButtons.ARROW_CENTERS[arrowId];
+        if (!center) return;
+
+        // Build transform: translate to origin, scale, translate back, then apply offset
+        // transform = translate(cx + offsetX, cy + offsetY) scale(s) translate(-cx, -cy)
+        // Simplified: translate((1-s)*cx + offsetX, (1-s)*cy + offsetY) scale(s)
+        const tx = (1 - scale) * center.x + offsetX;
+        const ty = (1 - scale) * center.y + offsetY;
+
+        arrow.setAttribute('transform', `translate(${tx.toFixed(3)}, ${ty.toFixed(3)}) scale(${scale})`);
     }
 
     /**

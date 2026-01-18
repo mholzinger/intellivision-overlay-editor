@@ -353,6 +353,8 @@ window.updateActionButton = (position) => ActionButtons.updateActionButton(posit
 window.updateAllActionButtons = () => ActionButtons.updateAllActionButtons();
 window.updateActionFont = () => FontManager.updateActionFont();
 window.toggleActionArrowFill = () => ActionButtons.toggleActionArrowFill();
+window.updateActionArrowColor = () => ActionButtons.updateActionArrowColor();
+window.updateActionArrowTransforms = () => ActionButtons.updateActionArrowTransforms();
 window.updateActionDescription = (side) => ActionButtons.updateActionDescription(side);
 window.updateBottomText = () => BottomControls.updateBottomText();
 window.updateBottomTextFont = () => FontManager.updateBottomTextFont();
@@ -360,6 +362,8 @@ window.updateBottomTextColor = () => BottomControls.updateBottomTextColor();
 window.updateBottomTextSize = () => BottomControls.updateBottomTextSize();
 window.updateBottomTextPosition = () => BottomControls.updateBottomTextPosition();
 window.toggleBottomArrowFill = () => BottomControls.toggleBottomArrowFill();
+window.updateBottomArrowColor = () => BottomControls.updateBottomArrowColor();
+window.updateDiscArrowTransforms = () => BottomControls.updateDiscArrowTransforms();
 window.toggleBackgroundFill = () => BackgroundControls.toggleBackgroundFill();
 window.updateBackgroundFill = () => BackgroundControls.updateBackgroundFill();
 window.updateBackgroundOpacity = () => BackgroundControls.updateBackgroundOpacity();

@@ -160,4 +160,81 @@ export class BottomControls {
             }
         });
     }
+
+    /**
+     * Disc arrow center positions for transform origin calculation
+     * These are the geometric centers of each disc arrow polygon
+     */
+    static DISC_ARROW_CENTERS = {
+        'disc-left-arrow': { x: 15.5, y: 86.25 },
+        'disc-right-arrow': { x: 38.1, y: 86.25 }
+    };
+
+    /**
+     * Update disc arrow transforms (scale, position, spacing, visibility)
+     * Both disc arrows are controlled together (paired) with an additional spacing control
+     */
+    static updateDiscArrowTransforms() {
+        const svgDoc = appState.getSvgDoc();
+        if (!svgDoc) return;
+
+        // Get control values
+        const visible = document.getElementById('disc-arrows-visible')?.checked ?? true;
+        const scale = parseFloat(document.getElementById('disc-arrows-scale')?.value || 100) / 100;
+        const spacing = parseFloat(document.getElementById('disc-arrows-spacing')?.value || 0);
+        const offsetX = parseFloat(document.getElementById('disc-arrows-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('disc-arrows-y')?.value || 0);
+
+        // Update display values
+        const scaleEl = document.getElementById('disc-arrows-scale-value');
+        const spacingEl = document.getElementById('disc-arrows-spacing-value');
+        const xEl = document.getElementById('disc-arrows-x-value');
+        const yEl = document.getElementById('disc-arrows-y-value');
+
+        if (scaleEl) scaleEl.textContent = (scale * 100).toFixed(0);
+        if (spacingEl) spacingEl.textContent = spacing.toFixed(1);
+        if (xEl) xEl.textContent = offsetX.toFixed(1);
+        if (yEl) yEl.textContent = offsetY.toFixed(1);
+
+        // Apply transforms to disc arrows
+        // Spacing moves left arrow further left (negative) and right arrow further right (positive)
+        const leftArrow = svgDoc.querySelector('#disc-left-arrow');
+        const rightArrow = svgDoc.querySelector('#disc-right-arrow');
+
+        if (leftArrow) {
+            BottomControls.applyDiscArrowTransform(leftArrow, 'disc-left-arrow', scale, offsetX - spacing, offsetY, visible);
+        }
+
+        if (rightArrow) {
+            BottomControls.applyDiscArrowTransform(rightArrow, 'disc-right-arrow', scale, offsetX + spacing, offsetY, visible);
+        }
+    }
+
+    /**
+     * Apply transform to a disc arrow element
+     * @param {Element} arrow - The arrow SVG element
+     * @param {string} arrowId - The arrow ID for center lookup
+     * @param {number} scale - Scale factor (1.0 = 100%)
+     * @param {number} offsetX - X offset in mm
+     * @param {number} offsetY - Y offset in mm
+     * @param {boolean} visible - Whether the arrow should be visible
+     */
+    static applyDiscArrowTransform(arrow, arrowId, scale, offsetX, offsetY, visible) {
+        if (!arrow) return;
+
+        // Handle visibility
+        arrow.style.display = visible ? '' : 'none';
+
+        if (!visible) return;
+
+        const center = BottomControls.DISC_ARROW_CENTERS[arrowId];
+        if (!center) return;
+
+        // Build transform: translate to origin, scale, translate back, then apply offset
+        // Simplified: translate((1-s)*cx + offsetX, (1-s)*cy + offsetY) scale(s)
+        const tx = (1 - scale) * center.x + offsetX;
+        const ty = (1 - scale) * center.y + offsetY;
+
+        arrow.setAttribute('transform', `translate(${tx.toFixed(3)}, ${ty.toFixed(3)}) scale(${scale})`);
+    }
 }
