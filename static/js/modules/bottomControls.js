@@ -94,7 +94,40 @@ export class BottomControls {
         if (textElement) {
             BottomControls.setMultilineText(textElement, value || 'DIRECTION', size);
             BottomControls.applyBottomTextStyling(textElement);
+
+            // Apply position including offset
+            BottomControls.updateBottomTextPosition();
         }
+    }
+
+    /**
+     * Update bottom text position with X/Y offset
+     */
+    static updateBottomTextPosition() {
+        const svgDoc = appState.getSvgDoc();
+        const textElement = svgDoc?.querySelector('#bottom-text');
+        if (!textElement) return;
+
+        const offsetX = parseFloat(document.getElementById('bottom-text-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('bottom-text-offset-y')?.value || 0);
+
+        // Update display values
+        const xValueEl = document.getElementById('bottom-text-offset-x-value');
+        const yValueEl = document.getElementById('bottom-text-offset-y-value');
+        if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
+        if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+
+        // Base position: center above disc area (x=27.8, y=87.0)
+        const baseX = 27.8 + offsetX;
+        const baseY = 87.0 + offsetY;
+
+        textElement.setAttribute('x', baseX.toFixed(2));
+        textElement.setAttribute('y', baseY.toFixed(2));
+
+        // Update tspan x coordinates for multiline text
+        textElement.querySelectorAll('tspan').forEach(tspan => {
+            tspan.setAttribute('x', baseX.toFixed(2));
+        });
     }
 
     /**

@@ -94,6 +94,24 @@ export class RowDescriptions {
             sizeDisplay.textContent = size;
         }
 
+        // Get position offsets
+        const offsetX = parseFloat(document.getElementById('row-desc-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('row-desc-offset-y')?.value || 0);
+
+        // Update display values
+        const xValueEl = document.getElementById('row-desc-offset-x-value');
+        const yValueEl = document.getElementById('row-desc-offset-y-value');
+        if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
+        if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+
+        // Base row description positions (centered above each row)
+        const rowPositions = {
+            1: {x: 27.8, y: 24.5},
+            2: {x: 27.8, y: 39.5},
+            3: {x: 27.8, y: 54.5},
+            4: {x: 27.8, y: 69.5}
+        };
+
         const svgDoc = appState.getSvgDoc();
         if (!svgDoc) return;
 
@@ -102,8 +120,22 @@ export class RowDescriptions {
             const textElement = svgDoc.querySelector(`#row-desc-${i}`);
             const input = document.getElementById(`row-desc-input-${i}`);
             if (textElement && input) {
+                const pos = rowPositions[i];
+                const newX = (pos.x + offsetX).toFixed(2);
+                const newY = (pos.y + offsetY).toFixed(2);
+
+                // Update position
+                textElement.setAttribute('x', newX);
+                textElement.setAttribute('y', newY);
+
                 // Re-render multiline text with new spacing
                 RowDescriptions.setMultilineText(textElement, input.value, size);
+
+                // Update tspan x coordinates
+                textElement.querySelectorAll('tspan').forEach(tspan => {
+                    tspan.setAttribute('x', newX);
+                });
+
                 RowDescriptions.applyRowDescStyling(textElement);
             }
         }

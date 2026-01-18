@@ -29,6 +29,9 @@ export class StateManager {
         this.selectedButtonForShape = null;
         this.shapeTemplates = {}; // Cache of loaded SVG shape templates
 
+        // Unified button editor state
+        this.selectedButtonForEditor = null;
+
         // Font state
         this.loadedFonts = new Set();
         this.availableFonts = [];
@@ -333,6 +336,27 @@ export class StateManager {
      */
     addShapeTemplate(name, svgContent) {
         this.shapeTemplates[name] = svgContent;
+    }
+
+    // ========== Unified Button Editor Methods ==========
+
+    /**
+     * Set selected button for unified editor
+     * @param {string} buttonId - Button identifier
+     */
+    setSelectedButtonForEditor(buttonId) {
+        this.selectedButtonForEditor = buttonId;
+        // Keep artwork and shape selections in sync
+        this.selectedButtonForArtwork = buttonId;
+        this.selectedButtonForShape = buttonId;
+    }
+
+    /**
+     * Get selected button for unified editor
+     * @returns {string} Button identifier
+     */
+    getSelectedButtonForEditor() {
+        return this.selectedButtonForEditor;
     }
 
     /**

@@ -103,8 +103,27 @@ export class ButtonEditor {
 
         document.getElementById('button-label-size-value').textContent = size;
 
+        // Get position offsets
+        const offsetX = parseFloat(document.getElementById('button-label-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('button-label-offset-y')?.value || 0);
+
+        // Update display values
+        const xValueEl = document.getElementById('button-label-offset-x-value');
+        const yValueEl = document.getElementById('button-label-offset-y-value');
+        if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
+        if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+
         // Get fill value (supports gradient)
         const fillValue = UIManager.getButtonLabelFillValue();
+
+        // Button text positions (centered in each button)
+        // These are the y positions for text (slightly offset from button centers for visual centering)
+        const buttonTextPositions = {
+            1: {x: 12.90, y: 32.25}, 2: {x: 26.80, y: 32.25}, 3: {x: 40.70, y: 32.25},
+            4: {x: 12.90, y: 47.39}, 5: {x: 26.80, y: 47.39}, 6: {x: 40.70, y: 47.39},
+            7: {x: 12.90, y: 62.53}, 8: {x: 26.80, y: 62.53}, 9: {x: 40.70, y: 62.53},
+            'clear': {x: 12.90, y: 77.68}, 0: {x: 26.80, y: 77.68}, 'enter': {x: 40.70, y: 77.68}
+        };
 
         // Update all 12 button labels
         const buttons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'clear', 0, 'enter'];
@@ -112,10 +131,22 @@ export class ButtonEditor {
         buttons.forEach(num => {
             const btnElement = svgDoc?.querySelector(`#btn-${num}`);
             if (btnElement) {
+                const pos = buttonTextPositions[num];
+                const newX = (pos.x + offsetX).toFixed(2);
+                const newY = (pos.y + offsetY).toFixed(2);
+
+                // Update position
+                btnElement.setAttribute('x', newX);
+                btnElement.setAttribute('y', newY);
+
                 // Re-render multiline text with new spacing
                 const input = document.getElementById(`btn-input-${num}`);
                 if (input) {
                     ButtonEditor.setMultilineText(btnElement, input.value, size);
+                    // Update tspan x coordinates
+                    btnElement.querySelectorAll('tspan').forEach(tspan => {
+                        tspan.setAttribute('x', newX);
+                    });
                 }
 
                 // Use inline style to override CSS class styles

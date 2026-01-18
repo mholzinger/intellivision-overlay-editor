@@ -89,11 +89,37 @@ export class TitleEditor {
             titleElement.style.fill = UIManager.getTitleFillValue();
             titleElement.style.dominantBaseline = 'central';
 
-            // Center the text vertically in the title box
-            // Title box is at y=2.5 with height=10.5, so center is at y=7.75
-            const baseY = 7.75;
-            titleElement.setAttribute('y', baseY.toFixed(2));
+            // Apply position including offset
+            TitleEditor.updateTitlePosition();
         }
+    }
+
+    /**
+     * Update title position with X/Y offset
+     */
+    static updateTitlePosition() {
+        const svgDoc = appState.getSvgDoc();
+        const titleElement = svgDoc?.querySelector('#title-text');
+        if (!titleElement) return;
+
+        const offsetX = parseFloat(document.getElementById('title-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('title-offset-y')?.value || 0);
+
+        // Update display values
+        document.getElementById('title-offset-x-value').textContent = offsetX.toFixed(1);
+        document.getElementById('title-offset-y-value').textContent = offsetY.toFixed(1);
+
+        // Base position: center of title box (x=27.8, y=7.75)
+        const baseX = 27.8 + offsetX;
+        const baseY = 7.75 + offsetY;
+
+        titleElement.setAttribute('x', baseX.toFixed(2));
+        titleElement.setAttribute('y', baseY.toFixed(2));
+
+        // Update tspan x coordinates for multiline text
+        titleElement.querySelectorAll('tspan').forEach(tspan => {
+            tspan.setAttribute('x', baseX.toFixed(2));
+        });
     }
 
     /**
@@ -164,6 +190,37 @@ export class TitleEditor {
             TitleEditor.setMultilineText(copyrightElement, text, size);
             copyrightElement.style.fontSize = size + 'px';
             copyrightElement.style.dominantBaseline = 'central';
+
+            // Apply position including offset
+            TitleEditor.updateCopyrightPosition();
         }
+    }
+
+    /**
+     * Update copyright position with X/Y offset
+     */
+    static updateCopyrightPosition() {
+        const svgDoc = appState.getSvgDoc();
+        const copyrightElement = svgDoc?.querySelector('#copyright-text');
+        if (!copyrightElement) return;
+
+        const offsetX = parseFloat(document.getElementById('copyright-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('copyright-offset-y')?.value || 0);
+
+        // Update display values
+        document.getElementById('copyright-offset-x-value').textContent = offsetX.toFixed(1);
+        document.getElementById('copyright-offset-y-value').textContent = offsetY.toFixed(1);
+
+        // Base position: center below title (x=27.8, y=19.5)
+        const baseX = 27.8 + offsetX;
+        const baseY = 19.5 + offsetY;
+
+        copyrightElement.setAttribute('x', baseX.toFixed(2));
+        copyrightElement.setAttribute('y', baseY.toFixed(2));
+
+        // Update tspan x coordinates for multiline text
+        copyrightElement.querySelectorAll('tspan').forEach(tspan => {
+            tspan.setAttribute('x', baseX.toFixed(2));
+        });
     }
 }

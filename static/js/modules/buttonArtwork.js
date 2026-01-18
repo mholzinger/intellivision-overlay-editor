@@ -12,16 +12,18 @@ export class ButtonArtwork {
      * Handle button selection for artwork
      */
     static selectButtonForArtwork() {
+        // Get selected button from state (set by unified editor) or fallback to hidden select
         const select = document.getElementById('button-artwork-select');
-        const selectedButton = select.value;
+        const selectedButton = appState.getSelectedButton() || select?.value;
         appState.setSelectedButton(selectedButton);
 
         if (selectedButton) {
-            document.getElementById('button-artwork-controls').style.display = 'block';
-
             // Load existing artwork data if available
             const art = appState.getButtonArtwork(selectedButton);
             if (art) {
+                // Button has existing artwork - show controls and load values
+                document.getElementById('button-artwork-controls').style.display = 'block';
+
                 document.getElementById('btn-art-x-pos').value = art.x;
                 document.getElementById('btn-art-y-pos').value = art.y;
                 document.getElementById('btn-art-scale').value = art.scale;
@@ -38,6 +40,9 @@ export class ButtonArtwork {
                 document.getElementById('btn-art-remove-white').checked = hasTransparency;
                 document.getElementById('btn-art-threshold-control').style.display = hasTransparency ? 'block' : 'none';
             } else {
+                // No artwork yet - hide controls until user uploads
+                document.getElementById('button-artwork-controls').style.display = 'none';
+
                 // Reset to defaults
                 document.getElementById('btn-art-x-pos').value = 0;
                 document.getElementById('btn-art-y-pos').value = 0;
@@ -83,6 +88,9 @@ export class ButtonArtwork {
                 opacity: 1.0
             });
 
+            // Show the artwork controls now that artwork exists
+            document.getElementById('button-artwork-controls').style.display = 'block';
+
             // Reset UI controls
             document.getElementById('btn-art-x-pos').value = 0;
             document.getElementById('btn-art-y-pos').value = 0;
@@ -94,6 +102,8 @@ export class ButtonArtwork {
             document.getElementById('btn-art-scale-value').textContent = '100';
             document.getElementById('btn-art-rotation-value').textContent = '0';
             document.getElementById('btn-art-opacity-value').textContent = '100';
+            document.getElementById('btn-art-remove-white').checked = false;
+            document.getElementById('btn-art-threshold-control').style.display = 'none';
 
             // Apply transparency if checkbox is enabled
             ButtonArtwork.reprocessButtonArtwork();

@@ -118,22 +118,78 @@ export class ActionButtons {
         const size = parseFloat(document.getElementById('action-label-size').value);
         document.getElementById('action-label-size-value').textContent = size.toFixed(1);
 
+        // Get position offsets
+        const offsetX = parseFloat(document.getElementById('action-label-offset-x')?.value || 0);
+        const offsetY = parseFloat(document.getElementById('action-label-offset-y')?.value || 0);
+
+        // Update display values
+        const xValueEl = document.getElementById('action-label-offset-x-value');
+        const yValueEl = document.getElementById('action-label-offset-y-value');
+        if (xValueEl) xValueEl.textContent = offsetX.toFixed(1);
+        if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
+
+        // Base positions for action labels (rotated text along edges)
+        // Note: For rotated text, X offset affects vertical position and Y offset affects horizontal
+        const labelPositions = {
+            'top-left-label': {x: 4.0, y: 44.89},
+            'top-right-label': {x: 50.48, y: 44.89},
+            'bottom-left-label': {x: 4.0, y: 66.03},
+            'bottom-right-label': {x: 50.48, y: 66.03}
+        };
+
         // Update all four action button labels
         const actionLabels = ['top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'];
         const svgDoc = appState.getSvgDoc();
         actionLabels.forEach(labelId => {
             const labelElement = svgDoc?.querySelector(`#${labelId}`);
             if (labelElement) {
+                const pos = labelPositions[labelId];
+                const isLeft = labelId.includes('left');
+
+                // For left labels (rotated 90°), X goes down/up, Y goes left/right
+                // For right labels (rotated -90°), X goes up/down, Y goes left/right
+                const newX = (pos.x + (isLeft ? offsetY : -offsetY)).toFixed(2);
+                const newY = (pos.y + offsetX).toFixed(2);
+
+                labelElement.setAttribute('x', newX);
+                labelElement.setAttribute('y', newY);
+
+                // Update tspan x coordinates
+                labelElement.querySelectorAll('tspan').forEach(tspan => {
+                    tspan.setAttribute('x', newX);
+                });
+
                 ActionButtons.applyActionButtonStyling(labelElement);
             }
         });
+
+        // Action description positions
+        const descPositions = {
+            'left': {x: 2.0, y: 55.0},
+            'right': {x: 53.6, y: 55.0}
+        };
 
         // Also update action descriptions with new size/styling
         ['left', 'right'].forEach(side => {
             const descElement = svgDoc?.querySelector(`#action-desc-${side}`);
             const input = document.getElementById(`action-desc-${side}-input`);
             if (descElement && input) {
+                const pos = descPositions[side];
+                const isLeft = side === 'left';
+
+                const newX = (pos.x + (isLeft ? offsetY : -offsetY)).toFixed(2);
+                const newY = (pos.y + offsetX).toFixed(2);
+
+                descElement.setAttribute('x', newX);
+                descElement.setAttribute('y', newY);
+
                 ActionButtons.setMultilineText(descElement, input.value, side, size);
+
+                // Update tspan x coordinates
+                descElement.querySelectorAll('tspan').forEach(tspan => {
+                    tspan.setAttribute('x', newX);
+                });
+
                 ActionButtons.applyActionButtonStyling(descElement);
             }
         });

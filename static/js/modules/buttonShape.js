@@ -48,16 +48,16 @@ export class ButtonShape {
      * Handle button selection for shape editing
      */
     static selectButtonForShape() {
+        // Get selected button from state (set by unified editor) or fallback to hidden select
         const select = document.getElementById('btn-shape-select');
-        const selectedButton = select.value;
+        const selectedButton = appState.getSelectedButtonForShape() || select?.value;
         appState.setSelectedButtonForShape(selectedButton);
 
         if (selectedButton) {
-            document.getElementById('btn-shape-controls').style.display = 'block';
-
             // Load existing shape config if available
             const shape = appState.getButtonShape(selectedButton);
-            if (shape) {
+            if (shape && shape.template) {
+                // Button has existing shape - load values and show controls
                 document.getElementById('btn-shape-template').value = shape.template || '';
                 document.getElementById('btn-shape-stroke-color').value = shape.strokeColor || '#ffffff';
                 document.getElementById('btn-shape-stroke-width').value = shape.strokeWidth || 0.5;
@@ -74,9 +74,13 @@ export class ButtonShape {
                 // Show/hide fill color based on checkbox
                 document.getElementById('btn-shape-fill-color-container').style.display =
                     shape.fillEnabled ? 'block' : 'none';
+
+                // Show shape styling controls
+                document.getElementById('btn-shape-controls').style.display = 'block';
             } else {
-                // Reset to defaults
+                // No shape configured - reset controls and hide styling section
                 this.resetControls();
+                document.getElementById('btn-shape-controls').style.display = 'none';
             }
         } else {
             document.getElementById('btn-shape-controls').style.display = 'none';
@@ -143,10 +147,14 @@ export class ButtonShape {
         const templateName = document.getElementById('btn-shape-template').value;
 
         if (!templateName) {
-            // Clear shape from button
+            // Clear shape from button and hide controls
             this.clearButtonShape();
+            document.getElementById('btn-shape-controls').style.display = 'none';
             return;
         }
+
+        // Show shape styling controls when a template is selected
+        document.getElementById('btn-shape-controls').style.display = 'block';
 
         // Load template if not cached
         if (!appState.getShapeTemplate(templateName)) {
@@ -171,11 +179,21 @@ export class ButtonShape {
         if (!selectedButton) return;
 
         const templateName = document.getElementById('btn-shape-template').value;
+        const applyToAll = document.getElementById('apply-to-all-buttons')?.checked || false;
+
         if (!templateName) {
-            this.removeShapeFromSVG(selectedButton);
-            appState.removeButtonShape(selectedButton);
-            // Refresh background to use default rect if enabled
-            this.refreshButtonBackground(selectedButton);
+            // Clear shape - check if applying to all
+            if (applyToAll) {
+                this.getAllButtonIds().forEach(buttonId => {
+                    this.removeShapeFromSVG(buttonId);
+                    appState.removeButtonShape(buttonId);
+                    this.refreshButtonBackground(buttonId);
+                });
+            } else {
+                this.removeShapeFromSVG(selectedButton);
+                appState.removeButtonShape(selectedButton);
+                this.refreshButtonBackground(selectedButton);
+            }
             return;
         }
 
@@ -195,14 +213,27 @@ export class ButtonShape {
         // Update display values
         this.updateDisplayValues(shapeConfig);
 
-        // Save to state
-        appState.setButtonShape(selectedButton, shapeConfig);
+        if (applyToAll) {
+            // Apply to all buttons
+            this.getAllButtonIds().forEach(buttonId => {
+                appState.setButtonShape(buttonId, { ...shapeConfig });
+                this.renderShapeToButton(buttonId, shapeConfig);
+                this.refreshButtonBackground(buttonId);
+            });
+        } else {
+            // Apply to selected button only
+            appState.setButtonShape(selectedButton, shapeConfig);
+            this.renderShapeToButton(selectedButton, shapeConfig);
+            this.refreshButtonBackground(selectedButton);
+        }
+    }
 
-        // Render shape to SVG
-        this.renderShapeToButton(selectedButton, shapeConfig);
-
-        // Refresh background to use new shape if enabled
-        this.refreshButtonBackground(selectedButton);
+    /**
+     * Get all button IDs
+     * @returns {string[]}
+     */
+    static getAllButtonIds() {
+        return ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'enter'];
     }
 
     /**
