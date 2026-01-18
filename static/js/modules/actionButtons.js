@@ -275,6 +275,28 @@ export class ActionButtons {
     }
 
     /**
+     * Update action arrow stroke color and width
+     */
+    static updateActionArrowStroke() {
+        const color = document.getElementById('action-arrow-stroke-color')?.value || '#000000';
+        const width = parseFloat(document.getElementById('action-arrow-stroke-width')?.value) || 0.2;
+        const svgDoc = appState.getSvgDoc();
+
+        // Update display value
+        const widthDisplay = document.getElementById('action-arrow-stroke-width-value');
+        if (widthDisplay) widthDisplay.textContent = width.toFixed(2);
+
+        const arrowIds = ['top-left-arrow', 'top-right-arrow', 'bottom-left-arrow', 'bottom-right-arrow'];
+        arrowIds.forEach(arrowId => {
+            const arrow = svgDoc?.querySelector(`#${arrowId}`);
+            if (arrow) {
+                arrow.setAttribute('stroke', color);
+                arrow.setAttribute('stroke-width', width.toString());
+            }
+        });
+    }
+
+    /**
      * Arrow center positions for transform origin calculation
      * These are the geometric centers of each arrow polygon
      */

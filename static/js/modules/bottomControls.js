@@ -162,6 +162,28 @@ export class BottomControls {
     }
 
     /**
+     * Update disc arrow stroke color and width
+     */
+    static updateDiscArrowStroke() {
+        const color = document.getElementById('disc-arrow-stroke-color')?.value || '#000000';
+        const width = parseFloat(document.getElementById('disc-arrow-stroke-width')?.value) || 0.2;
+        const svgDoc = appState.getSvgDoc();
+
+        // Update display value
+        const widthDisplay = document.getElementById('disc-arrow-stroke-width-value');
+        if (widthDisplay) widthDisplay.textContent = width.toFixed(2);
+
+        const arrowIds = ['disc-left-arrow', 'disc-right-arrow'];
+        arrowIds.forEach(arrowId => {
+            const arrow = svgDoc?.querySelector(`#${arrowId}`);
+            if (arrow) {
+                arrow.setAttribute('stroke', color);
+                arrow.setAttribute('stroke-width', width.toString());
+            }
+        });
+    }
+
+    /**
      * Disc arrow center positions for transform origin calculation
      * These are the geometric centers of each disc arrow polygon
      */

@@ -890,12 +890,24 @@
                             <!-- Arrow Styling -->
                             <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">
                                 <h3 style="font-size: 14px; margin: 0 0 12px 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 8px;">Arrow Styling</h3>
-                                <div class="input-group" style="margin-bottom: 12px;">
-                                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;">
-                                        <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
-                                        Enable arrow fill
-                                    </label>
-                                    <input type="color" id="action-arrow-color" value="#8B4513" oninput="updateActionArrowColor()" style="width: 100%; height: 36px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                    <!-- Fill Controls -->
+                                    <div class="input-group">
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;">
+                                            <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked>
+                                            Fill
+                                        </label>
+                                        <input type="color" id="action-arrow-color" value="#000000" oninput="updateActionArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    </div>
+                                    <!-- Stroke Controls -->
+                                    <div class="input-group">
+                                        <label style="font-size: 12px; margin-bottom: 8px; display: block;">Stroke</label>
+                                        <input type="color" id="action-arrow-stroke-color" value="#000000" oninput="updateActionArrowStroke()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                        <div style="margin-top: 6px;">
+                                            <label style="font-size: 9px; color: #666;">Width: <span id="action-arrow-stroke-width-value">0.2</span></label>
+                                            <input type="range" id="action-arrow-stroke-width" min="0" max="1" value="0.2" step="0.05" oninput="updateActionArrowStroke()" style="width: 100%;">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Arrow Transform Controls -->
@@ -1137,13 +1149,25 @@
 
                                 <!-- Arrow Styling -->
                                 <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
-                                    <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Arrow Fill</h3>
-                                    <div class="input-group" style="margin-bottom: 10px;">
-                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 6px;">
-                                            <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
-                                            Enable fill
-                                        </label>
-                                        <input type="color" id="bottom-arrow-color" value="#8B4513" oninput="updateBottomArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                    <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Arrow Styling</h3>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                        <!-- Fill Controls -->
+                                        <div class="input-group">
+                                            <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; margin-bottom: 6px;">
+                                                <input type="checkbox" id="bottom-arrow-fill-enabled" onchange="toggleBottomArrowFill()" checked>
+                                                Fill
+                                            </label>
+                                            <input type="color" id="bottom-arrow-color" value="#000000" oninput="updateBottomArrowColor()" style="width: 100%; height: 26px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                        </div>
+                                        <!-- Stroke Controls -->
+                                        <div class="input-group">
+                                            <label style="font-size: 11px; margin-bottom: 6px; display: block;">Stroke</label>
+                                            <input type="color" id="disc-arrow-stroke-color" value="#000000" oninput="updateDiscArrowStroke()" style="width: 100%; height: 26px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                            <div style="margin-top: 4px;">
+                                                <label style="font-size: 9px; color: #666;">Width: <span id="disc-arrow-stroke-width-value">0.2</span></label>
+                                                <input type="range" id="disc-arrow-stroke-width" min="0" max="1" value="0.2" step="0.05" oninput="updateDiscArrowStroke()" style="width: 100%;">
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Disc Arrow Transform Controls -->

@@ -133,7 +133,11 @@ export class ConfigManager {
                 },
                 arrowFill: {
                     enabled: document.getElementById('action-arrow-fill-enabled')?.checked || true,
-                    color: document.getElementById('action-arrow-color')?.value || '#8B4513'
+                    color: document.getElementById('action-arrow-color')?.value || '#000000'
+                },
+                arrowStroke: {
+                    color: document.getElementById('action-arrow-stroke-color')?.value || '#000000',
+                    width: parseFloat(document.getElementById('action-arrow-stroke-width')?.value) || 0.2
                 },
                 arrowTransforms: {
                     topArrows: {
@@ -177,7 +181,11 @@ export class ConfigManager {
                 },
                 arrowFill: {
                     enabled: document.getElementById('bottom-arrow-fill-enabled')?.checked || true,
-                    color: document.getElementById('bottom-arrow-color')?.value || '#8B4513'
+                    color: document.getElementById('bottom-arrow-color')?.value || '#000000'
+                },
+                arrowStroke: {
+                    color: document.getElementById('disc-arrow-stroke-color')?.value || '#000000',
+                    width: parseFloat(document.getElementById('disc-arrow-stroke-width')?.value) || 0.2
                 },
                 arrowTransforms: {
                     visible: document.getElementById('disc-arrows-visible')?.checked ?? true,
@@ -494,6 +502,11 @@ export class ConfigManager {
                 this.setInputValue('action-arrow-color', config.actionButtons.arrowFill.color);
             }
 
+            if (config.actionButtons.arrowStroke) {
+                this.setInputValue('action-arrow-stroke-color', config.actionButtons.arrowStroke.color);
+                this.setInputValue('action-arrow-stroke-width', config.actionButtons.arrowStroke.width);
+            }
+
             if (config.actionButtons.arrowTransforms) {
                 const transforms = config.actionButtons.arrowTransforms;
                 if (transforms.topArrows) {
@@ -541,6 +554,11 @@ export class ConfigManager {
             if (config.bottomArrows.arrowFill) {
                 this.setCheckbox('bottom-arrow-fill-enabled', config.bottomArrows.arrowFill.enabled);
                 this.setInputValue('bottom-arrow-color', config.bottomArrows.arrowFill.color);
+            }
+
+            if (config.bottomArrows.arrowStroke) {
+                this.setInputValue('disc-arrow-stroke-color', config.bottomArrows.arrowStroke.color);
+                this.setInputValue('disc-arrow-stroke-width', config.bottomArrows.arrowStroke.width);
             }
 
             if (config.bottomArrows.arrowTransforms) {
@@ -654,6 +672,7 @@ export class ConfigManager {
             window.updateActionDescription('right');
         }
         if (window.toggleActionArrowFill) window.toggleActionArrowFill();
+        if (window.updateActionArrowStroke) window.updateActionArrowStroke();
         if (window.updateActionArrowTransforms) window.updateActionArrowTransforms();
 
         // Bottom arrow updates
@@ -662,6 +681,7 @@ export class ConfigManager {
         if (window.updateBottomTextSize) window.updateBottomTextSize();
         if (window.updateBottomTextFont) window.updateBottomTextFont();
         if (window.toggleBottomArrowFill) window.toggleBottomArrowFill();
+        if (window.updateDiscArrowStroke) window.updateDiscArrowStroke();
         if (window.updateDiscArrowTransforms) window.updateDiscArrowTransforms();
 
         // Update UI value displays
