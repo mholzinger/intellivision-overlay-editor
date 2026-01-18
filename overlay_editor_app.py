@@ -28,7 +28,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 TEMPLATE_PATH = Path(__file__).parent / "intellivision_overlay_RECTANGULAR.svg"
 
 # Path to shape templates
-SHAPES_DIR = Path(__file__).parent / "templates"
+SHAPES_DIR = Path(__file__).parent / "svg-templates"
 
 
 def get_git_info():
@@ -116,6 +116,55 @@ def get_shape(name):
         return jsonify({'error': str(e)}), 500
 
 
+# Path to layout templates (pre-made overlay projects)
+LAYOUT_TEMPLATES_DIR = Path(__file__).parent / "layout-templates"
+
+
+@app.route('/get_examples')
+def get_examples():
+    """Return list of available example overlay projects"""
+    examples = []
+    if LAYOUT_TEMPLATES_DIR.exists():
+        for p in sorted(LAYOUT_TEMPLATES_DIR.iterdir()):
+            if p.suffix.lower() == '.zip' and p.is_file():
+                # Use filename without extension as the example name
+                # Convert underscores to spaces and title case for display
+                display_name = p.stem.replace('_', ' ').replace('overlay project', '').strip().title()
+                examples.append({
+                    'name': p.stem,
+                    'file': p.name,
+                    'displayName': display_name
+                })
+    return jsonify({'examples': examples}), 200
+
+
+@app.route('/get_example/<name>')
+def get_example(name):
+    """Return the zip file for a specific example overlay"""
+    # Sanitize name to prevent path traversal
+    safe_name = Path(name).name
+    if not safe_name.endswith('.zip'):
+        safe_name += '.zip'
+
+    example_path = (LAYOUT_TEMPLATES_DIR / safe_name).resolve()
+
+    # Security check: ensure path is within LAYOUT_TEMPLATES_DIR
+    try:
+        if not str(example_path).startswith(str(LAYOUT_TEMPLATES_DIR.resolve())):
+            return jsonify({'error': 'Invalid example path'}), 400
+        if not example_path.exists() or not example_path.is_file():
+            return jsonify({'error': 'Example not found'}), 404
+
+        return send_file(
+            example_path,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=safe_name
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/export_png', methods=['POST'])
 def export_png():
     """Convert SVG to PNG and return as download.
@@ -132,10 +181,12 @@ def export_png():
         filename = data.get('filename', 'overlay')
         include_template = data.get('include_template', True)
 
-        # Output dimensions for the overlay PNG
-        # Original "big_overlay" size matching physical dimensions
-        OUTPUT_WIDTH = 300
-        OUTPUT_HEIGHT = 478
+        # Output dimensions for the overlay PNG at true 300 DPI
+        # SVG is 55.6mm × 90.4mm, at 300 DPI (300/25.4 pixels per mm):
+        # Width: 55.6 × 11.811 = 657 pixels
+        # Height: 90.4 × 11.811 = 1068 pixels
+        OUTPUT_WIDTH = 657
+        OUTPUT_HEIGHT = 1068
 
         # No need to remove template overlay elements if we never merge them in the first place
         # Only use the template SVG to extract the mask (outer_boundary path and viewBox)

@@ -955,3 +955,91 @@ window.exportOverlayConfig = () => ConfigManager.exportConfig();
 window.importOverlayConfig = () => ConfigManager.importConfig();
 window.exportOverlayProject = () => ConfigManager.exportProject();
 window.importOverlayProject = () => ConfigManager.importProject();
+
+// Layout template loading functions (pre-made overlay projects)
+let layoutTemplatesLoaded = false;
+
+window.toggleLayoutTemplateDropdown = async function() {
+    const menu = document.getElementById('layout-template-dropdown-menu');
+    const isVisible = menu.style.display !== 'none';
+
+    if (isVisible) {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'block';
+
+        // Load templates list if not already loaded
+        if (!layoutTemplatesLoaded) {
+            await loadLayoutTemplatesList();
+        }
+    }
+};
+
+async function loadLayoutTemplatesList() {
+    const listContainer = document.getElementById('layout-template-list');
+
+    try {
+        const response = await fetch('/get_examples');
+        if (!response.ok) throw new Error('Failed to load templates');
+
+        const data = await response.json();
+        const templates = data.examples || [];
+
+        if (templates.length === 0) {
+            listContainer.innerHTML = '<div style="padding: 8px 12px; color: var(--text-secondary); font-size: 12px;">No templates available</div>';
+        } else {
+            listContainer.innerHTML = templates.map(tpl =>
+                `<div class="layout-template-item" onclick="loadLayoutTemplate('${tpl.name}')" style="padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">${tpl.displayName}</div>`
+            ).join('');
+        }
+        layoutTemplatesLoaded = true;
+    } catch (error) {
+        console.error('Error loading templates:', error);
+        listContainer.innerHTML = '<div style="padding: 8px 12px; color: var(--text-error); font-size: 12px;">Error loading templates</div>';
+    }
+}
+
+window.loadLayoutTemplate = async function(templateName) {
+    // Close the dropdown
+    document.getElementById('layout-template-dropdown-menu').style.display = 'none';
+
+    // Confirm with user
+    if (!confirm(`Load the "${templateName.replace(/_/g, ' ')}" template? This will replace your current work.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/get_example/${templateName}`);
+        if (!response.ok) throw new Error('Failed to load template');
+
+        const blob = await response.blob();
+        const file = new File([blob], `${templateName}.zip`, { type: 'application/zip' });
+
+        // Use the existing import function
+        await ConfigManager.importFromZip(file);
+
+        // Show success message
+        const status = document.getElementById('status');
+        if (status) {
+            status.textContent = `Loaded template: ${templateName.replace(/_/g, ' ')}`;
+            status.className = 'status-message success';
+            setTimeout(() => { status.textContent = ''; }, 3000);
+        }
+    } catch (error) {
+        console.error('Error loading template:', error);
+        const status = document.getElementById('status');
+        if (status) {
+            status.textContent = 'Error loading template: ' + error.message;
+            status.className = 'status-message error';
+        }
+    }
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.layout-template-dropdown');
+    const menu = document.getElementById('layout-template-dropdown-menu');
+    if (dropdown && menu && !dropdown.contains(event.target)) {
+        menu.style.display = 'none';
+    }
+});

@@ -32,6 +32,16 @@
                     <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
                         📂 Import Overlay
                     </button>
+                    <div class="layout-template-dropdown" style="position: relative; display: inline-block;">
+                        <button class="btn btn-secondary btn-sm" onclick="toggleLayoutTemplateDropdown()" style="padding: 8px 12px; font-size: 13px;">
+                            📋 Templates ▾
+                        </button>
+                        <div id="layout-template-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 180px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-top: 4px;">
+                            <div id="layout-template-list" style="max-height: 200px; overflow-y: auto;">
+                                <div style="padding: 8px 12px; color: var(--text-secondary); font-size: 12px;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" style="padding: 8px 12px; font-size: 13px;">
                         🔄 Reset
                     </button>

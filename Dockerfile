@@ -36,6 +36,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY overlay_editor_app.py .
 COPY intellivision_overlay_RECTANGULAR.svg .
 COPY templates/ templates/
+COPY svg-templates/ svg-templates/
+COPY layout-templates/ layout-templates/
 COPY static/ static/
 COPY sf_intellivised/ sf_intellivised/
 
