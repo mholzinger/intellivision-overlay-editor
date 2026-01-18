@@ -63,9 +63,28 @@ export class BottomControls {
 
         const size = parseFloat(document.getElementById('bottom-text-size')?.value || '1.2');
 
+        // Get text style options
+        const isBold = document.getElementById('bottom-text-bold')?.checked || false;
+        const isItalic = document.getElementById('bottom-text-italic')?.checked || false;
+        const isUnderline = document.getElementById('bottom-text-underline')?.checked || false;
+
         textElement.style.fill = UIManager.getBottomTextFillValue();
         textElement.style.fontSize = size + 'px';
         textElement.style.dominantBaseline = 'central';
+        textElement.style.fontWeight = isBold ? 'bold' : 'normal';
+        textElement.style.fontStyle = isItalic ? 'italic' : 'normal';
+        textElement.style.textDecoration = isUnderline ? 'underline' : 'none';
+    }
+
+    /**
+     * Update bottom text style (bold, italic, underline)
+     */
+    static updateBottomTextStyle() {
+        const svgDoc = appState.getSvgDoc();
+        const textElement = svgDoc?.querySelector('#bottom-text');
+        if (textElement) {
+            BottomControls.applyBottomTextStyling(textElement);
+        }
     }
 
     /**

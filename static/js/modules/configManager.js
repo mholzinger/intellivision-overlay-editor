@@ -26,6 +26,9 @@ export class ConfigManager {
                 font: document.getElementById('font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('title-font-size')?.value) || 5.5,
                 color: document.getElementById('font-color')?.value || '#ffffff',
+                bold: document.getElementById('title-bold')?.checked || false,
+                italic: document.getElementById('title-italic')?.checked || false,
+                underline: document.getElementById('title-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('title-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('title-gradient-end')?.value || '#000000',
@@ -48,6 +51,9 @@ export class ConfigManager {
                 font: document.getElementById('copyright-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('copyright-font-size')?.value) || 2,
                 color: document.getElementById('copyright-color')?.value || '#333333',
+                bold: document.getElementById('copyright-bold')?.checked || false,
+                italic: document.getElementById('copyright-italic')?.checked || false,
+                underline: document.getElementById('copyright-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('copyright-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('copyright-gradient-end')?.value || '#000000',
@@ -86,6 +92,9 @@ export class ConfigManager {
                 fontSize: parseFloat(document.getElementById('button-label-size')?.value) || 3,
                 color: document.getElementById('button-label-color')?.value || '#000000',
                 autoFit: document.getElementById('button-label-autofit')?.checked ?? true,
+                bold: document.getElementById('button-label-bold')?.checked || false,
+                italic: document.getElementById('button-label-italic')?.checked || false,
+                underline: document.getElementById('button-label-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('button-label-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('button-label-gradient-end')?.value || '#000000',
@@ -98,6 +107,9 @@ export class ConfigManager {
                 font: document.getElementById('row-desc-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('row-desc-size')?.value) || 2,
                 color: document.getElementById('row-desc-color')?.value || '#333333',
+                bold: document.getElementById('row-desc-bold')?.checked || false,
+                italic: document.getElementById('row-desc-italic')?.checked || false,
+                underline: document.getElementById('row-desc-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('row-desc-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('row-desc-gradient-end')?.value || '#000000',
@@ -127,6 +139,9 @@ export class ConfigManager {
                 font: document.getElementById('action-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('action-label-size')?.value) || 2,
                 color: document.getElementById('action-label-color')?.value || '#000000',
+                bold: document.getElementById('action-label-bold')?.checked || false,
+                italic: document.getElementById('action-label-italic')?.checked || false,
+                underline: document.getElementById('action-label-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('action-label-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('action-label-gradient-end')?.value || '#000000',
@@ -166,6 +181,28 @@ export class ConfigManager {
                     bottomRight: document.getElementById('action-bottom-right')?.value || 'ACTION',
                     descLeft: document.getElementById('action-desc-left-input')?.value || '',
                     descRight: document.getElementById('action-desc-right-input')?.value || ''
+                },
+                labelOffsets: {
+                    top: {
+                        x: parseFloat(document.getElementById('action-top-offset-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('action-top-offset-y')?.value) || 0
+                    },
+                    bottomLeft: {
+                        x: parseFloat(document.getElementById('action-bottom-left-offset-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('action-bottom-left-offset-y')?.value) || 0
+                    },
+                    bottomRight: {
+                        x: parseFloat(document.getElementById('action-bottom-right-offset-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('action-bottom-right-offset-y')?.value) || 0
+                    },
+                    descLeft: {
+                        x: parseFloat(document.getElementById('action-desc-left-offset-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('action-desc-left-offset-y')?.value) || 0
+                    },
+                    descRight: {
+                        x: parseFloat(document.getElementById('action-desc-right-offset-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('action-desc-right-offset-y')?.value) || 0
+                    }
                 }
             },
 
@@ -175,6 +212,9 @@ export class ConfigManager {
                 font: document.getElementById('bottom-text-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('bottom-text-size')?.value) || 2,
                 color: document.getElementById('bottom-text-color')?.value || '#000000',
+                bold: document.getElementById('bottom-text-bold')?.checked || false,
+                italic: document.getElementById('bottom-text-italic')?.checked || false,
+                underline: document.getElementById('bottom-text-underline')?.checked || false,
                 gradient: {
                     enabled: document.getElementById('bottom-text-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('bottom-text-gradient-end')?.value || '#000000',
@@ -194,6 +234,10 @@ export class ConfigManager {
                     spacing: parseFloat(document.getElementById('disc-arrows-spacing')?.value) || 0,
                     x: parseFloat(document.getElementById('disc-arrows-x')?.value) || 0,
                     y: parseFloat(document.getElementById('disc-arrows-y')?.value) || 0
+                },
+                textOffset: {
+                    x: parseFloat(document.getElementById('bottom-text-offset-x')?.value) || 0,
+                    y: parseFloat(document.getElementById('bottom-text-offset-y')?.value) || 0
                 }
             },
 
@@ -374,6 +418,9 @@ export class ConfigManager {
             this.setInputValue('font-color', config.title.color);
             this.setInputValue('title-font-size', config.title.fontSize);
             this.setSelectValue('font-select', config.title.font);
+            this.setCheckbox('title-bold', config.title.bold || false);
+            this.setCheckbox('title-italic', config.title.italic || false);
+            this.setCheckbox('title-underline', config.title.underline || false);
 
             if (config.title.gradient) {
                 this.setCheckbox('title-gradient-enabled', config.title.gradient.enabled);
@@ -398,6 +445,9 @@ export class ConfigManager {
             this.setInputValue('copyright-color', config.copyright.color);
             this.setInputValue('copyright-font-size', config.copyright.fontSize);
             this.setSelectValue('copyright-font-select', config.copyright.font);
+            this.setCheckbox('copyright-bold', config.copyright.bold || false);
+            this.setCheckbox('copyright-italic', config.copyright.italic || false);
+            this.setCheckbox('copyright-underline', config.copyright.underline || false);
 
             if (config.copyright.gradient) {
                 this.setCheckbox('copyright-gradient-enabled', config.copyright.gradient.enabled);
@@ -437,6 +487,9 @@ export class ConfigManager {
             this.setInputValue('button-label-size', config.buttonLabels.fontSize);
             this.setSelectValue('button-font-select', config.buttonLabels.font);
             this.setCheckbox('button-label-autofit', config.buttonLabels.autoFit ?? true);
+            this.setCheckbox('button-label-bold', config.buttonLabels.bold || false);
+            this.setCheckbox('button-label-italic', config.buttonLabels.italic || false);
+            this.setCheckbox('button-label-underline', config.buttonLabels.underline || false);
 
             if (config.buttonLabels.gradient) {
                 this.setCheckbox('button-label-gradient-enabled', config.buttonLabels.gradient.enabled);
@@ -450,6 +503,9 @@ export class ConfigManager {
             this.setInputValue('row-desc-color', config.rowDescriptions.color);
             this.setInputValue('row-desc-size', config.rowDescriptions.fontSize);
             this.setSelectValue('row-desc-font-select', config.rowDescriptions.font);
+            this.setCheckbox('row-desc-bold', config.rowDescriptions.bold || false);
+            this.setCheckbox('row-desc-italic', config.rowDescriptions.italic || false);
+            this.setCheckbox('row-desc-underline', config.rowDescriptions.underline || false);
 
             if (config.rowDescriptions.gradient) {
                 this.setCheckbox('row-desc-gradient-enabled', config.rowDescriptions.gradient.enabled);
@@ -492,6 +548,9 @@ export class ConfigManager {
             this.setInputValue('action-label-color', config.actionButtons.color);
             this.setInputValue('action-label-size', config.actionButtons.fontSize);
             this.setSelectValue('action-font-select', config.actionButtons.font);
+            this.setCheckbox('action-label-bold', config.actionButtons.bold || false);
+            this.setCheckbox('action-label-italic', config.actionButtons.italic || false);
+            this.setCheckbox('action-label-underline', config.actionButtons.underline || false);
 
             if (config.actionButtons.gradient) {
                 this.setCheckbox('action-label-gradient-enabled', config.actionButtons.gradient.enabled);
@@ -538,6 +597,30 @@ export class ConfigManager {
                 this.setInputValue('action-desc-left-input', config.actionButtons.labels.descLeft);
                 this.setInputValue('action-desc-right-input', config.actionButtons.labels.descRight);
             }
+
+            if (config.actionButtons.labelOffsets) {
+                const offsets = config.actionButtons.labelOffsets;
+                if (offsets.top) {
+                    this.setInputValue('action-top-offset-x', offsets.top.x);
+                    this.setInputValue('action-top-offset-y', offsets.top.y);
+                }
+                if (offsets.bottomLeft) {
+                    this.setInputValue('action-bottom-left-offset-x', offsets.bottomLeft.x);
+                    this.setInputValue('action-bottom-left-offset-y', offsets.bottomLeft.y);
+                }
+                if (offsets.bottomRight) {
+                    this.setInputValue('action-bottom-right-offset-x', offsets.bottomRight.x);
+                    this.setInputValue('action-bottom-right-offset-y', offsets.bottomRight.y);
+                }
+                if (offsets.descLeft) {
+                    this.setInputValue('action-desc-left-offset-x', offsets.descLeft.x);
+                    this.setInputValue('action-desc-left-offset-y', offsets.descLeft.y);
+                }
+                if (offsets.descRight) {
+                    this.setInputValue('action-desc-right-offset-x', offsets.descRight.x);
+                    this.setInputValue('action-desc-right-offset-y', offsets.descRight.y);
+                }
+            }
         }
 
         // Bottom arrows
@@ -546,6 +629,9 @@ export class ConfigManager {
             this.setInputValue('bottom-text-color', config.bottomArrows.color);
             this.setInputValue('bottom-text-size', config.bottomArrows.fontSize);
             this.setSelectValue('bottom-text-font-select', config.bottomArrows.font);
+            this.setCheckbox('bottom-text-bold', config.bottomArrows.bold || false);
+            this.setCheckbox('bottom-text-italic', config.bottomArrows.italic || false);
+            this.setCheckbox('bottom-text-underline', config.bottomArrows.underline || false);
 
             if (config.bottomArrows.gradient) {
                 this.setCheckbox('bottom-text-gradient-enabled', config.bottomArrows.gradient.enabled);
@@ -570,6 +656,11 @@ export class ConfigManager {
                 this.setInputValue('disc-arrows-spacing', transforms.spacing);
                 this.setInputValue('disc-arrows-x', transforms.x);
                 this.setInputValue('disc-arrows-y', transforms.y);
+            }
+
+            if (config.bottomArrows.textOffset) {
+                this.setInputValue('bottom-text-offset-x', config.bottomArrows.textOffset.x);
+                this.setInputValue('bottom-text-offset-y', config.bottomArrows.textOffset.y);
             }
         }
 
@@ -624,6 +715,7 @@ export class ConfigManager {
         if (window.updateTitleColor) window.updateTitleColor();
         if (window.updateTitleFont) window.updateTitleFont();
         if (window.updateTitleSize) window.updateTitleSize();
+        if (window.updateTitleStyle) window.updateTitleStyle();
         // Title background - always call to apply colors
         if (window.updateTitleBackground) {
             window.updateTitleBackground();
@@ -634,22 +726,25 @@ export class ConfigManager {
         if (window.updateCopyrightColor) window.updateCopyrightColor();
         if (window.updateCopyrightFont) window.updateCopyrightFont();
         if (window.updateCopyrightSize) window.updateCopyrightSize();
+        if (window.updateCopyrightStyle) window.updateCopyrightStyle();
 
         // Background fill updates
         if (window.toggleBackgroundFill) window.toggleBackgroundFill();
         if (window.updateBackgroundFill) window.updateBackgroundFill();
         if (window.updateBackgroundOpacity) window.updateBackgroundOpacity();
 
-        // Button label updates
-        if (window.updateAllButtonLabels) window.updateAllButtonLabels();
+        // Button font update first (needed for font loading)
         if (window.updateButtonFont) window.updateButtonFont();
 
-        // Individual button updates
+        // Individual button updates (set text content and backgrounds)
         const buttonIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 'clear', 0, 'enter'];
         for (const id of buttonIds) {
             if (window.updateButton) window.updateButton(id);
             if (window.toggleButtonBackground) window.toggleButtonBackground(id);
         }
+
+        // Button label updates AFTER individual buttons (applies auto-fit and styling)
+        if (window.updateAllButtonLabels) window.updateAllButtonLabels();
 
         // Button shape updates - load templates and render shapes
         await this.renderButtonShapes();
@@ -682,6 +777,7 @@ export class ConfigManager {
         if (window.updateBottomTextColor) window.updateBottomTextColor();
         if (window.updateBottomTextSize) window.updateBottomTextSize();
         if (window.updateBottomTextFont) window.updateBottomTextFont();
+        if (window.updateBottomTextStyle) window.updateBottomTextStyle();
         if (window.toggleBottomArrowFill) window.toggleBottomArrowFill();
         if (window.updateDiscArrowStroke) window.updateDiscArrowStroke();
         if (window.updateDiscArrowTransforms) window.updateDiscArrowTransforms();

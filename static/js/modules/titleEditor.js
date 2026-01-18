@@ -123,6 +123,23 @@ export class TitleEditor {
     }
 
     /**
+     * Update title text style (bold, italic, underline)
+     */
+    static updateTitleStyle() {
+        const svgDoc = appState.getSvgDoc();
+        const titleElement = svgDoc?.querySelector('#title-text');
+        if (!titleElement) return;
+
+        const isBold = document.getElementById('title-bold')?.checked || false;
+        const isItalic = document.getElementById('title-italic')?.checked || false;
+        const isUnderline = document.getElementById('title-underline')?.checked || false;
+
+        titleElement.style.fontWeight = isBold ? 'bold' : 'normal';
+        titleElement.style.fontStyle = isItalic ? 'italic' : 'normal';
+        titleElement.style.textDecoration = isUnderline ? 'underline' : 'none';
+    }
+
+    /**
      * Update title background
      */
     static updateTitleBackground() {
@@ -222,5 +239,22 @@ export class TitleEditor {
         copyrightElement.querySelectorAll('tspan').forEach(tspan => {
             tspan.setAttribute('x', baseX.toFixed(2));
         });
+    }
+
+    /**
+     * Update copyright text style (bold, italic, underline)
+     */
+    static updateCopyrightStyle() {
+        const svgDoc = appState.getSvgDoc();
+        const copyrightElement = svgDoc?.querySelector('#copyright-text');
+        if (!copyrightElement) return;
+
+        const isBold = document.getElementById('copyright-bold')?.checked || false;
+        const isItalic = document.getElementById('copyright-italic')?.checked || false;
+        const isUnderline = document.getElementById('copyright-underline')?.checked || false;
+
+        copyrightElement.style.fontWeight = isBold ? 'bold' : 'normal';
+        copyrightElement.style.fontStyle = isItalic ? 'italic' : 'normal';
+        copyrightElement.style.textDecoration = isUnderline ? 'underline' : 'none';
     }
 }

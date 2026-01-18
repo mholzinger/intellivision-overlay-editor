@@ -78,10 +78,18 @@ export class RowDescriptions {
             }
         }
 
+        // Get text style options
+        const isBold = document.getElementById('row-desc-bold')?.checked || false;
+        const isItalic = document.getElementById('row-desc-italic')?.checked || false;
+        const isUnderline = document.getElementById('row-desc-underline')?.checked || false;
+
         textElement.style.fill = UIManager.getRowDescFillValue();
         textElement.style.fontSize = size + 'px';
         textElement.style.fontFamily = fontFamily;
         textElement.style.dominantBaseline = 'central';
+        textElement.style.fontWeight = isBold ? 'bold' : 'normal';
+        textElement.style.fontStyle = isItalic ? 'italic' : 'normal';
+        textElement.style.textDecoration = isUnderline ? 'underline' : 'none';
     }
 
     /**

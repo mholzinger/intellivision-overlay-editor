@@ -226,11 +226,19 @@ export class ButtonEditor {
                     });
                 }
 
+                // Get text style options
+                const isBold = document.getElementById('button-label-bold')?.checked || false;
+                const isItalic = document.getElementById('button-label-italic')?.checked || false;
+                const isUnderline = document.getElementById('button-label-underline')?.checked || false;
+
                 // Use inline style to override CSS class styles
                 btnElement.style.fill = fillValue;
                 btnElement.style.fontSize = effectiveSize + 'px';
                 btnElement.style.fontFamily = fontFamily;
                 btnElement.style.dominantBaseline = 'central';
+                btnElement.style.fontWeight = isBold ? 'bold' : 'normal';
+                btnElement.style.fontStyle = isItalic ? 'italic' : 'normal';
+                btnElement.style.textDecoration = isUnderline ? 'underline' : 'none';
             }
         });
     }

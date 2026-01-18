@@ -105,10 +105,18 @@ export class ActionButtons {
             }
         }
 
+        // Get text style options
+        const isBold = document.getElementById('action-label-bold')?.checked || false;
+        const isItalic = document.getElementById('action-label-italic')?.checked || false;
+        const isUnderline = document.getElementById('action-label-underline')?.checked || false;
+
         element.style.fill = UIManager.getActionLabelFillValue();
         element.style.fontSize = size + 'px';
         element.style.fontFamily = fontFamily;
         element.style.dominantBaseline = 'central';
+        element.style.fontWeight = isBold ? 'bold' : 'normal';
+        element.style.fontStyle = isItalic ? 'italic' : 'normal';
+        element.style.textDecoration = isUnderline ? 'underline' : 'none';
     }
 
     /**
