@@ -135,6 +135,26 @@ export class ConfigManager {
                     enabled: document.getElementById('action-arrow-fill-enabled')?.checked || true,
                     color: document.getElementById('action-arrow-color')?.value || '#8B4513'
                 },
+                arrowTransforms: {
+                    topArrows: {
+                        visible: document.getElementById('top-arrows-visible')?.checked ?? true,
+                        scale: parseFloat(document.getElementById('top-arrows-scale')?.value) || 100,
+                        x: parseFloat(document.getElementById('top-arrows-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('top-arrows-y')?.value) || 0
+                    },
+                    bottomLeftArrow: {
+                        visible: document.getElementById('bottom-left-arrow-visible')?.checked ?? true,
+                        scale: parseFloat(document.getElementById('bottom-left-arrow-scale')?.value) || 100,
+                        x: parseFloat(document.getElementById('bottom-left-arrow-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('bottom-left-arrow-y')?.value) || 0
+                    },
+                    bottomRightArrow: {
+                        visible: document.getElementById('bottom-right-arrow-visible')?.checked ?? true,
+                        scale: parseFloat(document.getElementById('bottom-right-arrow-scale')?.value) || 100,
+                        x: parseFloat(document.getElementById('bottom-right-arrow-x')?.value) || 0,
+                        y: parseFloat(document.getElementById('bottom-right-arrow-y')?.value) || 0
+                    }
+                },
                 labels: {
                     top: document.getElementById('action-top')?.value || 'ACTION',
                     bottomLeft: document.getElementById('action-bottom-left')?.value || 'ACTION',
@@ -158,6 +178,13 @@ export class ConfigManager {
                 arrowFill: {
                     enabled: document.getElementById('bottom-arrow-fill-enabled')?.checked || true,
                     color: document.getElementById('bottom-arrow-color')?.value || '#8B4513'
+                },
+                arrowTransforms: {
+                    visible: document.getElementById('disc-arrows-visible')?.checked ?? true,
+                    scale: parseFloat(document.getElementById('disc-arrows-scale')?.value) || 100,
+                    spacing: parseFloat(document.getElementById('disc-arrows-spacing')?.value) || 0,
+                    x: parseFloat(document.getElementById('disc-arrows-x')?.value) || 0,
+                    y: parseFloat(document.getElementById('disc-arrows-y')?.value) || 0
                 }
             },
 
@@ -467,6 +494,28 @@ export class ConfigManager {
                 this.setInputValue('action-arrow-color', config.actionButtons.arrowFill.color);
             }
 
+            if (config.actionButtons.arrowTransforms) {
+                const transforms = config.actionButtons.arrowTransforms;
+                if (transforms.topArrows) {
+                    this.setCheckbox('top-arrows-visible', transforms.topArrows.visible);
+                    this.setInputValue('top-arrows-scale', transforms.topArrows.scale);
+                    this.setInputValue('top-arrows-x', transforms.topArrows.x);
+                    this.setInputValue('top-arrows-y', transforms.topArrows.y);
+                }
+                if (transforms.bottomLeftArrow) {
+                    this.setCheckbox('bottom-left-arrow-visible', transforms.bottomLeftArrow.visible);
+                    this.setInputValue('bottom-left-arrow-scale', transforms.bottomLeftArrow.scale);
+                    this.setInputValue('bottom-left-arrow-x', transforms.bottomLeftArrow.x);
+                    this.setInputValue('bottom-left-arrow-y', transforms.bottomLeftArrow.y);
+                }
+                if (transforms.bottomRightArrow) {
+                    this.setCheckbox('bottom-right-arrow-visible', transforms.bottomRightArrow.visible);
+                    this.setInputValue('bottom-right-arrow-scale', transforms.bottomRightArrow.scale);
+                    this.setInputValue('bottom-right-arrow-x', transforms.bottomRightArrow.x);
+                    this.setInputValue('bottom-right-arrow-y', transforms.bottomRightArrow.y);
+                }
+            }
+
             if (config.actionButtons.labels) {
                 this.setInputValue('action-top', config.actionButtons.labels.top);
                 this.setInputValue('action-bottom-left', config.actionButtons.labels.bottomLeft);
@@ -492,6 +541,15 @@ export class ConfigManager {
             if (config.bottomArrows.arrowFill) {
                 this.setCheckbox('bottom-arrow-fill-enabled', config.bottomArrows.arrowFill.enabled);
                 this.setInputValue('bottom-arrow-color', config.bottomArrows.arrowFill.color);
+            }
+
+            if (config.bottomArrows.arrowTransforms) {
+                const transforms = config.bottomArrows.arrowTransforms;
+                this.setCheckbox('disc-arrows-visible', transforms.visible);
+                this.setInputValue('disc-arrows-scale', transforms.scale);
+                this.setInputValue('disc-arrows-spacing', transforms.spacing);
+                this.setInputValue('disc-arrows-x', transforms.x);
+                this.setInputValue('disc-arrows-y', transforms.y);
             }
         }
 
@@ -596,6 +654,7 @@ export class ConfigManager {
             window.updateActionDescription('right');
         }
         if (window.toggleActionArrowFill) window.toggleActionArrowFill();
+        if (window.updateActionArrowTransforms) window.updateActionArrowTransforms();
 
         // Bottom arrow updates
         if (window.updateBottomText) window.updateBottomText();
@@ -603,6 +662,7 @@ export class ConfigManager {
         if (window.updateBottomTextSize) window.updateBottomTextSize();
         if (window.updateBottomTextFont) window.updateBottomTextFont();
         if (window.toggleBottomArrowFill) window.toggleBottomArrowFill();
+        if (window.updateDiscArrowTransforms) window.updateDiscArrowTransforms();
 
         // Update UI value displays
         this.updateValueDisplays();
