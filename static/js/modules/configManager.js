@@ -6,9 +6,52 @@
 import { appState } from '../services/stateManager.js';
 import { ButtonShape } from './buttonShape.js';
 import { APIService } from '../services/api.js';
+import { SVGManager } from './svgManager.js';
 
 export class ConfigManager {
     static CONFIG_VERSION = '1.0';
+
+    /**
+     * Reset the overlay to a clean state without reloading the page.
+     * Clears all state and reloads the fresh SVG template.
+     */
+    static async resetOverlayState() {
+        // Reset application state
+        appState.reset();
+
+        // Reload the fresh SVG template
+        await SVGManager.loadTemplate();
+
+        // Hide artwork controls
+        const artworkControls = document.getElementById('artwork-controls');
+        if (artworkControls) {
+            artworkControls.style.display = 'none';
+        }
+
+        // Reset button artwork dropdown selection
+        const btnArtSelect = document.getElementById('btn-artwork-select');
+        if (btnArtSelect) {
+            btnArtSelect.value = '';
+        }
+
+        // Reset button shape dropdown selection
+        const btnShapeSelect = document.getElementById('btn-shape-select');
+        if (btnShapeSelect) {
+            btnShapeSelect.value = '';
+        }
+
+        // Hide button artwork controls
+        const btnArtworkControls = document.getElementById('btn-artwork-controls');
+        if (btnArtworkControls) {
+            btnArtworkControls.style.display = 'none';
+        }
+
+        // Hide button shape controls
+        const btnShapeControls = document.getElementById('btn-shape-controls');
+        if (btnShapeControls) {
+            btnShapeControls.style.display = 'none';
+        }
+    }
 
     /**
      * Collect all current UI settings into a configuration object
@@ -1173,16 +1216,16 @@ async function loadLayoutTemplatesList() {
         const templates = data.examples || [];
 
         if (templates.length === 0) {
-            listContainer.innerHTML = '<div style="padding: 8px 12px; color: var(--text-secondary); font-size: 12px;">No templates available</div>';
+            listContainer.innerHTML = '<div style="padding: 8px 12px; color: #666; font-size: 12px;">No templates available</div>';
         } else {
             listContainer.innerHTML = templates.map(tpl =>
-                `<div class="layout-template-item" onclick="loadLayoutTemplate('${tpl.name}')" style="padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">${tpl.displayName}</div>`
+                `<div class="layout-template-item" onclick="loadLayoutTemplate('${tpl.name}')" style="padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s; color: #333;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">${tpl.displayName}</div>`
             ).join('');
         }
         layoutTemplatesLoaded = true;
     } catch (error) {
         console.error('Error loading templates:', error);
-        listContainer.innerHTML = '<div style="padding: 8px 12px; color: var(--text-error); font-size: 12px;">Error loading templates</div>';
+        listContainer.innerHTML = '<div style="padding: 8px 12px; color: #e74c3c; font-size: 12px;">Error loading templates</div>';
     }
 }
 
@@ -1196,13 +1239,16 @@ window.loadLayoutTemplate = async function(templateName) {
     }
 
     try {
+        // Reset to clean state before importing the template
+        await ConfigManager.resetOverlayState();
+
         const response = await fetch(`/get_example/${templateName}`);
         if (!response.ok) throw new Error('Failed to load template');
 
         const blob = await response.blob();
         const file = new File([blob], `${templateName}.zip`, { type: 'application/zip' });
 
-        // Use the existing import function
+        // Import the template into the clean state
         await ConfigManager.importFromZip(file);
 
         // Show success message
