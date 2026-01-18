@@ -95,6 +95,10 @@ export class ConfigManager {
                 bold: document.getElementById('button-label-bold')?.checked || false,
                 italic: document.getElementById('button-label-italic')?.checked || false,
                 underline: document.getElementById('button-label-underline')?.checked || false,
+                offset: {
+                    x: parseFloat(document.getElementById('button-label-offset-x')?.value) || 0,
+                    y: parseFloat(document.getElementById('button-label-offset-y')?.value) || 0
+                },
                 gradient: {
                     enabled: document.getElementById('button-label-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('button-label-gradient-end')?.value || '#000000',
@@ -490,6 +494,11 @@ export class ConfigManager {
             this.setCheckbox('button-label-bold', config.buttonLabels.bold || false);
             this.setCheckbox('button-label-italic', config.buttonLabels.italic || false);
             this.setCheckbox('button-label-underline', config.buttonLabels.underline || false);
+
+            if (config.buttonLabels.offset) {
+                this.setInputValue('button-label-offset-x', config.buttonLabels.offset.x);
+                this.setInputValue('button-label-offset-y', config.buttonLabels.offset.y);
+            }
 
             if (config.buttonLabels.gradient) {
                 this.setCheckbox('button-label-gradient-enabled', config.buttonLabels.gradient.enabled);
