@@ -102,8 +102,8 @@ export class FontManager {
                 buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : (eurostileBQIndex >= 0 ? eurostileBQIndex : 0);
                 // Action buttons: Arial
                 actionSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
-                // Bottom text: Eurostile BQ
-                bottomSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                // Bottom text: Arial
+                bottomSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
                 // Row descriptions: Eurostile BQ
                 if (rowDescSelect) {
                     rowDescSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;

@@ -137,8 +137,8 @@ export class BottomControls {
         if (yValueEl) yValueEl.textContent = offsetY.toFixed(1);
 
         // Base position: center above disc area (x=27.8, y=87.0)
-        const baseX = 27.8 + offsetX;
-        const baseY = 87.0 + offsetY;
+        const baseX = 27.3 + offsetX;
+        const baseY = 85.8 + offsetY;
 
         textElement.setAttribute('x', baseX.toFixed(2));
         textElement.setAttribute('y', baseY.toFixed(2));

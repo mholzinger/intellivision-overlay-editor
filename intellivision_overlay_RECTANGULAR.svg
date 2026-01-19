@@ -195,7 +195,7 @@
     <polygon id="disc-left-arrow" points="15.5,87 17,85.5 14,85.5" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
 
     <!-- Center text label -->
-    <text id="bottom-text" x="26.8" y="87" text-anchor="middle" class="label_small">DIRECTION</text>
+    <text id="bottom-text" x="27.3" y="85.8" text-anchor="middle" class="label_small">DIRECTION</text>
 
     <!-- Right arrow -->
     <polygon id="disc-right-arrow" points="38.1,87 39.6,85.5 36.6,85.5" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
