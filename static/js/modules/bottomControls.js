@@ -207,8 +207,8 @@ export class BottomControls {
      * These are the geometric centers of each disc arrow polygon
      */
     static DISC_ARROW_CENTERS = {
-        'disc-left-arrow': { x: 15.5, y: 86.25 },
-        'disc-right-arrow': { x: 38.1, y: 86.25 }
+        'disc-left-arrow': { x: 16, y: 85.25 },
+        'disc-right-arrow': { x: 38.6, y: 85.25 }
     };
 
     /**
