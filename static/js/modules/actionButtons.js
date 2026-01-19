@@ -130,11 +130,12 @@ export class ActionButtons {
         if (!svgDoc) return;
 
         // Base positions for action labels (rotated text along edges)
+        // These must match the SVG template coordinates
         const labelPositions = {
-            'top-left-label': {x: 4.0, y: 44.89},
-            'top-right-label': {x: 50.48, y: 44.89},
-            'bottom-left-label': {x: 4.0, y: 66.03},
-            'bottom-right-label': {x: 50.48, y: 66.03}
+            'top-left-label': {x: 2.82, y: 45.06},
+            'top-right-label': {x: 47.78, y: 45.19},
+            'bottom-left-label': {x: 4.4, y: 65.33},
+            'bottom-right-label': {x: 50.28, y: 66.13}
         };
 
         // Get individual offsets for each action label group

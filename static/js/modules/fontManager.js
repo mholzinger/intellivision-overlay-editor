@@ -31,6 +31,7 @@ export class FontManager {
             if (rowDescSelect) rowDescSelect.innerHTML = '';
 
             if (data.fonts && data.fonts.length > 0) {
+                let arialIndex = -1;
                 let arialBlackIndex = -1;
                 let eurostileBQIndex = -1;
                 let eurostileBoldExtIndex = -1;
@@ -74,6 +75,10 @@ export class FontManager {
                     }
 
                     // Track indices for different default fonts
+                    if (f.family === 'Arial' && f.type === 'system') {
+                        arialIndex = index;
+                        console.log('✓ Found Arial at index', index);
+                    }
                     if (f.family === 'Arial Black' && f.type === 'system') {
                         arialBlackIndex = index;
                         console.log('✓ Found Arial Black at index', index);
@@ -89,14 +94,14 @@ export class FontManager {
                 });
 
                 // Select appropriate default fonts for each selector
-                // Title: Arial Black
-                select.selectedIndex = arialBlackIndex >= 0 ? arialBlackIndex : 0;
+                // Title: Arial
+                select.selectedIndex = arialIndex >= 0 ? arialIndex : (arialBlackIndex >= 0 ? arialBlackIndex : 0);
                 // Copyright: Arial Black
                 copyrightSelect.selectedIndex = arialBlackIndex >= 0 ? arialBlackIndex : 0;
                 // Button labels: Eurostile Bold Extended
                 buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : (eurostileBQIndex >= 0 ? eurostileBQIndex : 0);
-                // Action buttons: Eurostile BQ
-                actionSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                // Action buttons: Arial
+                actionSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
                 // Bottom text: Eurostile BQ
                 bottomSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
                 // Row descriptions: Eurostile BQ
@@ -104,7 +109,7 @@ export class FontManager {
                     rowDescSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
                 }
 
-                console.log('Font indices - Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex);
+                console.log('Font indices - Arial:', arialIndex, 'Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex);
 
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();

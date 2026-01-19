@@ -42,16 +42,16 @@
 
   <!-- TITLE BACKGROUND (optional colored fill matching official overlays) -->
   <rect id="title-background"
-        x="4" y="2.5"
-        width="47.6" height="10.5"
+        x="3.5" y="2.4"
+        width="48.6" height="11.5"
         rx="1.5" ry="1.5"
         fill="none"
         opacity="1.0"/>
 
   <!-- TITLE BORDER (rounded rectangle matching official overlays) -->
   <rect id="title-border"
-        x="4" y="2.5"
-        width="47.6" height="10.5"
+        x="3.5" y="2.4"
+        width="48.6" height="11.5"
         rx="1.5" ry="1.5"
         fill="none"
         stroke="#8B4513"
@@ -70,71 +70,72 @@
   </g>
 
   <!-- KEYPAD BUTTON GRID (3 columns × 4 rows) - RECTANGULAR BUTTONS -->
-  <!-- Positioned to match official overlay measurements: centers at (13.90, 27.80, 41.70) x (21.75, 36.31, 50.68, 66.57) -->
+  <!-- Positioned to match official overlay measurements: centers at (13.30, 27.20, 41.10) x (31.95, 46.93, 61.91, 76.88) -->
+  <!-- Adjusted -1.5mm from original; spacing now 14.98mm between rows -->
   <g id="keypad_buttons">
-    <!-- Row 1: Buttons 1, 2, 3 - Center Y: 31.75mm -->
+    <!-- Row 1: Buttons 1, 2, 3 - Center Y: 31.95mm (anchored) -->
     <!-- Button 1 -->
-    <circle cx="12.90" cy="31.75" r="0.05" class="button_center"/>
-    <rect x="7.20" y="26.05" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-1" x="12.90" y="32.25" text-anchor="middle" class="label_small">1</text>
+    <circle cx="13.30" cy="31.95" r="0.05" class="button_center"/>
+    <rect x="7.60" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-1" x="13.30" y="32.45" text-anchor="middle" class="label_small">1</text>
 
     <!-- Button 2 -->
-    <circle cx="26.80" cy="31.75" r="0.05" class="button_center"/>
-    <rect x="21.10" y="26.05" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-2" x="26.80" y="32.25" text-anchor="middle" class="label_small">2</text>
+    <circle cx="27.20" cy="31.95" r="0.05" class="button_center"/>
+    <rect x="21.50" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-2" x="27.20" y="32.45" text-anchor="middle" class="label_small">2</text>
 
     <!-- Button 3 -->
-    <circle cx="40.70" cy="31.75" r="0.05" class="button_center"/>
-    <rect x="35.00" y="26.05" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-3" x="40.70" y="32.25" text-anchor="middle" class="label_small">3</text>
+    <circle cx="41.10" cy="31.95" r="0.05" class="button_center"/>
+    <rect x="35.40" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-3" x="41.10" y="32.45" text-anchor="middle" class="label_small">3</text>
 
-    <!-- Row 2: Buttons 4, 5, 6 - Center Y: 46.89mm -->
+    <!-- Row 2: Buttons 4, 5, 6 - Center Y: 46.93mm -->
     <!-- Button 4 -->
-    <circle cx="12.90" cy="46.89" r="0.05" class="button_center"/>
-    <rect x="7.20" y="41.19" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-4" x="12.90" y="47.39" text-anchor="middle" class="label_small">4</text>
+    <circle cx="13.30" cy="46.93" r="0.05" class="button_center"/>
+    <rect x="7.60" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-4" x="13.30" y="47.43" text-anchor="middle" class="label_small">4</text>
 
     <!-- Button 5 -->
-    <circle cx="26.80" cy="46.89" r="0.05" class="button_center"/>
-    <rect x="21.10" y="41.19" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-5" x="26.80" y="47.39" text-anchor="middle" class="label_small">5</text>
+    <circle cx="27.20" cy="46.93" r="0.05" class="button_center"/>
+    <rect x="21.50" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-5" x="27.20" y="47.43" text-anchor="middle" class="label_small">5</text>
 
     <!-- Button 6 -->
-    <circle cx="40.70" cy="46.89" r="0.05" class="button_center"/>
-    <rect x="35.00" y="41.19" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-6" x="40.70" y="47.39" text-anchor="middle" class="label_small">6</text>
+    <circle cx="41.10" cy="46.93" r="0.05" class="button_center"/>
+    <rect x="35.40" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-6" x="41.10" y="47.43" text-anchor="middle" class="label_small">6</text>
 
-    <!-- Row 3: Buttons 7, 8, 9 - Center Y: 62.03mm -->
+    <!-- Row 3: Buttons 7, 8, 9 - Center Y: 61.91mm -->
     <!-- Button 7 -->
-    <circle cx="12.90" cy="62.03" r="0.05" class="button_center"/>
-    <rect x="7.20" y="56.33" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-7" x="12.90" y="62.53" text-anchor="middle" class="label_small">7</text>
+    <circle cx="13.30" cy="61.91" r="0.05" class="button_center"/>
+    <rect x="7.60" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-7" x="13.30" y="62.41" text-anchor="middle" class="label_small">7</text>
 
     <!-- Button 8 -->
-    <circle cx="26.80" cy="62.03" r="0.05" class="button_center"/>
-    <rect x="21.10" y="56.33" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-8" x="26.80" y="62.53" text-anchor="middle" class="label_small">8</text>
+    <circle cx="27.20" cy="61.91" r="0.05" class="button_center"/>
+    <rect x="21.50" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-8" x="27.20" y="62.41" text-anchor="middle" class="label_small">8</text>
 
     <!-- Button 9 -->
-    <circle cx="40.70" cy="62.03" r="0.05" class="button_center"/>
-    <rect x="35.00" y="56.33" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-9" x="40.70" y="62.53" text-anchor="middle" class="label_small">9</text>
+    <circle cx="41.10" cy="61.91" r="0.05" class="button_center"/>
+    <rect x="35.40" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-9" x="41.10" y="62.41" text-anchor="middle" class="label_small">9</text>
 
-    <!-- Row 4: CLEAR, 0, ENTER - Center Y: 77.18mm -->
+    <!-- Row 4: CLEAR, 0, ENTER - Center Y: 76.88mm -->
     <!-- Button CLEAR -->
-    <circle cx="12.90" cy="77.18" r="0.05" class="button_center"/>
-    <rect x="7.20" y="71.48" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-clear" x="12.90" y="77.68" text-anchor="middle" class="label_small">CLR</text>
+    <circle cx="13.30" cy="76.88" r="0.05" class="button_center"/>
+    <rect x="7.60" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-clear" x="13.30" y="77.38" text-anchor="middle" class="label_small">CLR</text>
 
     <!-- Button 0 -->
-    <circle cx="26.80" cy="77.18" r="0.05" class="button_center"/>
-    <rect x="21.10" y="71.48" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-0" x="26.80" y="77.68" text-anchor="middle" class="label_small">0</text>
+    <circle cx="27.20" cy="76.88" r="0.05" class="button_center"/>
+    <rect x="21.50" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-0" x="27.20" y="77.38" text-anchor="middle" class="label_small">0</text>
 
     <!-- Button ENTER -->
-    <circle cx="40.70" cy="77.18" r="0.05" class="button_center"/>
-    <rect x="35.00" y="71.48" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-enter" x="40.70" y="77.68" text-anchor="middle" class="label_small">ENT</text>
+    <circle cx="41.10" cy="76.88" r="0.05" class="button_center"/>
+    <rect x="35.40" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
+    <text id="btn-enter" x="41.10" y="77.38" text-anchor="middle" class="label_small">ENT</text>
   </g>
 
   <!-- Grid information (hidden - development reference only) -->
@@ -150,14 +151,14 @@
     <!-- Top Left Action Button (aligned with rows 2-3, Y ~54.5mm) -->
     <g id="top-left-action">
       <polygon id="top-left-arrow" points="5.12,46.89 3.08,48.39 5.12,49.89" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
-      <text id="top-left-label" x="4.0" y="44.89" text-anchor="end"
-          transform="rotate(90, 4.0, 44.89)" class="label_small">ACTION</text>
+      <text id="top-left-label" x="2.82" y="45.06" text-anchor="end"
+          transform="rotate(90, 3.65, 46.09)" class="label_small">ACTION</text>
     </g>
 
     <!-- Bottom Left Action Button (aligned with rows 3-4, Y ~69.6mm) -->
     <g id="bottom-left-action">
       <polygon id="bottom-left-arrow" points="5.12,62.03 3.08,63.53 5.12,65.03" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
-      <text id="bottom-left-label" x="4.0" y="66.03" text-anchor="start"
+      <text id="bottom-left-label" x="4.4" y="65.33" text-anchor="start"
           transform="rotate(90, 4.0, 66.03)" class="label_small">ACTION</text>
     </g>
 
@@ -171,14 +172,14 @@
     <!-- Top Right Action Button (aligned with rows 2-3, Y ~54.5mm) -->
     <g id="top-right-action">
       <polygon id="top-right-arrow" points="48.93,46.89 51.15,48.39 48.93,49.89" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
-      <text id="top-right-label" x="50.48" y="44.89" text-anchor="start"
-          transform="rotate(-90, 50.48, 44.89)" class="label_small">ACTION</text>
+      <text id="top-right-label" x="47.78" y="45.19" text-anchor="start"
+          transform="rotate(-90, 49.08, 43.79)" class="label_small">ACTION</text>
     </g>
 
     <!-- Bottom Right Action Button (aligned with rows 3-4, Y ~69.6mm) -->
     <g id="bottom-right-action">
       <polygon id="bottom-right-arrow" points="48.93,62.03 50.97,63.53 48.93,65.03" fill="none" stroke="#000000" stroke-width="0.2" opacity="1"/>
-      <text id="bottom-right-label" x="50.48" y="66.03" text-anchor="end"
+      <text id="bottom-right-label" x="50.28" y="66.13" text-anchor="end"
           transform="rotate(-90, 50.48, 66.03)" class="label_small">ACTION</text>
     </g>
 

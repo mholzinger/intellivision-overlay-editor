@@ -39,8 +39,14 @@ export class SVGManager {
                     await FontManager.loadFonts();
                     TitleEditor.updateTitle();
                     TitleEditor.updateTitleSize();  // Called after updateTitle to center it
+                    TitleEditor.updateTitleStyle();  // Apply default bold style
+                    TitleEditor.updateTitlePosition();  // Apply default X/Y offset
                     TitleEditor.toggleTitleBackground();  // Apply default blue title background
+                    TitleEditor.updateCopyrightText();    // Apply copyright text
+                    TitleEditor.updateCopyrightStyle();   // Apply default bold style
+                    TitleEditor.updateCopyrightPosition(); // Apply default X/Y offset
                     ButtonEditor.updateAllButtonLabels();  // Apply button label styling on load
+                    ActionButtons.updateAllActionButtons();  // Apply action button styling and offsets
                     ActionButtons.toggleActionArrowFill();  // Apply default brown arrow fill
                     BottomControls.updateBottomTextColor();  // Apply default bottom text color
                     BottomControls.updateBottomTextSize();   // Apply default bottom text size
