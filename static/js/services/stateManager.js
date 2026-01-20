@@ -47,6 +47,21 @@ export class StateManager {
         // Font state
         this.loadedFonts = new Set();
         this.availableFonts = [];
+
+        // Box Art Editor state
+        this.boxArtSvgDoc = null;
+        this.boxArtArtworkDataURL = null;
+        this.boxArtArtworkX = 0;
+        this.boxArtArtworkY = 0;
+        this.boxArtArtworkScale = 1.0;
+        this.boxArtArtworkOpacity = 1.0;
+        this.boxArtVignetteEnabled = false;
+        this.boxArtVignetteX = 93;
+        this.boxArtVignetteY = 136;
+        this.boxArtVignetteRx = 68;
+        this.boxArtVignetteRy = 58;
+        this.boxArtVignetteStrokeColor = '#666666';
+        this.boxArtVignetteStrokeWidth = 2;
     }
 
     /**
@@ -553,6 +568,193 @@ export class StateManager {
      */
     getAvailableFonts() {
         return this.availableFonts;
+    }
+
+    // ========== Box Art Editor Methods ==========
+
+    /**
+     * Set box art SVG document
+     * @param {Document} doc - SVG document
+     */
+    setBoxArtSvgDoc(doc) {
+        this.boxArtSvgDoc = doc;
+    }
+
+    /**
+     * Get box art SVG document
+     * @returns {Document} SVG document
+     */
+    getBoxArtSvgDoc() {
+        return this.boxArtSvgDoc;
+    }
+
+    /**
+     * Set box art artwork data
+     * @param {string} dataURL - Image data URL
+     */
+    setBoxArtArtworkData(dataURL) {
+        this.boxArtArtworkDataURL = dataURL;
+    }
+
+    /**
+     * Get box art artwork data
+     * @returns {string} Image data URL
+     */
+    getBoxArtArtworkData() {
+        return this.boxArtArtworkDataURL;
+    }
+
+    /**
+     * Set box art artwork position
+     * @param {number} x - X offset
+     * @param {number} y - Y offset
+     */
+    setBoxArtArtworkPosition(x, y) {
+        this.boxArtArtworkX = x;
+        this.boxArtArtworkY = y;
+    }
+
+    /**
+     * Get box art artwork position
+     * @returns {{x: number, y: number}} Position
+     */
+    getBoxArtArtworkPosition() {
+        return { x: this.boxArtArtworkX, y: this.boxArtArtworkY };
+    }
+
+    /**
+     * Set box art artwork scale
+     * @param {number} scale - Scale factor
+     */
+    setBoxArtArtworkScale(scale) {
+        this.boxArtArtworkScale = scale;
+    }
+
+    /**
+     * Get box art artwork scale
+     * @returns {number} Scale factor
+     */
+    getBoxArtArtworkScale() {
+        return this.boxArtArtworkScale;
+    }
+
+    /**
+     * Set box art artwork opacity
+     * @param {number} opacity - Opacity value (0-1)
+     */
+    setBoxArtArtworkOpacity(opacity) {
+        this.boxArtArtworkOpacity = opacity;
+    }
+
+    /**
+     * Get box art artwork opacity
+     * @returns {number} Opacity value
+     */
+    getBoxArtArtworkOpacity() {
+        return this.boxArtArtworkOpacity;
+    }
+
+    /**
+     * Set box art vignette enabled state
+     * @param {boolean} enabled - Whether vignette is enabled
+     */
+    setBoxArtVignetteEnabled(enabled) {
+        this.boxArtVignetteEnabled = enabled;
+    }
+
+    /**
+     * Get box art vignette enabled state
+     * @returns {boolean} Enabled state
+     */
+    getBoxArtVignetteEnabled() {
+        return this.boxArtVignetteEnabled;
+    }
+
+    /**
+     * Set box art vignette position
+     * @param {number} x - Center X
+     * @param {number} y - Center Y
+     */
+    setBoxArtVignettePosition(x, y) {
+        this.boxArtVignetteX = x;
+        this.boxArtVignetteY = y;
+    }
+
+    /**
+     * Get box art vignette position
+     * @returns {{x: number, y: number}} Position
+     */
+    getBoxArtVignettePosition() {
+        return { x: this.boxArtVignetteX, y: this.boxArtVignetteY };
+    }
+
+    /**
+     * Set box art vignette size
+     * @param {number} rx - Horizontal radius
+     * @param {number} ry - Vertical radius
+     */
+    setBoxArtVignetteSize(rx, ry) {
+        this.boxArtVignetteRx = rx;
+        this.boxArtVignetteRy = ry;
+    }
+
+    /**
+     * Get box art vignette size
+     * @returns {{rx: number, ry: number}} Size
+     */
+    getBoxArtVignetteSize() {
+        return { rx: this.boxArtVignetteRx, ry: this.boxArtVignetteRy };
+    }
+
+    /**
+     * Set box art vignette stroke color
+     * @param {string} color - Stroke color
+     */
+    setBoxArtVignetteStrokeColor(color) {
+        this.boxArtVignetteStrokeColor = color;
+    }
+
+    /**
+     * Get box art vignette stroke color
+     * @returns {string} Stroke color
+     */
+    getBoxArtVignetteStrokeColor() {
+        return this.boxArtVignetteStrokeColor;
+    }
+
+    /**
+     * Set box art vignette stroke width
+     * @param {number} width - Stroke width
+     */
+    setBoxArtVignetteStrokeWidth(width) {
+        this.boxArtVignetteStrokeWidth = width;
+    }
+
+    /**
+     * Get box art vignette stroke width
+     * @returns {number} Stroke width
+     */
+    getBoxArtVignetteStrokeWidth() {
+        return this.boxArtVignetteStrokeWidth;
+    }
+
+    /**
+     * Reset box art state
+     */
+    resetBoxArt() {
+        this.boxArtSvgDoc = null;
+        this.boxArtArtworkDataURL = null;
+        this.boxArtArtworkX = 0;
+        this.boxArtArtworkY = 0;
+        this.boxArtArtworkScale = 1.0;
+        this.boxArtArtworkOpacity = 1.0;
+        this.boxArtVignetteEnabled = false;
+        this.boxArtVignetteX = 93;
+        this.boxArtVignetteY = 136;
+        this.boxArtVignetteRx = 68;
+        this.boxArtVignetteRy = 58;
+        this.boxArtVignetteStrokeColor = '#666666';
+        this.boxArtVignetteStrokeWidth = 2;
     }
 
     /**

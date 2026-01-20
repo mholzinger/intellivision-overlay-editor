@@ -23,18 +23,29 @@ export class FontManager {
             const copyrightSelect = document.getElementById('copyright-font-select');
             const rowDescSelect = document.getElementById('row-desc-font-select');
 
+            // Box art font selectors
+            const boxartBrandSelect = document.getElementById('boxart-brand-font-select');
+            const boxartTaglineSelect = document.getElementById('boxart-tagline-font-select');
+            const boxartTitleSelect = document.getElementById('boxart-title-font-select');
+            const boxartSubtitleSelect = document.getElementById('boxart-subtitle-font-select');
+
             select.innerHTML = '';
             buttonSelect.innerHTML = '';
             actionSelect.innerHTML = '';
             bottomSelect.innerHTML = '';
             copyrightSelect.innerHTML = '';
             if (rowDescSelect) rowDescSelect.innerHTML = '';
+            if (boxartBrandSelect) boxartBrandSelect.innerHTML = '';
+            if (boxartTaglineSelect) boxartTaglineSelect.innerHTML = '';
+            if (boxartTitleSelect) boxartTitleSelect.innerHTML = '';
+            if (boxartSubtitleSelect) boxartSubtitleSelect.innerHTML = '';
 
             if (data.fonts && data.fonts.length > 0) {
                 let arialIndex = -1;
                 let arialBlackIndex = -1;
                 let eurostileBQIndex = -1;
                 let eurostileBoldExtIndex = -1;
+                let sfIntellivisedIndex = -1;
                 data.fonts.forEach((f, index) => {
                     // Create option for title font selector
                     const opt = document.createElement('option');
@@ -74,6 +85,32 @@ export class FontManager {
                         rowDescSelect.appendChild(rowDescOpt);
                     }
 
+                    // Create options for box art font selectors
+                    if (boxartBrandSelect) {
+                        const brandOpt = document.createElement('option');
+                        brandOpt.value = JSON.stringify(f);
+                        brandOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        boxartBrandSelect.appendChild(brandOpt);
+                    }
+                    if (boxartTaglineSelect) {
+                        const taglineOpt = document.createElement('option');
+                        taglineOpt.value = JSON.stringify(f);
+                        taglineOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        boxartTaglineSelect.appendChild(taglineOpt);
+                    }
+                    if (boxartTitleSelect) {
+                        const titleOpt = document.createElement('option');
+                        titleOpt.value = JSON.stringify(f);
+                        titleOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        boxartTitleSelect.appendChild(titleOpt);
+                    }
+                    if (boxartSubtitleSelect) {
+                        const subtitleOpt = document.createElement('option');
+                        subtitleOpt.value = JSON.stringify(f);
+                        subtitleOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        boxartSubtitleSelect.appendChild(subtitleOpt);
+                    }
+
                     // Track indices for different default fonts
                     if (f.family === 'Arial' && f.type === 'system') {
                         arialIndex = index;
@@ -90,6 +127,11 @@ export class FontManager {
                     if (f.family === 'Eurostile Bold Extended' && f.type === 'system') {
                         eurostileBoldExtIndex = index;
                         console.log('✓ Found Eurostile Bold Extended at index', index);
+                    }
+                    // Track SF Intellivised for box art brand
+                    if (f.family === 'SF Intellivised') {
+                        sfIntellivisedIndex = index;
+                        console.log('✓ Found SF Intellivised at index', index);
                     }
                 });
 
@@ -109,7 +151,25 @@ export class FontManager {
                     rowDescSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
                 }
 
-                console.log('Font indices - Arial:', arialIndex, 'Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex);
+                // Box art font defaults
+                // Brand: SF Intellivised (falls back to Arial)
+                if (boxartBrandSelect) {
+                    boxartBrandSelect.selectedIndex = sfIntellivisedIndex >= 0 ? sfIntellivisedIndex : (arialIndex >= 0 ? arialIndex : 0);
+                }
+                // Tagline: Arial
+                if (boxartTaglineSelect) {
+                    boxartTaglineSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                }
+                // Title: Arial
+                if (boxartTitleSelect) {
+                    boxartTitleSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                }
+                // Subtitle: Arial
+                if (boxartSubtitleSelect) {
+                    boxartSubtitleSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                }
+
+                console.log('Font indices - Arial:', arialIndex, 'Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex, 'SF Intellivised:', sfIntellivisedIndex);
 
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();

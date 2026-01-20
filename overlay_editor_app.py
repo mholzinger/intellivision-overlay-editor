@@ -27,6 +27,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 # Path to the SVG template
 TEMPLATE_PATH = Path(__file__).parent / "intellivision_overlay_RECTANGULAR.svg"
 
+# Path to box art template
+BOXART_TEMPLATE_PATH = Path(__file__).parent / "templates" / "box_art_template.svg"
+
 # Path to shape templates
 SHAPES_DIR = Path(__file__).parent / "svg-templates"
 
@@ -76,6 +79,15 @@ def get_template():
         with open(TEMPLATE_PATH, 'r') as f:
             return jsonify({'svg': f.read()})
     return jsonify({'error': 'Template not found'}), 404
+
+
+@app.route('/get_boxart_template')
+def get_boxart_template():
+    """Return the box art SVG template"""
+    if BOXART_TEMPLATE_PATH.exists():
+        with open(BOXART_TEMPLATE_PATH, 'r') as f:
+            return jsonify({'svg': f.read()})
+    return jsonify({'error': 'Box art template not found'}), 404
 
 
 @app.route('/get_shape_templates')

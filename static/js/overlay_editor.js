@@ -20,6 +20,7 @@ import { RowDescriptions } from './modules/rowDescriptions.js';
 import { UIManager } from './modules/uiManager.js';
 import { ConfigManager } from './modules/configManager.js';
 import { ImageProcessor } from './modules/imageProcessor.js';
+import { BoxArtEditor } from './modules/boxArtEditor.js';
 
 /**
  * Initialize the application
@@ -427,6 +428,75 @@ window.updateRowDescription = (rowNum) => RowDescriptions.updateRowDescription(r
 window.updateAllRowDescriptions = () => RowDescriptions.updateAllRowDescriptions();
 window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 window.ImageProcessor = ImageProcessor;
+
+// Tab switching function
+window.switchEditorTab = (tabName) => {
+    // Update tab buttons
+    document.querySelectorAll('.editor-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+
+    // Update content panels
+    document.querySelectorAll('.editor-content').forEach(content => {
+        content.classList.toggle('active', content.id === `${tabName}-editor-content`);
+    });
+
+    // Initialize box art editor on first switch to that tab
+    if (tabName === 'boxart' && !window._boxArtInitialized) {
+        BoxArtEditor.init();
+        window._boxArtInitialized = true;
+    }
+};
+
+// Box Art Editor functions
+window.updateBoxArtBrand = () => BoxArtEditor.updateBrand();
+window.updateBoxArtTagline = () => BoxArtEditor.updateTagline();
+window.updateBoxArtBrandFont = () => BoxArtEditor.updateBrandFont();
+window.updateBoxArtBrandSize = () => BoxArtEditor.updateBrandSize();
+window.updateBoxArtBrandColor = () => BoxArtEditor.updateBrandColor();
+window.updateBoxArtBrandStyle = () => BoxArtEditor.updateBrandStyle();
+window.updateBoxArtBrandPosition = () => BoxArtEditor.updateBrandPosition();
+window.updateBoxArtTaglineFont = () => BoxArtEditor.updateTaglineFont();
+window.updateBoxArtTaglineSize = () => BoxArtEditor.updateTaglineSize();
+window.updateBoxArtTaglineColor = () => BoxArtEditor.updateTaglineColor();
+window.updateBoxArtTaglineStyle = () => BoxArtEditor.updateTaglineStyle();
+window.updateBoxArtTaglinePosition = () => BoxArtEditor.updateTaglinePosition();
+window.updateBoxArtHeaderColor = () => BoxArtEditor.updateHeaderColor();
+window.updateBoxArtTitle = () => BoxArtEditor.updateTitle();
+window.updateBoxArtSubtitle = () => BoxArtEditor.updateSubtitle();
+window.updateBoxArtTitleFont = () => BoxArtEditor.updateTitleFont();
+window.updateBoxArtSubtitleFont = () => BoxArtEditor.updateSubtitleFont();
+window.updateBoxArtTitleColor = () => BoxArtEditor.updateTitleColor();
+window.updateBoxArtTitleSize = () => BoxArtEditor.updateTitleSize();
+window.updateBoxArtTitleStyle = () => BoxArtEditor.updateTitleStyle();
+window.updateBoxArtTitleAnchor = () => BoxArtEditor.updateTitleAnchor();
+window.updateBoxArtTitlePosition = () => BoxArtEditor.updateTitlePosition();
+window.updateBoxArtSubtitleColor = () => BoxArtEditor.updateSubtitleColor();
+window.updateBoxArtSubtitleSize = () => BoxArtEditor.updateSubtitleSize();
+window.updateBoxArtSubtitleStyle = () => BoxArtEditor.updateSubtitleStyle();
+window.updateBoxArtSubtitleAnchor = () => BoxArtEditor.updateSubtitleAnchor();
+window.updateBoxArtSubtitlePosition = () => BoxArtEditor.updateSubtitlePosition();
+window.updateBoxArtFrameColor = () => BoxArtEditor.updateFrameColor();
+window.updateBoxArtFrameStroke = () => BoxArtEditor.updateFrameStroke();
+window.handleBoxArtArtworkUpload = (e) => BoxArtEditor.handleArtworkUpload(e);
+window.updateBoxArtArtwork = () => BoxArtEditor.updateArtwork();
+window.clearBoxArtArtwork = () => BoxArtEditor.clearArtwork();
+window.toggleBoxArtVignette = () => BoxArtEditor.toggleVignette();
+window.updateBoxArtVignette = () => BoxArtEditor.updateVignette();
+window.handleBoxArtVignetteArtworkUpload = (e) => BoxArtEditor.handleVignetteArtworkUpload(e);
+window.updateBoxArtVignetteArtwork = () => BoxArtEditor.updateVignetteArtwork();
+window.reprocessBoxArtVignetteArtwork = () => BoxArtEditor.reprocessVignetteArtwork();
+window.moveVignetteArtworkX = (delta) => BoxArtEditor.moveVignetteArtworkX(delta);
+window.moveVignetteArtworkY = (delta) => BoxArtEditor.moveVignetteArtworkY(delta);
+window.scaleVignetteArtwork = (delta) => BoxArtEditor.scaleVignetteArtwork(delta);
+window.rotateVignetteArtwork = (delta) => BoxArtEditor.rotateVignetteArtwork(delta);
+window.clearBoxArtVignetteArtwork = () => BoxArtEditor.clearVignetteArtwork();
+window.toggleBoxArtVoiceBadge = () => BoxArtEditor.toggleVoiceBadge();
+window.updateBoxArtPlayerCount = () => BoxArtEditor.updatePlayerCount();
+window.exportBoxArtPNG = () => BoxArtEditor.exportPNG();
+window.resetBoxArt = () => BoxArtEditor.reset();
+window.exportBoxArtProject = () => console.log('Box art project export not yet implemented');
+window.importBoxArtProject = () => console.log('Box art project import not yet implemented');
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

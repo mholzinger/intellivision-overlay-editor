@@ -16,6 +16,18 @@
             <span class="header-link-text">{% if git_info and git_info.hash %}Release <code>{{ git_info.hash }}</code>{% if git_info.date %} &middot; Updated {{ git_info.date }}{% endif %} &middot; {% endif %}View this project on <a href="https://github.com/mholzinger/intellivision-overlay-editor" target="_blank" rel="noopener noreferrer" class="header-link">GitHub</a></span>
         </div>
 
+        <!-- Tab Navigation -->
+        <div class="editor-tabs">
+            <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')">
+                🎮 Overlay Editor
+            </button>
+            <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
+                📦 Box Art Editor
+            </button>
+        </div>
+
+        <!-- Overlay Editor Content -->
+        <div id="overlay-editor-content" class="editor-content active">
         <div class="main-content">
             <div class="preview-panel">
                 <div class="preview-container">
@@ -1417,6 +1429,475 @@
                 </div>
             </div>
         </div>
+        </div><!-- End overlay-editor-content -->
+
+        <!-- Box Art Editor Content -->
+        <div id="boxart-editor-content" class="editor-content">
+        <div class="main-content">
+            <div class="preview-panel">
+                <div class="preview-container">
+                    <div id="boxart-svg-preview"></div>
+                </div>
+
+                <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-success btn-sm" onclick="exportBoxArtPNG()" style="padding: 8px 12px; font-size: 13px;">
+                        📥 Download PNG
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportBoxArtProject()" style="padding: 8px 12px; font-size: 13px;">
+                        💾 Export Project
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="importBoxArtProject()" style="padding: 8px 12px; font-size: 13px;">
+                        📂 Import Project
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()" style="padding: 8px 12px; font-size: 13px;">
+                        🔄 Reset
+                    </button>
+                </div>
+                <div style="margin: 8px 0 0 0;">
+                    <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <input type="checkbox" id="boxart-export-include-template">
+                        Include template guides in export
+                    </label>
+                </div>
+
+                <div id="boxart-status" class="status-message"></div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="controls-grid">
+                    <!-- Header Section -->
+                    <div class="control-section full-width">
+                        <h2>Header / Branding</h2>
+                        <div class="input-group">
+                            <label for="boxart-header-color">Background Color</label>
+                            <input type="color" id="boxart-header-color" value="#1E3A8A" oninput="updateBoxArtHeaderColor()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+                            <!-- Brand controls -->
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Brand</h3>
+                                <div class="input-group">
+                                    <label for="boxart-brand-text">Text</label>
+                                    <input type="text" id="boxart-brand-text" placeholder="Intellivision" value="Intellivision" oninput="updateBoxArtBrand()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-brand-font-select">Font</label>
+                                    <select id="boxart-brand-font-select" onchange="updateBoxArtBrandFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-brand-size">Size: <span id="boxart-brand-size-value">12</span>px</label>
+                                    <input type="range" id="boxart-brand-size" min="6" max="20" value="12" step="0.5" oninput="updateBoxArtBrandSize()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-brand-color">Color</label>
+                                    <input type="color" id="boxart-brand-color" value="#FFFFFF" oninput="updateBoxArtBrandColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Style</label>
+                                    <div style="display: flex; gap: 12px; margin-top: 4px;">
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-brand-bold" onchange="updateBoxArtBrandStyle()">
+                                            <span style="font-weight: bold;">B</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-brand-italic" onchange="updateBoxArtBrandStyle()">
+                                            <span style="font-style: italic;">I</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-brand-underline" onchange="updateBoxArtBrandStyle()">
+                                            <span style="text-decoration: underline;">U</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Position</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">X: <span id="boxart-brand-x-value">12</span></label>
+                                            <input type="range" id="boxart-brand-x" min="0" max="100" value="12" step="1" oninput="updateBoxArtBrandPosition()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-brand-y-value">11</span></label>
+                                            <input type="range" id="boxart-brand-y" min="5" max="18" value="11" step="0.5" oninput="updateBoxArtBrandPosition()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Tagline controls -->
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Tagline</h3>
+                                <div class="input-group">
+                                    <label for="boxart-tagline">Text</label>
+                                    <input type="text" id="boxart-tagline" placeholder="Intelligent Television" value="Intelligent Television" oninput="updateBoxArtTagline()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-tagline-font-select">Font</label>
+                                    <select id="boxart-tagline-font-select" onchange="updateBoxArtTaglineFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-tagline-size">Size: <span id="boxart-tagline-size-value">5</span>px</label>
+                                    <input type="range" id="boxart-tagline-size" min="3" max="12" value="5" step="0.5" oninput="updateBoxArtTaglineSize()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-tagline-color">Color</label>
+                                    <input type="color" id="boxart-tagline-color" value="#FFFFFF" oninput="updateBoxArtTaglineColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Style</label>
+                                    <div style="display: flex; gap: 12px; margin-top: 4px;">
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-tagline-bold" onchange="updateBoxArtTaglineStyle()">
+                                            <span style="font-weight: bold;">B</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-tagline-italic" onchange="updateBoxArtTaglineStyle()">
+                                            <span style="font-style: italic;">I</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-tagline-underline" onchange="updateBoxArtTaglineStyle()">
+                                            <span style="text-decoration: underline;">U</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Position</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">X: <span id="boxart-tagline-x-value">118</span></label>
+                                            <input type="range" id="boxart-tagline-x" min="50" max="180" value="118" step="1" oninput="updateBoxArtTaglinePosition()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-tagline-y-value">11</span></label>
+                                            <input type="range" id="boxart-tagline-y" min="5" max="18" value="11" step="0.5" oninput="updateBoxArtTaglinePosition()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Title Section -->
+                    <div class="control-section full-width">
+                        <h2>Game Title</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <!-- Title controls -->
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Title</h3>
+                                <div class="input-group">
+                                    <label for="boxart-title">Text</label>
+                                    <input type="text" id="boxart-title" placeholder="GAME TITLE" value="GAME TITLE" oninput="updateBoxArtTitle()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-title-font-select">Font</label>
+                                    <select id="boxart-title-font-select" onchange="updateBoxArtTitleFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-title-size">Size: <span id="boxart-title-size-value">14</span>px</label>
+                                    <input type="range" id="boxart-title-size" min="8" max="24" value="14" step="1" oninput="updateBoxArtTitleSize()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-title-color">Color</label>
+                                    <input type="color" id="boxart-title-color" value="#333333" oninput="updateBoxArtTitleColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Style</label>
+                                    <div style="display: flex; gap: 12px; margin-top: 4px;">
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-title-bold" onchange="updateBoxArtTitleStyle()">
+                                            <span style="font-weight: bold;">B</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-title-italic" onchange="updateBoxArtTitleStyle()">
+                                            <span style="font-style: italic;">I</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-title-underline" onchange="updateBoxArtTitleStyle()">
+                                            <span style="text-decoration: underline;">U</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-title-anchor">Anchor</label>
+                                    <select id="boxart-title-anchor" onchange="updateBoxArtTitleAnchor()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                                        <option value="start">Left</option>
+                                        <option value="middle" selected>Center</option>
+                                        <option value="end">Right</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Position</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">X: <span id="boxart-title-x-value">93</span></label>
+                                            <input type="range" id="boxart-title-x" min="10" max="176" value="93" step="1" oninput="updateBoxArtTitlePosition()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-title-y-value">36</span></label>
+                                            <input type="range" id="boxart-title-y" min="20" max="60" value="36" step="1" oninput="updateBoxArtTitlePosition()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Subtitle controls -->
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px;">
+                                <h3 style="font-size: 13px; margin: 0 0 10px 0; color: #555;">Subtitle</h3>
+                                <div class="input-group">
+                                    <label for="boxart-subtitle">Text</label>
+                                    <input type="text" id="boxart-subtitle" placeholder="by MATTEL ELECTRONICS" value="by MATTEL ELECTRONICS" oninput="updateBoxArtSubtitle()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-subtitle-font-select">Font</label>
+                                    <select id="boxart-subtitle-font-select" onchange="updateBoxArtSubtitleFont()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-subtitle-size">Size: <span id="boxart-subtitle-size-value">4</span>px</label>
+                                    <input type="range" id="boxart-subtitle-size" min="2" max="12" value="4" step="0.5" oninput="updateBoxArtSubtitleSize()">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-subtitle-color">Color</label>
+                                    <input type="color" id="boxart-subtitle-color" value="#666666" oninput="updateBoxArtSubtitleColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div class="input-group">
+                                    <label>Style</label>
+                                    <div style="display: flex; gap: 12px; margin-top: 4px;">
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-subtitle-bold" onchange="updateBoxArtSubtitleStyle()">
+                                            <span style="font-weight: bold;">B</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-subtitle-italic" onchange="updateBoxArtSubtitleStyle()">
+                                            <span style="font-style: italic;">I</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                                            <input type="checkbox" id="boxart-subtitle-underline" onchange="updateBoxArtSubtitleStyle()">
+                                            <span style="text-decoration: underline;">U</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-subtitle-anchor">Anchor</label>
+                                    <select id="boxart-subtitle-anchor" onchange="updateBoxArtSubtitleAnchor()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                                        <option value="start">Left</option>
+                                        <option value="middle" selected>Center</option>
+                                        <option value="end">Right</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Position</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">X: <span id="boxart-subtitle-x-value">93</span></label>
+                                            <input type="range" id="boxart-subtitle-x" min="10" max="176" value="93" step="1" oninput="updateBoxArtSubtitlePosition()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-subtitle-y-value">48</span></label>
+                                            <input type="range" id="boxart-subtitle-y" min="30" max="70" value="48" step="1" oninput="updateBoxArtSubtitlePosition()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Frame Section -->
+                    <div class="control-section">
+                        <h2>Content Frame</h2>
+                        <div class="input-group">
+                            <label for="boxart-frame-color">Frame Color</label>
+                            <input type="color" id="boxart-frame-color" value="#8B4513" oninput="updateBoxArtFrameColor()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        </div>
+                        <div class="input-group">
+                            <label for="boxart-frame-stroke">Stroke Width</label>
+                            <input type="range" id="boxart-frame-stroke" min="0.5" max="4" value="1" step="0.5" oninput="updateBoxArtFrameStroke()">
+                            <div class="helper-text">Width: <span id="boxart-frame-stroke-value">1</span>px</div>
+                        </div>
+                    </div>
+
+                    <!-- Main Artwork Section -->
+                    <div class="control-section full-width">
+                        <h2>Main Artwork</h2>
+                        <div class="input-group">
+                            <label for="boxart-artwork-upload">Upload Artwork</label>
+                            <input type="file" id="boxart-artwork-upload" accept="image/*" onchange="handleBoxArtArtworkUpload(event)">
+                            <div class="helper-text">Upload game artwork to fill the content frame</div>
+                        </div>
+                        <div id="boxart-artwork-controls" style="display: none;">
+                            <div class="input-group">
+                                <label>Position</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="font-size: 11px; color: #666;">X: <span id="boxart-art-x-value">0</span>mm</label>
+                                        <input type="range" id="boxart-art-x" min="-50" max="50" value="0" step="1" oninput="updateBoxArtArtwork()" style="width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; color: #666;">Y: <span id="boxart-art-y-value">0</span>mm</label>
+                                        <input type="range" id="boxart-art-y" min="-50" max="50" value="0" step="1" oninput="updateBoxArtArtwork()" style="width: 100%;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label for="boxart-art-scale">Scale</label>
+                                <input type="range" id="boxart-art-scale" min="0.1" max="3" value="1" step="0.05" oninput="updateBoxArtArtwork()">
+                                <div class="helper-text">Scale: <span id="boxart-art-scale-value">100</span>%</div>
+                            </div>
+                            <div class="input-group">
+                                <label for="boxart-art-opacity">Opacity</label>
+                                <input type="range" id="boxart-art-opacity" min="0" max="1" value="1" step="0.05" oninput="updateBoxArtArtwork()">
+                                <div class="helper-text">Opacity: <span id="boxart-art-opacity-value">100</span>%</div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="clearBoxArtArtwork()" style="margin-top: 8px;">
+                                🗑️ Clear Artwork
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vignette Section -->
+                    <div class="control-section full-width">
+                        <h2>Vignette Frame (Optional)</h2>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="checkbox" id="boxart-vignette-enabled" onchange="toggleBoxArtVignette()">
+                                Enable vignette frame
+                            </label>
+                            <div class="helper-text">Classic Intellivision box art style with circular/oval artwork frame</div>
+                        </div>
+                        <div id="boxart-vignette-controls" style="display: none;">
+                            <!-- Vignette Artwork Upload -->
+                            <div class="input-group" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+                                <label class="file-upload" style="padding: 12px;">
+                                    <div class="upload-icon">🖼️</div>
+                                    <div><strong>Click to upload vignette artwork</strong></div>
+                                    <div class="helper-text">Artwork will be clipped to the vignette frame</div>
+                                    <input type="file" id="boxart-vignette-artwork-upload" accept="image/*" onchange="handleBoxArtVignetteArtworkUpload(event)">
+                                </label>
+                            </div>
+
+                            <!-- Vignette Artwork Controls (hidden until artwork uploaded) -->
+                            <div id="boxart-vignette-artwork-controls" style="display: none; margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #555;">Vignette Artwork</h4>
+                                <div class="input-group">
+                                    <label>Opacity</label>
+                                    <input type="range" id="boxart-vignette-art-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateBoxArtVignetteArtwork()" style="width: 100%;">
+                                    <div class="helper-text">Transparency: <span id="boxart-vignette-art-opacity-value">100</span>%</div>
+                                </div>
+                                <div class="input-group">
+                                    <label style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="boxart-vignette-art-remove-white" onchange="reprocessBoxArtVignetteArtwork()">
+                                        Remove white/light backgrounds
+                                    </label>
+                                </div>
+                                <div class="input-group" id="boxart-vignette-art-threshold-control" style="display: none;">
+                                    <label>White Detection Threshold</label>
+                                    <input type="range" id="boxart-vignette-art-threshold" min="200" max="255" value="245" step="1" oninput="reprocessBoxArtVignetteArtwork()" style="width: 100%;">
+                                    <div class="helper-text">Threshold: <span id="boxart-vignette-art-threshold-value">245</span></div>
+                                </div>
+                                <div class="input-group">
+                                    <label>X Position</label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="moveVignetteArtworkX(-0.5)" style="padding: 6px 10px;">⬅</button>
+                                        <input type="range" id="boxart-vignette-art-x" min="-50" max="50" value="0" step="0.5" oninput="updateBoxArtVignetteArtwork()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="moveVignetteArtworkX(0.5)" style="padding: 6px 10px;">➡</button>
+                                    </div>
+                                    <div class="helper-text">X offset: <span id="boxart-vignette-art-x-value">0</span>mm</div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Y Position</label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="moveVignetteArtworkY(-0.5)" style="padding: 6px 10px;">⬆</button>
+                                        <input type="range" id="boxart-vignette-art-y" min="-50" max="50" value="0" step="0.5" oninput="updateBoxArtVignetteArtwork()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="moveVignetteArtworkY(0.5)" style="padding: 6px 10px;">⬇</button>
+                                    </div>
+                                    <div class="helper-text">Y offset: <span id="boxart-vignette-art-y-value">0</span>mm</div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Scale</label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="scaleVignetteArtwork(-0.1)" style="padding: 6px 10px;">−</button>
+                                        <input type="range" id="boxart-vignette-art-scale" min="0.2" max="3.0" value="1.0" step="0.05" oninput="updateBoxArtVignetteArtwork()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="scaleVignetteArtwork(0.1)" style="padding: 6px 10px;">+</button>
+                                    </div>
+                                    <div class="helper-text">Scale: <span id="boxart-vignette-art-scale-value">100</span>%</div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Rotation</label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="rotateVignetteArtwork(-5)" style="padding: 6px 10px;">↺</button>
+                                        <input type="range" id="boxart-vignette-art-rotation" min="-180" max="180" value="0" step="1" oninput="updateBoxArtVignetteArtwork()" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="rotateVignetteArtwork(5)" style="padding: 6px 10px;">↻</button>
+                                    </div>
+                                    <div class="helper-text">Angle: <span id="boxart-vignette-art-rotation-value">0</span>°</div>
+                                </div>
+                                <div class="input-group" style="margin-top: 10px;">
+                                    <button class="btn btn-danger" onclick="clearBoxArtVignetteArtwork()" style="width: 100%;">Clear Vignette Artwork</button>
+                                </div>
+                            </div>
+
+                            <!-- Frame Shape Controls -->
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #555;">Frame Shape</h4>
+                                <div class="input-group">
+                                    <label>Position</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div>
+                                            <label style="font-size: 11px; color: #666;">X: <span id="boxart-vignette-x-value">93</span>mm</label>
+                                            <input type="range" id="boxart-vignette-x" min="40" max="146" value="93" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; color: #666;">Y: <span id="boxart-vignette-y-value">136</span>mm</label>
+                                            <input type="range" id="boxart-vignette-y" min="50" max="200" value="136" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Size (adjust to make oval)</label>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div>
+                                            <label style="font-size: 11px; color: #666;">Width (rx): <span id="boxart-vignette-rx-value">65</span>mm</label>
+                                            <input type="range" id="boxart-vignette-rx" min="20" max="85" value="65" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 11px; color: #666;">Height (ry): <span id="boxart-vignette-ry-value">65</span>mm</label>
+                                            <input type="range" id="boxart-vignette-ry" min="20" max="100" value="65" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                        </div>
+                                    </div>
+                                    <div class="helper-text">Equal values = circle, different values = oval</div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-vignette-stroke-color">Stroke Color</label>
+                                    <input type="color" id="boxart-vignette-stroke-color" value="#666666" oninput="updateBoxArtVignette()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                                </div>
+                                <div class="input-group">
+                                    <label for="boxart-vignette-stroke-width">Stroke Width: <span id="boxart-vignette-stroke-width-value">2</span>px</label>
+                                    <input type="range" id="boxart-vignette-stroke-width" min="0.5" max="6" value="2" step="0.5" oninput="updateBoxArtVignette()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Badges Section -->
+                    <div class="control-section">
+                        <h2>Badges (Optional)</h2>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="checkbox" id="boxart-voice-badge" onchange="toggleBoxArtVoiceBadge()">
+                                Intellivoice Badge
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <label for="boxart-player-count">Player Count</label>
+                            <select id="boxart-player-count" onchange="updateBoxArtPlayerCount()" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <option value="">None</option>
+                                <option value="1">1 Player</option>
+                                <option value="2">1-2 Players</option>
+                                <option value="4">1-4 Players</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div><!-- End boxart-editor-content -->
+
     </div>
 
     <!-- JSZip for project export/import -->
