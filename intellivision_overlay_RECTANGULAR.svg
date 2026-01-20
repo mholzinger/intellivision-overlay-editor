@@ -77,65 +77,65 @@
     <!-- Button 1 -->
     <circle cx="13.30" cy="31.95" r="0.05" class="button_center"/>
     <rect x="7.60" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-1" x="13.30" y="32.45" text-anchor="middle" class="label_small">1</text>
+    <text id="btn-1" x="13.80" y="31.95" text-anchor="middle" class="label_small">1</text>
 
     <!-- Button 2 -->
     <circle cx="27.20" cy="31.95" r="0.05" class="button_center"/>
     <rect x="21.50" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-2" x="27.20" y="32.45" text-anchor="middle" class="label_small">2</text>
+    <text id="btn-2" x="27.70" y="31.95" text-anchor="middle" class="label_small">2</text>
 
     <!-- Button 3 -->
     <circle cx="41.10" cy="31.95" r="0.05" class="button_center"/>
     <rect x="35.40" y="26.25" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-3" x="41.10" y="32.45" text-anchor="middle" class="label_small">3</text>
+    <text id="btn-3" x="41.60" y="31.95" text-anchor="middle" class="label_small">3</text>
 
     <!-- Row 2: Buttons 4, 5, 6 - Center Y: 46.93mm -->
     <!-- Button 4 -->
     <circle cx="13.30" cy="46.93" r="0.05" class="button_center"/>
     <rect x="7.60" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-4" x="13.30" y="47.43" text-anchor="middle" class="label_small">4</text>
+    <text id="btn-4" x="13.80" y="46.93" text-anchor="middle" class="label_small">4</text>
 
     <!-- Button 5 -->
     <circle cx="27.20" cy="46.93" r="0.05" class="button_center"/>
     <rect x="21.50" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-5" x="27.20" y="47.43" text-anchor="middle" class="label_small">5</text>
+    <text id="btn-5" x="27.70" y="46.93" text-anchor="middle" class="label_small">5</text>
 
     <!-- Button 6 -->
     <circle cx="41.10" cy="46.93" r="0.05" class="button_center"/>
     <rect x="35.40" y="41.23" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-6" x="41.10" y="47.43" text-anchor="middle" class="label_small">6</text>
+    <text id="btn-6" x="41.60" y="46.93" text-anchor="middle" class="label_small">6</text>
 
     <!-- Row 3: Buttons 7, 8, 9 - Center Y: 61.91mm -->
     <!-- Button 7 -->
     <circle cx="13.30" cy="61.91" r="0.05" class="button_center"/>
     <rect x="7.60" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-7" x="13.30" y="62.41" text-anchor="middle" class="label_small">7</text>
+    <text id="btn-7" x="13.80" y="61.91" text-anchor="middle" class="label_small">7</text>
 
     <!-- Button 8 -->
     <circle cx="27.20" cy="61.91" r="0.05" class="button_center"/>
     <rect x="21.50" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-8" x="27.20" y="62.41" text-anchor="middle" class="label_small">8</text>
+    <text id="btn-8" x="27.70" y="61.91" text-anchor="middle" class="label_small">8</text>
 
     <!-- Button 9 -->
     <circle cx="41.10" cy="61.91" r="0.05" class="button_center"/>
     <rect x="35.40" y="56.21" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-9" x="41.10" y="62.41" text-anchor="middle" class="label_small">9</text>
+    <text id="btn-9" x="41.60" y="61.91" text-anchor="middle" class="label_small">9</text>
 
     <!-- Row 4: CLEAR, 0, ENTER - Center Y: 76.88mm -->
     <!-- Button CLEAR -->
     <circle cx="13.30" cy="76.88" r="0.05" class="button_center"/>
     <rect x="7.60" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-clear" x="13.30" y="77.38" text-anchor="middle" class="label_small">CLR</text>
+    <text id="btn-clear" x="13.80" y="76.88" text-anchor="middle" class="label_small">CLR</text>
 
     <!-- Button 0 -->
     <circle cx="27.20" cy="76.88" r="0.05" class="button_center"/>
     <rect x="21.50" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-0" x="27.20" y="77.38" text-anchor="middle" class="label_small">0</text>
+    <text id="btn-0" x="27.70" y="76.88" text-anchor="middle" class="label_small">0</text>
 
     <!-- Button ENTER -->
     <circle cx="41.10" cy="76.88" r="0.05" class="button_center"/>
     <rect x="35.40" y="71.18" width="11.4" height="11.4" rx="1.5" ry="1.5" class="button"/>
-    <text id="btn-enter" x="41.10" y="77.38" text-anchor="middle" class="label_small">ENT</text>
+    <text id="btn-enter" x="41.60" y="76.88" text-anchor="middle" class="label_small">ENT</text>
   </g>
 
   <!-- Grid information (hidden - development reference only) -->
