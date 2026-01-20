@@ -192,6 +192,91 @@
                             <input type="file" id="title-artwork-upload" accept="image/*" onchange="handleTitleArtworkUpload(event)">
                         </label>
                     </div>
+
+                    <!-- Inline controls - hidden until artwork uploaded -->
+                    <div id="title-artwork-controls" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <div class="input-group">
+                            <label>Artwork Opacity</label>
+                            <input type="range" id="title-artwork-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateTitleArtworkOpacity()" style="width: 100%;">
+                            <div class="helper-text">
+                                Transparency: <span id="title-artwork-opacity-value">100</span>%
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="title-artwork-remove-white" onchange="toggleTitleArtworkRemoveWhite()">
+                                Remove white/light backgrounds (make transparent)
+                            </label>
+                            <div class="helper-text" style="margin-top: 4px;">
+                                Automatically removes white or near-white pixels from the image
+                            </div>
+                        </div>
+                        <div class="input-group" id="title-artwork-threshold-control" style="display: none;">
+                            <label>White Detection Threshold</label>
+                            <input type="range" id="title-artwork-threshold" min="200" max="255" value="245" step="1" oninput="updateTitleArtworkThreshold()" style="width: 100%;">
+                            <div class="helper-text">
+                                Threshold: <span id="title-artwork-threshold-value">245</span> (lower = more aggressive)
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>X-axis Position (Horizontal)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveTitleArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
+                                <input type="range" id="title-artwork-x-pos" min="-25" max="25" value="0" step="0.5"
+                                       oninput="updateTitleArtworkPosition()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveTitleArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                X offset: <span id="title-artwork-x-value">0.0</span>mm
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Y-axis Position (Vertical)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveTitleArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
+                                <input type="range" id="title-artwork-y-pos" min="-10" max="10" value="0" step="0.5"
+                                       oninput="updateTitleArtworkPosition()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveTitleArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Y offset: <span id="title-artwork-y-value">0.0</span>mm
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Artwork Scale (Zoom)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="scaleTitleArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
+                                <input type="range" id="title-artwork-scale" min="0.5" max="3.0" value="1.0" step="0.05"
+                                       oninput="updateTitleArtworkScale()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="scaleTitleArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Scale: <span id="title-artwork-scale-value">100</span>%
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Rotation</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="rotateTitleArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
+                                <input type="range" id="title-artwork-rotation" min="-180" max="180" value="0" step="1"
+                                       oninput="updateTitleArtworkRotation()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="rotateTitleArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Angle: <span id="title-artwork-rotation-value">0</span>°
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="title-artwork-tile" onchange="toggleTitleArtworkTile()">
+                                Tile artwork (repeat pattern)
+                            </label>
+                            <div class="helper-text">Repeats the image across the title area</div>
+                        </div>
+                        <div class="input-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <button class="btn btn-danger" onclick="clearTitleArtwork()" style="width: 100%;">Clear Title Artwork</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="control-section">
@@ -274,91 +359,6 @@
                     </div>
                 </div>
 
-                <div class="control-section" id="title-artwork-controls" style="display: none;">
-                    <h2>Title Artwork Position & Scale</h2>
-                    <div class="input-group">
-                        <label>Artwork Opacity</label>
-                        <input type="range" id="title-artwork-opacity" min="0" max="1" value="1.0" step="0.05" oninput="updateTitleArtworkOpacity()" style="width: 100%;">
-                        <div class="helper-text">
-                            Transparency: <span id="title-artwork-opacity-value">100</span>%
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="title-artwork-remove-white" onchange="toggleTitleArtworkRemoveWhite()">
-                            Remove white/light backgrounds (make transparent)
-                        </label>
-                        <div class="helper-text" style="margin-top: 4px;">
-                            Automatically removes white or near-white pixels from the image
-                        </div>
-                    </div>
-                    <div class="input-group" id="title-artwork-threshold-control" style="display: none;">
-                        <label>White Detection Threshold</label>
-                        <input type="range" id="title-artwork-threshold" min="200" max="255" value="245" step="1" oninput="updateTitleArtworkThreshold()" style="width: 100%;">
-                        <div class="helper-text">
-                            Threshold: <span id="title-artwork-threshold-value">245</span> (lower = more aggressive)
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>X-axis Position (Horizontal)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="moveTitleArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
-                            <input type="range" id="title-artwork-x-pos" min="-25" max="25" value="0" step="0.5"
-                                   oninput="updateTitleArtworkPosition()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="moveTitleArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
-                        </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            X offset: <span id="title-artwork-x-value">0.0</span>mm
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Y-axis Position (Vertical)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="moveTitleArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
-                            <input type="range" id="title-artwork-y-pos" min="-10" max="10" value="0" step="0.5"
-                                   oninput="updateTitleArtworkPosition()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="moveTitleArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
-                        </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Y offset: <span id="title-artwork-y-value">0.0</span>mm
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Artwork Scale (Zoom)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="scaleTitleArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
-                            <input type="range" id="title-artwork-scale" min="0.5" max="3.0" value="1.0" step="0.05"
-                                   oninput="updateTitleArtworkScale()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="scaleTitleArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
-                        </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Scale: <span id="title-artwork-scale-value">100</span>%
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Rotation</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="rotateTitleArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
-                            <input type="range" id="title-artwork-rotation" min="-180" max="180" value="0" step="1"
-                                   oninput="updateTitleArtworkRotation()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="rotateTitleArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
-                        </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Angle: <span id="title-artwork-rotation-value">0</span>°
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="title-artwork-tile" onchange="toggleTitleArtworkTile()">
-                            Tile artwork (repeat pattern)
-                        </label>
-                        <div class="helper-text">Repeats the image across the title area</div>
-                    </div>
-                    <div class="input-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                        <button class="btn btn-danger" onclick="clearTitleArtwork()" style="width: 100%;">Clear Title Artwork</button>
-                    </div>
-                </div>
-
                 <div class="control-section">
                     <h2>Background Fill</h2>
                     <div class="input-group">
@@ -418,87 +418,90 @@
                             <input type="file" id="artwork-upload" accept="image/*" onchange="handleArtworkUpload(event)">
                         </label>
                     </div>
-                </div>
 
-                <div class="control-section" id="artwork-controls" style="display: none;">
-                    <h2>Artwork Position & Scale</h2>
-                    <div class="input-group">
-                        <label>Artwork Opacity</label>
-                        <input type="range" id="artwork-opacity" min="0" max="1" value="0.9" step="0.05" oninput="updateArtworkOpacity()" style="width: 100%;">
-                        <div class="helper-text">
-                            Transparency: <span id="opacity-value">90</span>%
+                    <!-- Inline controls - hidden until artwork uploaded -->
+                    <div id="artwork-controls" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <div class="input-group">
+                            <label>Artwork Opacity</label>
+                            <input type="range" id="artwork-opacity" min="0" max="1" value="0.9" step="0.05" oninput="updateArtworkOpacity()" style="width: 100%;">
+                            <div class="helper-text">
+                                Transparency: <span id="opacity-value">90</span>%
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="artwork-remove-white" onchange="toggleArtworkRemoveWhite()">
-                            Remove white/light backgrounds (make transparent)
-                        </label>
-                        <div class="helper-text" style="margin-top: 4px;">
-                            Automatically removes white or near-white pixels from the image
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="artwork-remove-white" onchange="toggleArtworkRemoveWhite()">
+                                Remove white/light backgrounds (make transparent)
+                            </label>
+                            <div class="helper-text" style="margin-top: 4px;">
+                                Automatically removes white or near-white pixels from the image
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-group" id="artwork-threshold-control" style="display: none;">
-                        <label>White Detection Threshold</label>
-                        <input type="range" id="artwork-threshold" min="200" max="255" value="245" step="1" oninput="updateArtworkThreshold()" style="width: 100%;">
-                        <div class="helper-text">
-                            Threshold: <span id="artwork-threshold-value">245</span> (lower = more aggressive)
+                        <div class="input-group" id="artwork-threshold-control" style="display: none;">
+                            <label>White Detection Threshold</label>
+                            <input type="range" id="artwork-threshold" min="200" max="255" value="245" step="1" oninput="updateArtworkThreshold()" style="width: 100%;">
+                            <div class="helper-text">
+                                Threshold: <span id="artwork-threshold-value">245</span> (lower = more aggressive)
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label>X-axis Position (Horizontal)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="moveArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
-                            <input type="range" id="artwork-x-pos" min="-55" max="55" value="0" step="0.5"
-                                   oninput="updateArtworkPosition()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="moveArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
+                        <div class="input-group">
+                            <label>X-axis Position (Horizontal)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveArtworkX(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬅</button>
+                                <input type="range" id="artwork-x-pos" min="-55" max="55" value="0" step="0.5"
+                                       oninput="updateArtworkPosition()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveArtworkX(0.5)" style="padding: 8px 12px; font-size: 18px;">➡</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                X offset: <span id="x-position-value">0</span>mm
+                            </div>
                         </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            X offset: <span id="x-position-value">0</span>mm
+                        <div class="input-group">
+                            <label>Y-axis Position (Vertical)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="moveArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
+                                <input type="range" id="artwork-y-pos" min="-90" max="90" value="0" step="0.5"
+                                       oninput="updateArtworkPosition()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="moveArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Y offset: <span id="y-position-value">0</span>mm
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Y-axis Position (Vertical)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="moveArtworkY(-0.5)" style="padding: 8px 12px; font-size: 18px;">⬆</button>
-                            <input type="range" id="artwork-y-pos" min="-90" max="90" value="0" step="0.5"
-                                   oninput="updateArtworkPosition()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="moveArtworkY(0.5)" style="padding: 8px 12px; font-size: 18px;">⬇</button>
+                        <div class="input-group">
+                            <label>Artwork Scale (Zoom)</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="scaleArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
+                                <input type="range" id="artwork-scale" min="0.5" max="2.5" value="1.0" step="0.05"
+                                       oninput="updateArtworkScale()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="scaleArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Scale: <span id="scale-value">100</span>%
+                            </div>
                         </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Y offset: <span id="y-position-value">0</span>mm
+                        <div class="input-group">
+                            <label>Rotation</label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="rotateArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
+                                <input type="range" id="artwork-rotation" min="-180" max="180" value="0" step="1"
+                                       oninput="updateArtworkRotation()" style="flex: 1;">
+                                <button class="btn btn-secondary" onclick="rotateArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
+                            </div>
+                            <div class="helper-text" style="margin-top: 8px;">
+                                Angle: <span id="rotation-value">0</span>°
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Artwork Scale (Zoom)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="scaleArtwork(-0.1)" style="padding: 8px 12px; font-size: 18px;">−</button>
-                            <input type="range" id="artwork-scale" min="0.5" max="2.5" value="1.0" step="0.05"
-                                   oninput="updateArtworkScale()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="scaleArtwork(0.1)" style="padding: 8px 12px; font-size: 18px;">+</button>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="artwork-tile" onchange="toggleArtworkTile()">
+                                Tile artwork (repeat pattern)
+                            </label>
+                            <div class="helper-text">Repeats the image across the entire overlay area</div>
                         </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Scale: <span id="scale-value">100</span>%
+                        <div class="input-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <button class="btn btn-danger" onclick="clearArtwork()" style="width: 100%;">Clear Overlay Artwork</button>
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Rotation</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="rotateArtwork(-5)" style="padding: 8px 12px; font-size: 18px;">↺</button>
-                            <input type="range" id="artwork-rotation" min="-180" max="180" value="0" step="1"
-                                   oninput="updateArtworkRotation()" style="flex: 1;">
-                            <button class="btn btn-secondary" onclick="rotateArtwork(5)" style="padding: 8px 12px; font-size: 18px;">↻</button>
-                        </div>
-                        <div class="helper-text" style="margin-top: 8px;">
-                            Angle: <span id="rotation-value">0</span>°
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="artwork-tile" onchange="toggleArtworkTile()">
-                            Tile artwork (repeat pattern)
-                        </label>
-                        <div class="helper-text">Repeats the image across the entire overlay area</div>
                     </div>
                 </div>
 
