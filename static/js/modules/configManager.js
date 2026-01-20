@@ -22,7 +22,19 @@ export class ConfigManager {
         // Reload the fresh SVG template
         await SVGManager.loadTemplate();
 
-        // Hide artwork controls
+        // Hide title artwork controls
+        const titleArtworkControls = document.getElementById('title-artwork-controls');
+        if (titleArtworkControls) {
+            titleArtworkControls.style.display = 'none';
+        }
+
+        // Reset title artwork upload
+        const titleArtworkUpload = document.getElementById('title-artwork-upload');
+        if (titleArtworkUpload) {
+            titleArtworkUpload.value = '';
+        }
+
+        // Hide main artwork controls
         const artworkControls = document.getElementById('artwork-controls');
         if (artworkControls) {
             artworkControls.style.display = 'none';
@@ -114,6 +126,19 @@ export class ConfigManager {
                     endColor: document.getElementById('bg-fill-gradient-end')?.value || '#000000',
                     direction: document.getElementById('bg-fill-gradient-direction')?.value || 'left-to-right'
                 }
+            },
+
+            // Title artwork settings (transforms only, no image data)
+            titleArtwork: {
+                hasImage: !!appState.getTitleArtworkData(),
+                x: parseFloat(document.getElementById('title-artwork-x-pos')?.value) || 0,
+                y: parseFloat(document.getElementById('title-artwork-y-pos')?.value) || 0,
+                scale: parseFloat(document.getElementById('title-artwork-scale')?.value) || 1.0,
+                rotation: parseFloat(document.getElementById('title-artwork-rotation')?.value) || 0,
+                opacity: parseFloat(document.getElementById('title-artwork-opacity')?.value) || 1.0,
+                removeWhite: document.getElementById('title-artwork-remove-white')?.checked || false,
+                threshold: parseInt(document.getElementById('title-artwork-threshold')?.value) || 245,
+                tiled: document.getElementById('title-artwork-tile')?.checked || false
             },
 
             // Main artwork settings (transforms only, no image data)
@@ -516,7 +541,19 @@ export class ConfigManager {
             }
         }
 
-        // Artwork transform settings (images must be re-uploaded)
+        // Title artwork transform settings (images must be re-uploaded)
+        if (config.titleArtwork) {
+            this.setInputValue('title-artwork-x-pos', config.titleArtwork.x);
+            this.setInputValue('title-artwork-y-pos', config.titleArtwork.y);
+            this.setInputValue('title-artwork-scale', config.titleArtwork.scale);
+            this.setInputValue('title-artwork-rotation', config.titleArtwork.rotation);
+            this.setInputValue('title-artwork-opacity', config.titleArtwork.opacity);
+            this.setCheckbox('title-artwork-remove-white', config.titleArtwork.removeWhite);
+            this.setInputValue('title-artwork-threshold', config.titleArtwork.threshold);
+            this.setCheckbox('title-artwork-tile', config.titleArtwork.tiled);
+        }
+
+        // Main artwork transform settings (images must be re-uploaded)
         if (config.artwork) {
             this.setInputValue('artwork-x-pos', config.artwork.x);
             this.setInputValue('artwork-y-pos', config.artwork.y);
@@ -929,6 +966,15 @@ export class ConfigManager {
         const jsonString = JSON.stringify(config, null, 2);
         zip.file('config.json', jsonString);
 
+        // Add title artwork if present (use original unprocessed data)
+        const titleArtwork = appState.getTitleArtworkOriginalData() || appState.getTitleArtworkData();
+        if (titleArtwork) {
+            const imageData = this.dataURLtoBlob(titleArtwork);
+            if (imageData) {
+                zip.file('title_artwork.png', imageData);
+            }
+        }
+
         // Add main artwork if present (use original unprocessed data)
         const mainArtwork = appState.getArtworkOriginalData() || appState.getArtworkData();
         if (mainArtwork) {
@@ -1075,6 +1121,39 @@ export class ConfigManager {
 
         // Apply the configuration first (sets UI values)
         await this.applyConfig(config);
+
+        // Load title artwork if present
+        const titleArtworkFile = zip.file('title_artwork.png');
+        if (titleArtworkFile) {
+            const blob = await titleArtworkFile.async('blob');
+            const dataURL = await this.blobToDataURL(blob);
+            if (dataURL) {
+                // Get artwork settings from config
+                const artworkSettings = config.titleArtwork || {};
+
+                // Set all title artwork state in appState
+                appState.setTitleArtworkOriginalData(dataURL);
+                appState.setTitleArtworkData(dataURL);
+                appState.setTitleArtworkPosition(artworkSettings.x || 0, artworkSettings.y || 0);
+                appState.setTitleArtworkScale(artworkSettings.scale || 1.0);
+                appState.setTitleArtworkOpacity(artworkSettings.opacity || 1.0);
+                appState.setTitleArtworkRotation(artworkSettings.rotation || 0);
+                appState.setTitleArtworkTiled(artworkSettings.tiled || false);
+                appState.setTitleArtworkRemoveWhite(artworkSettings.removeWhite || false);
+                appState.setTitleArtworkWhiteThreshold(artworkSettings.threshold || 245);
+
+                // Insert title artwork into SVG
+                if (window.insertTitleArtwork) {
+                    window.insertTitleArtwork(dataURL);
+                }
+
+                // Show title artwork controls
+                const titleArtworkControls = document.getElementById('title-artwork-controls');
+                if (titleArtworkControls) {
+                    titleArtworkControls.style.display = 'block';
+                }
+            }
+        }
 
         // Load main artwork if present
         const mainArtworkFile = zip.file('main_artwork.png');

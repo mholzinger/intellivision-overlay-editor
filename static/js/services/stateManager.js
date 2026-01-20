@@ -8,7 +8,7 @@ export class StateManager {
         // SVG state
         this.svgDoc = null;
 
-        // Artwork state
+        // Main artwork state
         this.artworkDataURL = null;
         this.artworkOriginalDataURL = null;  // Original unprocessed image
         this.artworkXOffset = 0;
@@ -19,6 +19,18 @@ export class StateManager {
         this.artworkTiled = false;
         this.artworkRemoveWhite = false;
         this.artworkWhiteThreshold = 245;
+
+        // Title artwork state
+        this.titleArtworkDataURL = null;
+        this.titleArtworkOriginalDataURL = null;
+        this.titleArtworkXOffset = 0;
+        this.titleArtworkYOffset = 0;
+        this.titleArtworkScale = 1.0;
+        this.titleArtworkOpacity = 1.0;
+        this.titleArtworkRotation = 0;
+        this.titleArtworkTiled = false;
+        this.titleArtworkRemoveWhite = false;
+        this.titleArtworkWhiteThreshold = 245;
 
         // Button artwork state
         this.buttonArtwork = {}; // Maps button IDs to artwork data
@@ -200,6 +212,157 @@ export class StateManager {
      */
     getArtworkWhiteThreshold() {
         return this.artworkWhiteThreshold;
+    }
+
+    // ========== Title Artwork Methods ==========
+
+    /**
+     * Set title artwork data
+     * @param {string} dataURL - Image data URL
+     */
+    setTitleArtworkData(dataURL) {
+        this.titleArtworkDataURL = dataURL;
+    }
+
+    /**
+     * Get title artwork data
+     * @returns {string} Image data URL
+     */
+    getTitleArtworkData() {
+        return this.titleArtworkDataURL;
+    }
+
+    /**
+     * Set original title artwork data (unprocessed)
+     * @param {string} dataURL - Image data URL
+     */
+    setTitleArtworkOriginalData(dataURL) {
+        this.titleArtworkOriginalDataURL = dataURL;
+    }
+
+    /**
+     * Get original title artwork data
+     * @returns {string} Image data URL
+     */
+    getTitleArtworkOriginalData() {
+        return this.titleArtworkOriginalDataURL;
+    }
+
+    /**
+     * Update title artwork position
+     * @param {number} x - X offset
+     * @param {number} y - Y offset
+     */
+    setTitleArtworkPosition(x, y) {
+        this.titleArtworkXOffset = x;
+        this.titleArtworkYOffset = y;
+    }
+
+    /**
+     * Get title artwork position
+     * @returns {{x: number, y: number}} Position
+     */
+    getTitleArtworkPosition() {
+        return {
+            x: this.titleArtworkXOffset,
+            y: this.titleArtworkYOffset
+        };
+    }
+
+    /**
+     * Set title artwork scale
+     * @param {number} scale - Scale factor
+     */
+    setTitleArtworkScale(scale) {
+        this.titleArtworkScale = scale;
+    }
+
+    /**
+     * Get title artwork scale
+     * @returns {number} Scale factor
+     */
+    getTitleArtworkScale() {
+        return this.titleArtworkScale;
+    }
+
+    /**
+     * Set title artwork opacity
+     * @param {number} opacity - Opacity value (0-1)
+     */
+    setTitleArtworkOpacity(opacity) {
+        this.titleArtworkOpacity = opacity;
+    }
+
+    /**
+     * Get title artwork opacity
+     * @returns {number} Opacity value
+     */
+    getTitleArtworkOpacity() {
+        return this.titleArtworkOpacity;
+    }
+
+    /**
+     * Set title artwork rotation
+     * @param {number} rotation - Rotation in degrees
+     */
+    setTitleArtworkRotation(rotation) {
+        this.titleArtworkRotation = rotation;
+    }
+
+    /**
+     * Get title artwork rotation
+     * @returns {number} Rotation in degrees
+     */
+    getTitleArtworkRotation() {
+        return this.titleArtworkRotation;
+    }
+
+    /**
+     * Set title artwork tiled state
+     * @param {boolean} tiled - Whether artwork is tiled
+     */
+    setTitleArtworkTiled(tiled) {
+        this.titleArtworkTiled = tiled;
+    }
+
+    /**
+     * Get title artwork tiled state
+     * @returns {boolean} Tiled state
+     */
+    getTitleArtworkTiled() {
+        return this.titleArtworkTiled;
+    }
+
+    /**
+     * Set title artwork remove white state
+     * @param {boolean} removeWhite - Whether to remove white backgrounds
+     */
+    setTitleArtworkRemoveWhite(removeWhite) {
+        this.titleArtworkRemoveWhite = removeWhite;
+    }
+
+    /**
+     * Get title artwork remove white state
+     * @returns {boolean} Remove white state
+     */
+    getTitleArtworkRemoveWhite() {
+        return this.titleArtworkRemoveWhite;
+    }
+
+    /**
+     * Set title artwork white threshold
+     * @param {number} threshold - Threshold value (0-255)
+     */
+    setTitleArtworkWhiteThreshold(threshold) {
+        this.titleArtworkWhiteThreshold = threshold;
+    }
+
+    /**
+     * Get title artwork white threshold
+     * @returns {number} Threshold value
+     */
+    getTitleArtworkWhiteThreshold() {
+        return this.titleArtworkWhiteThreshold;
     }
 
     /**
@@ -397,6 +560,7 @@ export class StateManager {
      */
     reset() {
         this.svgDoc = null;
+        // Main artwork
         this.artworkDataURL = null;
         this.artworkOriginalDataURL = null;
         this.artworkXOffset = 0;
@@ -407,6 +571,18 @@ export class StateManager {
         this.artworkTiled = false;
         this.artworkRemoveWhite = false;
         this.artworkWhiteThreshold = 245;
+        // Title artwork
+        this.titleArtworkDataURL = null;
+        this.titleArtworkOriginalDataURL = null;
+        this.titleArtworkXOffset = 0;
+        this.titleArtworkYOffset = 0;
+        this.titleArtworkScale = 1.0;
+        this.titleArtworkOpacity = 1.0;
+        this.titleArtworkRotation = 0;
+        this.titleArtworkTiled = false;
+        this.titleArtworkRemoveWhite = false;
+        this.titleArtworkWhiteThreshold = 245;
+        // Button artwork and shapes
         this.buttonArtwork = {};
         this.selectedButtonForArtwork = null;
         this.buttonShapes = {};

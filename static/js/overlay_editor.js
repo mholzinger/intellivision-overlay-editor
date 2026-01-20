@@ -6,6 +6,7 @@
 import { SVGManager } from './modules/svgManager.js';
 import { FontManager } from './modules/fontManager.js';
 import { TitleEditor } from './modules/titleEditor.js';
+import { TitleArtwork } from './modules/titleArtwork.js';
 import { ButtonEditor } from './modules/buttonEditor.js';
 import { ButtonArtwork } from './modules/buttonArtwork.js';
 import { ButtonShape } from './modules/buttonShape.js';
@@ -372,6 +373,23 @@ window.updateDiscArrowTransforms = () => BottomControls.updateDiscArrowTransform
 window.toggleBackgroundFill = () => BackgroundControls.toggleBackgroundFill();
 window.updateBackgroundFill = () => BackgroundControls.updateBackgroundFill();
 window.updateBackgroundOpacity = () => BackgroundControls.updateBackgroundOpacity();
+// Title artwork functions
+window.handleTitleArtworkUpload = (e) => TitleArtwork.handleTitleArtworkUpload(e);
+window.clearTitleArtwork = () => TitleArtwork.clearTitleArtwork();
+window.moveTitleArtworkX = (delta) => TitleArtwork.moveTitleArtworkX(delta);
+window.moveTitleArtworkY = (delta) => TitleArtwork.moveTitleArtworkY(delta);
+window.scaleTitleArtwork = (delta) => TitleArtwork.scaleTitleArtwork(delta);
+window.rotateTitleArtwork = (delta) => TitleArtwork.rotateTitleArtwork(delta);
+window.updateTitleArtworkPosition = () => TitleArtwork.updateTitleArtworkPosition();
+window.updateTitleArtworkScale = () => TitleArtwork.updateTitleArtworkScale();
+window.updateTitleArtworkOpacity = () => TitleArtwork.updateTitleArtworkOpacity();
+window.updateTitleArtworkRotation = () => TitleArtwork.updateTitleArtworkRotation();
+window.toggleTitleArtworkTile = () => TitleArtwork.toggleTitleArtworkTile();
+window.toggleTitleArtworkRemoveWhite = () => TitleArtwork.toggleTitleArtworkRemoveWhite();
+window.updateTitleArtworkThreshold = () => TitleArtwork.updateTitleArtworkThreshold();
+window.insertTitleArtwork = (dataURL) => TitleArtwork.insertTitleArtwork(dataURL);
+
+// Main overlay artwork functions
 window.handleArtworkUpload = (e) => MainArtwork.handleArtworkUpload(e);
 window.clearArtwork = () => MainArtwork.clearArtwork();
 window.moveArtworkX = (delta) => MainArtwork.moveArtworkX(delta);
