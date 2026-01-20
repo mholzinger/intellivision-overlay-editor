@@ -49,7 +49,7 @@ export class BottomControls {
         const fontSize = parseFloat(document.getElementById('bottom-text-size')?.value || '1.2');
 
         if (textElement) {
-            BottomControls.setMultilineText(textElement, value || 'DIRECTION', fontSize);
+            BottomControls.setMultilineText(textElement, value, fontSize);
             BottomControls.applyBottomTextStyling(textElement);
         }
     }
@@ -111,7 +111,7 @@ export class BottomControls {
         const textElement = svgDoc?.querySelector('#bottom-text');
 
         if (textElement) {
-            BottomControls.setMultilineText(textElement, value || 'DIRECTION', size);
+            BottomControls.setMultilineText(textElement, value, size);
             BottomControls.applyBottomTextStyling(textElement);
 
             // Apply position including offset

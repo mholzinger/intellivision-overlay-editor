@@ -55,7 +55,7 @@ export class TitleEditor {
         const fontSize = parseFloat(document.getElementById('title-font-size')?.value || '2');
 
         if (titleElement) {
-            TitleEditor.setMultilineText(titleElement, title || 'TITLE', fontSize);
+            TitleEditor.setMultilineText(titleElement, title, fontSize);
             titleElement.style.fill = UIManager.getTitleFillValue();
             titleElement.style.dominantBaseline = 'central';
         }
@@ -80,7 +80,7 @@ export class TitleEditor {
         document.getElementById('title-font-size-value').textContent = size;
         const svgDoc = appState.getSvgDoc();
         const titleElement = svgDoc?.querySelector('#title-text');
-        const title = document.getElementById('title')?.value || 'TITLE';
+        const title = document.getElementById('title')?.value || '';
 
         if (titleElement) {
             // Re-render multiline text with new spacing
@@ -176,7 +176,7 @@ export class TitleEditor {
         const fontSize = parseFloat(document.getElementById('copyright-font-size')?.value || '2');
 
         if (copyrightElement) {
-            TitleEditor.setMultilineText(copyrightElement, text || '© Copyright Year & Printing Info.', fontSize);
+            TitleEditor.setMultilineText(copyrightElement, text, fontSize);
             copyrightElement.style.dominantBaseline = 'central';
         }
     }
@@ -200,7 +200,7 @@ export class TitleEditor {
         document.getElementById('copyright-font-size-value').textContent = size;
         const svgDoc = appState.getSvgDoc();
         const copyrightElement = svgDoc?.querySelector('#copyright-text');
-        const text = document.getElementById('copyright-input')?.value || '© Copyright Year & Printing Info.';
+        const text = document.getElementById('copyright-input')?.value || '';
 
         if (copyrightElement) {
             // Re-render multiline text with new spacing

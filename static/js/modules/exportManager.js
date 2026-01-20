@@ -721,7 +721,7 @@ export class ExportManager {
             }
 
             // Top buttons share the same label
-            const topValue = document.getElementById('action-top').value || 'FIRE';
+            const topValue = document.getElementById('action-top').value;
             const topLeftLabel = exportCopy.querySelector('#top-left-label');
             const topRightLabel = exportCopy.querySelector('#top-right-label');
             if (topLeftLabel) {
@@ -734,8 +734,8 @@ export class ExportManager {
             }
 
             // Bottom buttons are independent
-            const bottomLeftValue = document.getElementById('action-bottom-left').value || 'FIRE';
-            const bottomRightValue = document.getElementById('action-bottom-right').value || 'FIRE';
+            const bottomLeftValue = document.getElementById('action-bottom-left').value;
+            const bottomRightValue = document.getElementById('action-bottom-right').value;
             const bottomLeftLabel = exportCopy.querySelector('#bottom-left-label');
             const bottomRightLabel = exportCopy.querySelector('#bottom-right-label');
             if (bottomLeftLabel) {
@@ -747,14 +747,29 @@ export class ExportManager {
                 bottomRightLabel.setAttribute('style', `fill: ${actionLabelColor}; font-size: ${actionLabelSize}px; font-family: ${actionFontFamily};`);
             }
 
-            // Apply action arrow fill color if enabled
+            // Apply action arrow fill color if enabled, or remove if hidden
             const arrowFillEnabled = document.getElementById('action-arrow-fill-enabled').checked;
             const arrowFillColor = document.getElementById('action-arrow-color').value;
+            const topArrowsVisible = document.getElementById('top-arrows-visible')?.checked ?? true;
+            const bottomLeftArrowVisible = document.getElementById('bottom-left-arrow-visible')?.checked ?? true;
+            const bottomRightArrowVisible = document.getElementById('bottom-right-arrow-visible')?.checked ?? true;
+
+            // Map arrow IDs to their visibility state
+            const arrowVisibility = {
+                'top-left-arrow': topArrowsVisible,
+                'top-right-arrow': topArrowsVisible,
+                'bottom-left-arrow': bottomLeftArrowVisible,
+                'bottom-right-arrow': bottomRightArrowVisible
+            };
+
             const arrowIds = ['top-left-arrow', 'top-right-arrow', 'bottom-left-arrow', 'bottom-right-arrow'];
             arrowIds.forEach(arrowId => {
                 const arrow = exportCopy.querySelector(`#${arrowId}`);
                 if (arrow) {
-                    if (arrowFillEnabled) {
+                    if (!arrowVisibility[arrowId]) {
+                        // Remove hidden arrows from export
+                        arrow.remove();
+                    } else if (arrowFillEnabled) {
                         arrow.setAttribute('fill', arrowFillColor);
                     } else {
                         arrow.setAttribute('fill', 'none');
@@ -763,7 +778,7 @@ export class ExportManager {
             });
 
             // Apply bottom arrow text and fill color if enabled
-            const bottomText = document.getElementById('bottom-text-input').value || 'DIRECTION';
+            const bottomText = document.getElementById('bottom-text-input').value;
             const bottomTextElement = exportCopy.querySelector('#bottom-text');
             if (bottomTextElement) {
                 bottomTextElement.textContent = bottomText;
@@ -784,11 +799,15 @@ export class ExportManager {
 
             const bottomArrowFillEnabled = document.getElementById('bottom-arrow-fill-enabled').checked;
             const bottomArrowFillColor = document.getElementById('bottom-arrow-color').value;
+            const discArrowsVisible = document.getElementById('disc-arrows-visible')?.checked ?? true;
             const bottomArrowIds = ['disc-left-arrow', 'disc-right-arrow'];
             bottomArrowIds.forEach(arrowId => {
                 const arrow = exportCopy.querySelector(`#${arrowId}`);
                 if (arrow) {
-                    if (bottomArrowFillEnabled) {
+                    if (!discArrowsVisible) {
+                        // Remove hidden disc arrows from export
+                        arrow.remove();
+                    } else if (bottomArrowFillEnabled) {
                         arrow.setAttribute('fill', bottomArrowFillColor);
                     } else {
                         arrow.setAttribute('fill', 'none');

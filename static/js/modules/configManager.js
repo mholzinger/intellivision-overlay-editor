@@ -248,9 +248,9 @@ export class ConfigManager {
                     }
                 },
                 labels: {
-                    top: document.getElementById('action-top')?.value || 'ACTION',
-                    bottomLeft: document.getElementById('action-bottom-left')?.value || 'ACTION',
-                    bottomRight: document.getElementById('action-bottom-right')?.value || 'ACTION',
+                    top: document.getElementById('action-top')?.value || '',
+                    bottomLeft: document.getElementById('action-bottom-left')?.value || '',
+                    bottomRight: document.getElementById('action-bottom-right')?.value || '',
                     descLeft: document.getElementById('action-desc-left-input')?.value || '',
                     descRight: document.getElementById('action-desc-right-input')?.value || ''
                 },
@@ -280,7 +280,7 @@ export class ConfigManager {
 
             // Bottom arrows
             bottomArrows: {
-                text: document.getElementById('bottom-text-input')?.value || 'DIRECTION',
+                text: document.getElementById('bottom-text-input')?.value || '',
                 font: document.getElementById('bottom-text-font-select')?.value || '',
                 fontSize: parseFloat(document.getElementById('bottom-text-size')?.value) || 2,
                 color: document.getElementById('bottom-text-color')?.value || '#000000',

@@ -63,14 +63,12 @@ export class ActionButtons {
             // Update both top-left and top-right labels
             const topLeftLabel = svgDoc?.querySelector('#top-left-label');
             const topRightLabel = svgDoc?.querySelector('#top-right-label');
-            const text = value || 'FIRE';
-
             if (topLeftLabel) {
-                ActionButtons.setMultilineText(topLeftLabel, text, 'left', fontSize);
+                ActionButtons.setMultilineText(topLeftLabel, value, 'left', fontSize);
                 ActionButtons.applyActionButtonStyling(topLeftLabel);
             }
             if (topRightLabel) {
-                ActionButtons.setMultilineText(topRightLabel, text, 'right', fontSize);
+                ActionButtons.setMultilineText(topRightLabel, value, 'right', fontSize);
                 ActionButtons.applyActionButtonStyling(topRightLabel);
             }
         } else {
@@ -78,7 +76,7 @@ export class ActionButtons {
             const labelElement = svgDoc?.querySelector(`#${position}-label`);
             const side = position.includes('left') ? 'left' : 'right';
             if (labelElement) {
-                ActionButtons.setMultilineText(labelElement, value || 'FIRE', side, fontSize);
+                ActionButtons.setMultilineText(labelElement, value, side, fontSize);
                 ActionButtons.applyActionButtonStyling(labelElement);
             }
         }
