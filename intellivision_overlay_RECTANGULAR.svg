@@ -21,15 +21,15 @@
   <rect id="overlay-background" x="0" y="0" width="55.6" height="90.4" fill="#FFFFFF"/>
 
   <!-- Outer boundary with different top/bottom rounded corners -->
-  <!-- Top corners: 2.26mm radius | Bottom corners: 10.0mm radius -->
+  <!-- Top corners: 2.26mm radius | Bottom corners: 9.0mm radius -->
   <path id="outer_boundary"
         d="M 2.26 0
            L 53.34 0
            Q 55.6 0 55.6 2.26
-           L 55.6 80.4
-           Q 55.6 90.4 45.6 90.4
-           L 10.0 90.4
-           Q 0 90.4 0 80.4
+           L 55.6 81.4
+           Q 55.6 90.4 46.6 90.4
+           L 9.0 90.4
+           Q 0 90.4 0 81.4
            L 0 2.26
            Q 0 0 2.26 0 Z"
         class="outline"/>
