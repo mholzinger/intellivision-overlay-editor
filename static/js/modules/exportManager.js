@@ -392,12 +392,11 @@ export class ExportManager {
         const gradientEnd = document.getElementById('title-bg-gradient-end')?.value || '#000000';
         const gradientDirection = document.getElementById('title-bg-gradient-direction')?.value || 'left-to-right';
 
-        // Title background dimensions (from SVG template)
-        // SVG rect: x="4" y="2.5" width="47.6" height="10.5" rx="1.5" ry="1.5"
-        const x = 4;
-        const y = 2.5;
-        const width = 47.6;
-        const height = 10.5;
+        // Title background dimensions - read from UI controls (dynamic title area)
+        const x = parseFloat(document.getElementById('title-area-x')?.value) || 3.5;
+        const y = parseFloat(document.getElementById('title-area-y')?.value) || 2.4;
+        const width = parseFloat(document.getElementById('title-area-width')?.value) || 48.6;
+        const height = parseFloat(document.getElementById('title-area-height')?.value) || 11.5;
         const cornerRadius = 1.5; // rx and ry from SVG
 
         // Render at higher resolution
