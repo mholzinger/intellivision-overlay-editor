@@ -478,11 +478,16 @@ window.updateBoxArtSubtitleAnchor = () => BoxArtEditor.updateSubtitleAnchor();
 window.updateBoxArtSubtitlePosition = () => BoxArtEditor.updateSubtitlePosition();
 window.updateBoxArtFrameColor = () => BoxArtEditor.updateFrameColor();
 window.updateBoxArtFrameStroke = () => BoxArtEditor.updateFrameStroke();
+window.updateBoxArtFrameTop = () => BoxArtEditor.updateFrameTop();
+window.updateBoxArtStripes = () => BoxArtEditor.updateStripes();
+window.updateBoxArtStripesLayer = () => BoxArtEditor.updateStripesLayer();
+window.updateBoxArtFrameFill = () => BoxArtEditor.updateFrameFill();
 window.handleBoxArtArtworkUpload = (e) => BoxArtEditor.handleArtworkUpload(e);
 window.updateBoxArtArtwork = () => BoxArtEditor.updateArtwork();
 window.clearBoxArtArtwork = () => BoxArtEditor.clearArtwork();
 window.toggleBoxArtVignette = () => BoxArtEditor.toggleVignette();
 window.updateBoxArtVignette = () => BoxArtEditor.updateVignette();
+window.updateBoxArtVignetteSize = (axis) => BoxArtEditor.updateVignetteSize(axis);
 window.handleBoxArtVignetteArtworkUpload = (e) => BoxArtEditor.handleVignetteArtworkUpload(e);
 window.updateBoxArtVignetteArtwork = () => BoxArtEditor.updateVignetteArtwork();
 window.reprocessBoxArtVignetteArtwork = () => BoxArtEditor.reprocessVignetteArtwork();
@@ -495,8 +500,8 @@ window.toggleBoxArtVoiceBadge = () => BoxArtEditor.toggleVoiceBadge();
 window.updateBoxArtPlayerCount = () => BoxArtEditor.updatePlayerCount();
 window.exportBoxArtPNG = () => BoxArtEditor.exportPNG();
 window.resetBoxArt = () => BoxArtEditor.reset();
-window.exportBoxArtProject = () => console.log('Box art project export not yet implemented');
-window.importBoxArtProject = () => console.log('Box art project import not yet implemented');
+window.exportBoxArtProject = () => BoxArtEditor.exportProject();
+window.importBoxArtProject = () => BoxArtEditor.importProject();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

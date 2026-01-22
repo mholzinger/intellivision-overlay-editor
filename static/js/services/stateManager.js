@@ -755,6 +755,9 @@ export class StateManager {
         this.boxArtVignetteRy = 58;
         this.boxArtVignetteStrokeColor = '#666666';
         this.boxArtVignetteStrokeWidth = 2;
+        // Clear vignette artwork (used via direct property access)
+        this._boxArtVignetteArtworkData = null;
+        this._boxArtVignetteArtworkOriginal = null;
     }
 
     /**

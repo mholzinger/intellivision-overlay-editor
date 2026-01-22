@@ -11,6 +11,23 @@ export class BoxArtEditor {
      * Initialize the box art editor
      */
     static async init() {
+        await BoxArtEditor.loadTemplate();
+
+        // Apply initial values from controls
+        BoxArtEditor.updateBrand();
+        BoxArtEditor.updateTagline();
+        BoxArtEditor.updateTitle();
+        BoxArtEditor.updateSubtitle();
+        BoxArtEditor.updateStripes();
+
+        console.log('Box art editor initialized');
+    }
+
+    /**
+     * Load the SVG template without applying updates
+     * Used during import to get a fresh template before applying config
+     */
+    static async loadTemplate() {
         try {
             const response = await fetch('/get_boxart_template');
             const data = await response.json();
@@ -27,14 +44,6 @@ export class BoxArtEditor {
                     const svgElement = svgDoc.documentElement.cloneNode(true);
                     preview.appendChild(svgElement);
                 }
-
-                // Apply initial values from controls
-                BoxArtEditor.updateBrand();
-                BoxArtEditor.updateTagline();
-                BoxArtEditor.updateTitle();
-                BoxArtEditor.updateSubtitle();
-
-                console.log('Box art editor initialized');
             }
         } catch (error) {
             console.error('Failed to load box art template:', error);
@@ -539,7 +548,10 @@ export class BoxArtEditor {
      * Update content frame color
      */
     static updateFrameColor() {
-        const color = document.getElementById('boxart-frame-color')?.value || '#8B4513';
+        const colorInput = document.getElementById('boxart-frame-color');
+        if (!colorInput) return; // Element doesn't exist in current HTML
+
+        const color = colorInput.value || '#8B4513';
         const svgDoc = appState.getBoxArtSvgDoc();
         const frame = svgDoc?.querySelector('#content-frame');
 
@@ -553,14 +565,337 @@ export class BoxArtEditor {
      * Update content frame stroke width
      */
     static updateFrameStroke() {
-        const width = parseFloat(document.getElementById('boxart-frame-stroke')?.value || 1);
-        document.getElementById('boxart-frame-stroke-value').textContent = width;
+        const strokeInput = document.getElementById('boxart-frame-stroke');
+        if (!strokeInput) return; // Element doesn't exist in current HTML
+
+        const width = parseFloat(strokeInput.value || 1);
+        const valueDisplay = document.getElementById('boxart-frame-stroke-value');
+        if (valueDisplay) valueDisplay.textContent = width;
 
         const svgDoc = appState.getBoxArtSvgDoc();
         const frame = svgDoc?.querySelector('#content-frame');
 
         if (frame) {
             frame.setAttribute('stroke-width', width);
+            BoxArtEditor.refreshPreview();
+        }
+    }
+
+    /**
+     * Update content frame top position (Y)
+     * This resizes the content frame from the top, adjusting the title/header area
+     */
+    static updateFrameTop() {
+        const topY = parseFloat(document.getElementById('boxart-frame-top')?.value || 20);
+        document.getElementById('boxart-frame-top-value').textContent = topY;
+
+        const svgDoc = appState.getBoxArtSvgDoc();
+        if (!svgDoc) return;
+
+        // Calculate new height based on top position
+        // Original: y=20, height=206, bottom=226
+        const bottomY = 226; // Fixed bottom position
+        const newHeight = bottomY - topY;
+
+        // Update content frame rect
+        const frame = svgDoc.querySelector('#content-frame');
+        if (frame) {
+            frame.setAttribute('y', topY);
+            frame.setAttribute('height', newHeight);
+        }
+
+        // Update the clip path for content frame
+        const clipRect = svgDoc.querySelector('#content-frame-clip rect');
+        if (clipRect) {
+            clipRect.setAttribute('y', topY);
+            clipRect.setAttribute('height', newHeight);
+        }
+
+        // Update title area boundary (dashed rect) if it exists
+        const titleArea = svgDoc.querySelector('#title-area');
+        if (titleArea) {
+            titleArea.setAttribute('y', topY);
+        }
+
+        // Update game title position (originally y=36 when frame at y=20, so offset is 16)
+        const titleElement = svgDoc.querySelector('#game-title');
+        if (titleElement) {
+            const titleY = topY + 16;
+            titleElement.setAttribute('y', titleY);
+            // Update the slider and display value
+            const titleYInput = document.getElementById('boxart-title-y');
+            const titleYValue = document.getElementById('boxart-title-y-value');
+            if (titleYInput) titleYInput.value = titleY;
+            if (titleYValue) titleYValue.textContent = titleY;
+        }
+
+        // Update game subtitle position (originally y=48 when frame at y=20, so offset is 28)
+        const subtitleElement = svgDoc.querySelector('#game-subtitle');
+        if (subtitleElement) {
+            const subtitleY = topY + 28;
+            subtitleElement.setAttribute('y', subtitleY);
+            // Update the slider and display value
+            const subtitleYInput = document.getElementById('boxart-subtitle-y');
+            const subtitleYValue = document.getElementById('boxart-subtitle-y-value');
+            if (subtitleYInput) subtitleYInput.value = subtitleY;
+            if (subtitleYValue) subtitleYValue.textContent = subtitleY;
+        }
+
+        // Update artwork placeholder
+        const artworkPlaceholder = svgDoc.querySelector('#background-artwork-placeholder');
+        if (artworkPlaceholder) {
+            // Artwork starts below title area (36mm from top of content frame)
+            const artworkY = topY + 36;
+            const artworkHeight = bottomY - artworkY - 10; // Leave some margin at bottom
+            artworkPlaceholder.setAttribute('y', artworkY);
+            artworkPlaceholder.setAttribute('height', Math.max(artworkHeight, 50));
+        }
+
+        // Update crosshair lines for artwork alignment
+        const vertLine = svgDoc.querySelector('#artwork-layer line:first-of-type');
+        const horizLine = svgDoc.querySelector('#artwork-layer line:last-of-type');
+        if (vertLine) {
+            const artworkY = topY + 36;
+            vertLine.setAttribute('y1', artworkY);
+            vertLine.setAttribute('y2', bottomY - 10);
+        }
+
+        // Re-insert main artwork if it exists (to recalculate positioning)
+        const mainArtworkData = appState.getBoxArtArtworkData?.();
+        if (mainArtworkData) {
+            BoxArtEditor.insertArtwork(mainArtworkData);
+        }
+
+        // Regenerate stripes to match new frame position
+        BoxArtEditor.updateStripes();
+
+        BoxArtEditor.refreshPreview();
+    }
+
+    /**
+     * Update frame stripes
+     * Creates decorative border stripes around the content frame
+     * Structure for 3 stripes: line-stripe1-line-stripe2-line-stripe3-line
+     * Structure for 1 stripe: line-stripe1-line
+     */
+    static updateStripes() {
+        const svgDoc = appState.getBoxArtSvgDoc();
+        if (!svgDoc) return;
+
+        const stripeCount = parseInt(document.getElementById('boxart-stripe-count')?.value || 1);
+        const stripeWidth = parseFloat(document.getElementById('boxart-stripe-width')?.value || 3);
+        const lineColor = document.getElementById('boxart-stripe-line-color')?.value || '#333333';
+        const stripe1Color = document.getElementById('boxart-stripe1-color')?.value || '#8B4513';
+        const stripe2Color = document.getElementById('boxart-stripe2-color')?.value || '#D4AF37';
+        const stripe3Color = document.getElementById('boxart-stripe3-color')?.value || '#8B4513';
+
+        // Update display value
+        const stripeWidthValue = document.getElementById('boxart-stripe-width-value');
+        if (stripeWidthValue) stripeWidthValue.textContent = stripeWidth;
+
+        // Show/hide stripe 2&3 controls
+        const stripe23Controls = document.getElementById('boxart-stripe23-controls');
+        const stripe1Controls = document.getElementById('boxart-stripe1-controls');
+        const stripesOnTopControls = document.getElementById('boxart-stripes-ontop-controls');
+        if (stripe23Controls) {
+            stripe23Controls.style.display = stripeCount === 3 ? 'block' : 'none';
+        }
+        if (stripe1Controls) {
+            stripe1Controls.style.display = stripeCount > 0 ? 'block' : 'none';
+        }
+        if (stripesOnTopControls) {
+            stripesOnTopControls.style.display = stripeCount > 0 ? 'block' : 'none';
+        }
+
+        // Get or create the stripes layer
+        let stripesLayer = svgDoc.querySelector('#frame-stripes-layer');
+        if (!stripesLayer) return;
+
+        // Clear existing stripes
+        stripesLayer.innerHTML = '';
+
+        if (stripeCount === 0) {
+            // No stripes, just update content frame position to default
+            BoxArtEditor.updateContentFrameForStripes(0, 0);
+            BoxArtEditor.refreshPreview();
+            return;
+        }
+
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const thinLineWidth = 0.5; // Very thin separator lines
+
+        // Get current frame top position
+        const frameTop = parseFloat(document.getElementById('boxart-frame-top')?.value || 20);
+        const frameBottom = 226;
+
+        // Base content frame position (will be inset by stripes)
+        const baseX = 10;
+        const baseWidth = 166;
+        const cornerRadius = 4;
+
+        // Calculate total stripe border width
+        // For 1 stripe: line + stripe + line = 0.5 + stripeWidth + 0.5
+        // For 3 stripes: line + stripe + line + stripe + line + stripe + line = 0.5 + sw + 0.5 + sw + 0.5 + sw + 0.5
+        let totalBorderWidth;
+        if (stripeCount === 1) {
+            totalBorderWidth = thinLineWidth + stripeWidth + thinLineWidth;
+        } else {
+            totalBorderWidth = thinLineWidth + stripeWidth + thinLineWidth + stripeWidth + thinLineWidth + stripeWidth + thinLineWidth;
+        }
+
+        // Draw stripes from outside to inside
+        // SVG strokes are CENTERED on the path, so half is inside and half outside
+        // We track the CENTER position of each stroke
+        let centerOffset = thinLineWidth / 2; // Start at center of first thin line
+
+        // Helper to create a stroke rect at a given center offset
+        const createStrokeRect = (offset, strokeWidth, color) => {
+            const rect = document.createElementNS(svgNS, 'rect');
+            // Position rect so stroke center is at the offset
+            rect.setAttribute('x', baseX + offset);
+            rect.setAttribute('y', frameTop + offset);
+            rect.setAttribute('width', baseWidth - offset * 2);
+            rect.setAttribute('height', frameBottom - frameTop - offset * 2);
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', color);
+            rect.setAttribute('stroke-width', strokeWidth);
+            rect.setAttribute('stroke-opacity', '1');
+            rect.setAttribute('rx', Math.max(0, cornerRadius - offset));
+            rect.setAttribute('ry', Math.max(0, cornerRadius - offset));
+            return rect;
+        };
+
+        // Outer thin line
+        stripesLayer.appendChild(createStrokeRect(centerOffset, thinLineWidth, lineColor));
+        // Move to next center: half of current stroke + half of next stroke
+        centerOffset += thinLineWidth / 2 + stripeWidth / 2;
+
+        // Stripe 1 (outer stripe)
+        stripesLayer.appendChild(createStrokeRect(centerOffset, stripeWidth, stripe1Color));
+        centerOffset += stripeWidth / 2 + thinLineWidth / 2;
+
+        // Line after stripe 1
+        stripesLayer.appendChild(createStrokeRect(centerOffset, thinLineWidth, lineColor));
+        centerOffset += thinLineWidth / 2;
+
+        if (stripeCount === 3) {
+            // Move to stripe 2 center
+            centerOffset += stripeWidth / 2;
+
+            // Stripe 2 (middle stripe)
+            stripesLayer.appendChild(createStrokeRect(centerOffset, stripeWidth, stripe2Color));
+            centerOffset += stripeWidth / 2 + thinLineWidth / 2;
+
+            // Line after stripe 2
+            stripesLayer.appendChild(createStrokeRect(centerOffset, thinLineWidth, lineColor));
+            centerOffset += thinLineWidth / 2 + stripeWidth / 2;
+
+            // Stripe 3 (inner stripe)
+            stripesLayer.appendChild(createStrokeRect(centerOffset, stripeWidth, stripe3Color));
+            centerOffset += stripeWidth / 2 + thinLineWidth / 2;
+
+            // Inner thin line (after stripe 3)
+            stripesLayer.appendChild(createStrokeRect(centerOffset, thinLineWidth, lineColor));
+            centerOffset += thinLineWidth / 2;
+        }
+
+        // Update content frame to be inset by the stripe border
+        BoxArtEditor.updateContentFrameForStripes(centerOffset, frameTop);
+
+        // Apply stripes layer position based on "always on top" setting
+        BoxArtEditor.updateStripesLayer();
+
+        BoxArtEditor.refreshPreview();
+    }
+
+    /**
+     * Update stripes layer position (on top or below vignette/title)
+     * When "always on top" is checked, stripes render above vignette and title
+     * When unchecked, stripes stay in their default position (below vignette)
+     */
+    static updateStripesLayer() {
+        const svgDoc = appState.getBoxArtSvgDoc();
+        if (!svgDoc) return;
+
+        const stripesLayer = svgDoc.querySelector('#frame-stripes-layer');
+        if (!stripesLayer) return;
+
+        const alwaysOnTop = document.getElementById('boxart-stripes-ontop')?.checked ?? true;
+        const svgRoot = svgDoc.documentElement || svgDoc.querySelector('svg');
+
+        if (alwaysOnTop) {
+            // Move stripes to the end of the SVG (renders on top of everything)
+            // But before badge-layer if it exists
+            const badgeLayer = svgDoc.querySelector('#badge-layer');
+            if (badgeLayer) {
+                svgRoot.insertBefore(stripesLayer, badgeLayer);
+            } else {
+                svgRoot.appendChild(stripesLayer);
+            }
+        } else {
+            // Move stripes back to default position (after artwork-layer, before branding-layer)
+            const brandingLayer = svgDoc.querySelector('#branding-layer');
+            if (brandingLayer) {
+                svgRoot.insertBefore(stripesLayer, brandingLayer);
+            }
+        }
+
+        BoxArtEditor.refreshPreview();
+    }
+
+    /**
+     * Update content frame position based on stripe border width
+     * @param {number} inset - How much to inset the content frame
+     * @param {number} frameTop - Top position of the frame
+     */
+    static updateContentFrameForStripes(inset, frameTop) {
+        const svgDoc = appState.getBoxArtSvgDoc();
+        if (!svgDoc) return;
+
+        const frame = svgDoc.querySelector('#content-frame');
+        if (!frame) return;
+
+        const baseX = 10;
+        const baseWidth = 166;
+        const frameBottom = 226;
+        const cornerRadius = 4;
+
+        // Use current frameTop if not provided
+        if (!frameTop) {
+            frameTop = parseFloat(document.getElementById('boxart-frame-top')?.value || 20);
+        }
+
+        // Inset the content frame by the stripe border width
+        frame.setAttribute('x', baseX + inset);
+        frame.setAttribute('y', frameTop + inset);
+        frame.setAttribute('width', baseWidth - inset * 2);
+        frame.setAttribute('height', frameBottom - frameTop - inset * 2);
+        frame.setAttribute('rx', Math.max(0, cornerRadius - inset));
+        frame.setAttribute('ry', Math.max(0, cornerRadius - inset));
+
+        // Keep the clip path at the BASE position (outer frame boundary)
+        // so artwork can fill the entire content area including under stripes
+        const clipRect = svgDoc.querySelector('#content-frame-clip rect');
+        if (clipRect) {
+            clipRect.setAttribute('x', baseX);
+            clipRect.setAttribute('y', frameTop);
+            clipRect.setAttribute('width', baseWidth);
+            clipRect.setAttribute('height', frameBottom - frameTop);
+            clipRect.setAttribute('rx', cornerRadius);
+            clipRect.setAttribute('ry', cornerRadius);
+        }
+    }
+
+    /**
+     * Update content frame fill color
+     */
+    static updateFrameFill() {
+        const color = document.getElementById('boxart-frame-fill')?.value || '#FFFFFF';
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const frame = svgDoc?.querySelector('#content-frame');
+
+        if (frame) {
+            frame.setAttribute('fill', color);
             BoxArtEditor.refreshPreview();
         }
     }
@@ -628,14 +963,15 @@ export class BoxArtEditor {
         image.setAttribute('id', 'boxart-main-artwork');
         image.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
 
-        // Content frame dimensions: x=10, y=20, width=166, height=206
-        // Center of content frame: cx=93, cy=123
+        // Get current content frame dimensions (may have been adjusted)
+        const frameTopY = parseFloat(document.getElementById('boxart-frame-top')?.value || 20);
         const frameX = 10;
-        const frameY = 20;
+        const frameY = frameTopY;
         const frameWidth = 166;
-        const frameHeight = 206;
+        const bottomY = 226;
+        const frameHeight = bottomY - frameTopY;
         const centerX = frameX + frameWidth / 2;  // 93
-        const centerY = frameY + frameHeight / 2; // 123
+        const centerY = frameY + frameHeight / 2;
 
         // Calculate artwork dimensions based on scale
         const artWidth = frameWidth * scale;
@@ -655,10 +991,11 @@ export class BoxArtEditor {
         // Clip artwork to content frame
         image.setAttribute('clip-path', 'url(#content-frame-clip)');
 
-        // Insert BEFORE title-layer so title appears on top of artwork
-        const titleLayer = svgDoc.querySelector('#title-layer');
-        if (titleLayer && titleLayer.parentNode) {
-            titleLayer.parentNode.insertBefore(image, titleLayer);
+        // Insert into artwork-layer (after placeholder elements)
+        // This ensures artwork is below stripes, vignette, and title layers
+        const artworkLayer = svgDoc.querySelector('#artwork-layer');
+        if (artworkLayer) {
+            artworkLayer.appendChild(image);
         }
 
         BoxArtEditor.refreshPreview();
@@ -734,6 +1071,28 @@ export class BoxArtEditor {
     }
 
     /**
+     * Update vignette size with aspect ratio lock support
+     * @param {string} changedAxis - Which axis was changed ('rx' or 'ry')
+     */
+    static updateVignetteSize(changedAxis) {
+        const lockRatio = document.getElementById('boxart-vignette-lock-ratio')?.checked || false;
+        const rxInput = document.getElementById('boxart-vignette-rx');
+        const ryInput = document.getElementById('boxart-vignette-ry');
+
+        if (lockRatio && rxInput && ryInput) {
+            // When locked, sync the other value to match
+            if (changedAxis === 'rx') {
+                ryInput.value = rxInput.value;
+            } else if (changedAxis === 'ry') {
+                rxInput.value = ryInput.value;
+            }
+        }
+
+        // Now call the regular update
+        BoxArtEditor.updateVignette();
+    }
+
+    /**
      * Update vignette from controls
      */
     static updateVignette() {
@@ -786,8 +1145,8 @@ export class BoxArtEditor {
             clipEllipse.setAttribute('ry', ry - 5);
         }
 
-        // Re-insert vignette artwork if it exists (to update clip path)
-        const vignetteArtData = appState.getBoxArtVignetteArtworkData?.();
+        // Re-insert vignette artwork if it exists (to update position and clip path)
+        const vignetteArtData = appState.getBoxArtVignetteArtworkData?.() || appState._boxArtVignetteArtworkData;
         if (vignetteArtData) {
             BoxArtEditor.insertVignetteArtwork(vignetteArtData);
         }
@@ -1101,6 +1460,687 @@ export class BoxArtEditor {
         // Re-initialize
         BoxArtEditor.init();
         BoxArtEditor.showStatus('Box art reset to defaults', 'success');
+    }
+
+    /**
+     * Collect all box art settings into a configuration object
+     * @returns {Object} Box art configuration
+     */
+    static collectConfig() {
+        return {
+            version: '1.0',
+            type: 'boxart',
+            created: new Date().toISOString(),
+            name: document.getElementById('boxart-title')?.value || 'Untitled Box Art',
+
+            // Branding
+            brand: {
+                text: document.getElementById('boxart-brand-text')?.value || 'INTELLIVISION',
+                font: document.getElementById('boxart-brand-font-select')?.value || '',
+                size: parseFloat(document.getElementById('boxart-brand-size')?.value) || 12,
+                color: document.getElementById('boxart-brand-color')?.value || '#FFFFFF',
+                bold: document.getElementById('boxart-brand-bold')?.checked || false,
+                italic: document.getElementById('boxart-brand-italic')?.checked || false,
+                underline: document.getElementById('boxart-brand-underline')?.checked || false,
+                x: parseFloat(document.getElementById('boxart-brand-x')?.value) || 12,
+                y: parseFloat(document.getElementById('boxart-brand-y')?.value) || 11
+            },
+
+            // Tagline
+            tagline: {
+                text: document.getElementById('boxart-tagline')?.value || 'Intelligent Television',
+                font: document.getElementById('boxart-tagline-font-select')?.value || '',
+                size: parseFloat(document.getElementById('boxart-tagline-size')?.value) || 5,
+                color: document.getElementById('boxart-tagline-color')?.value || '#FFFFFF',
+                bold: document.getElementById('boxart-tagline-bold')?.checked || false,
+                italic: document.getElementById('boxart-tagline-italic')?.checked || false,
+                underline: document.getElementById('boxart-tagline-underline')?.checked || false,
+                x: parseFloat(document.getElementById('boxart-tagline-x')?.value) || 118,
+                y: parseFloat(document.getElementById('boxart-tagline-y')?.value) || 11
+            },
+
+            // Header/background
+            header: {
+                color: document.getElementById('boxart-header-color')?.value || '#1E3A8A'
+            },
+
+            // Title
+            title: {
+                text: document.getElementById('boxart-title')?.value || 'GAME TITLE',
+                font: document.getElementById('boxart-title-font-select')?.value || '',
+                size: parseFloat(document.getElementById('boxart-title-size')?.value) || 14,
+                color: document.getElementById('boxart-title-color')?.value || '#333333',
+                bold: document.getElementById('boxart-title-bold')?.checked || false,
+                italic: document.getElementById('boxart-title-italic')?.checked || false,
+                underline: document.getElementById('boxart-title-underline')?.checked || false,
+                anchor: document.getElementById('boxart-title-anchor')?.value || 'middle',
+                x: parseFloat(document.getElementById('boxart-title-x')?.value) || 93,
+                y: parseFloat(document.getElementById('boxart-title-y')?.value) || 36
+            },
+
+            // Subtitle
+            subtitle: {
+                text: document.getElementById('boxart-subtitle')?.value || 'by MATTEL ELECTRONICS',
+                font: document.getElementById('boxart-subtitle-font-select')?.value || '',
+                size: parseFloat(document.getElementById('boxart-subtitle-size')?.value) || 4,
+                color: document.getElementById('boxart-subtitle-color')?.value || '#666666',
+                bold: document.getElementById('boxart-subtitle-bold')?.checked || false,
+                italic: document.getElementById('boxart-subtitle-italic')?.checked || false,
+                underline: document.getElementById('boxart-subtitle-underline')?.checked || false,
+                anchor: document.getElementById('boxart-subtitle-anchor')?.value || 'middle',
+                x: parseFloat(document.getElementById('boxart-subtitle-x')?.value) || 93,
+                y: parseFloat(document.getElementById('boxart-subtitle-y')?.value) || 48
+            },
+
+            // Content frame
+            frame: {
+                color: document.getElementById('boxart-frame-color')?.value || '#8B4513',
+                strokeWidth: parseFloat(document.getElementById('boxart-frame-stroke')?.value) || 1,
+                fill: document.getElementById('boxart-frame-fill')?.value || '#FFFFFF',
+                top: parseFloat(document.getElementById('boxart-frame-top')?.value) || 20
+            },
+
+            // Stripes
+            stripes: {
+                count: parseInt(document.getElementById('boxart-stripe-count')?.value) || 1,
+                width: parseFloat(document.getElementById('boxart-stripe-width')?.value) || 3,
+                lineColor: document.getElementById('boxart-stripe-line-color')?.value || '#333333',
+                stripe1Color: document.getElementById('boxart-stripe1-color')?.value || '#8B4513',
+                stripe2Color: document.getElementById('boxart-stripe2-color')?.value || '#D4AF37',
+                stripe3Color: document.getElementById('boxart-stripe3-color')?.value || '#8B4513',
+                alwaysOnTop: document.getElementById('boxart-stripes-ontop')?.checked ?? true
+            },
+
+            // Main artwork
+            artwork: {
+                hasImage: !!appState.getBoxArtArtworkData(),
+                x: parseFloat(document.getElementById('boxart-art-x')?.value) || 0,
+                y: parseFloat(document.getElementById('boxart-art-y')?.value) || 0,
+                scale: parseFloat(document.getElementById('boxart-art-scale')?.value) || 1,
+                opacity: parseFloat(document.getElementById('boxart-art-opacity')?.value) || 1
+            },
+
+            // Vignette
+            vignette: {
+                enabled: document.getElementById('boxart-vignette-enabled')?.checked || false,
+                x: parseFloat(document.getElementById('boxart-vignette-x')?.value) || 93,
+                y: parseFloat(document.getElementById('boxart-vignette-y')?.value) || 165,
+                rx: parseFloat(document.getElementById('boxart-vignette-rx')?.value) || 65,
+                ry: parseFloat(document.getElementById('boxart-vignette-ry')?.value) || 55,
+                lockRatio: document.getElementById('boxart-vignette-lock-ratio')?.checked || false,
+                strokeColor: document.getElementById('boxart-vignette-stroke-color')?.value || '#666666',
+                strokeWidth: parseFloat(document.getElementById('boxart-vignette-stroke-width')?.value) || 2
+            },
+
+            // Vignette artwork
+            vignetteArtwork: {
+                hasImage: !!(appState.getBoxArtVignetteArtworkData?.() || appState._boxArtVignetteArtworkData),
+                x: parseFloat(document.getElementById('boxart-vignette-art-x')?.value) || 0,
+                y: parseFloat(document.getElementById('boxart-vignette-art-y')?.value) || 0,
+                scale: parseFloat(document.getElementById('boxart-vignette-art-scale')?.value) || 1,
+                opacity: parseFloat(document.getElementById('boxart-vignette-art-opacity')?.value) || 1,
+                rotation: parseFloat(document.getElementById('boxart-vignette-art-rotation')?.value) || 0,
+                removeWhite: document.getElementById('boxart-vignette-art-remove-white')?.checked || false,
+                threshold: parseInt(document.getElementById('boxart-vignette-art-threshold')?.value) || 245
+            },
+
+            // Badges
+            badges: {
+                voiceBadge: document.getElementById('boxart-voice-badge')?.checked || false,
+                playerCount: document.getElementById('boxart-player-count')?.value || ''
+            },
+
+            // Export settings
+            exportSettings: {
+                includeTemplate: document.getElementById('boxart-export-include-template')?.checked || false
+            }
+        };
+    }
+
+    /**
+     * Apply a configuration object to restore box art settings
+     * @param {Object} config - Configuration object to apply
+     */
+    static async applyConfig(config) {
+        await BoxArtEditor.applyConfigValues(config);
+        await BoxArtEditor.triggerAllUpdates();
+    }
+
+    /**
+     * Apply configuration values to UI controls (without triggering updates)
+     * @param {Object} config - Configuration object to apply
+     */
+    static async applyConfigValues(config) {
+        // Brand settings
+        if (config.brand) {
+            BoxArtEditor.setInputValue('boxart-brand-text', config.brand.text);
+            BoxArtEditor.setSelectValue('boxart-brand-font-select', config.brand.font);
+            BoxArtEditor.setInputValue('boxart-brand-size', config.brand.size);
+            BoxArtEditor.setInputValue('boxart-brand-color', config.brand.color);
+            BoxArtEditor.setCheckbox('boxart-brand-bold', config.brand.bold);
+            BoxArtEditor.setCheckbox('boxart-brand-italic', config.brand.italic);
+            BoxArtEditor.setCheckbox('boxart-brand-underline', config.brand.underline);
+            BoxArtEditor.setInputValue('boxart-brand-x', config.brand.x);
+            BoxArtEditor.setInputValue('boxart-brand-y', config.brand.y);
+        }
+
+        // Tagline settings
+        if (config.tagline) {
+            BoxArtEditor.setInputValue('boxart-tagline', config.tagline.text);
+            BoxArtEditor.setSelectValue('boxart-tagline-font-select', config.tagline.font);
+            BoxArtEditor.setInputValue('boxart-tagline-size', config.tagline.size);
+            BoxArtEditor.setInputValue('boxart-tagline-color', config.tagline.color);
+            BoxArtEditor.setCheckbox('boxart-tagline-bold', config.tagline.bold);
+            BoxArtEditor.setCheckbox('boxart-tagline-italic', config.tagline.italic);
+            BoxArtEditor.setCheckbox('boxart-tagline-underline', config.tagline.underline);
+            BoxArtEditor.setInputValue('boxart-tagline-x', config.tagline.x);
+            BoxArtEditor.setInputValue('boxart-tagline-y', config.tagline.y);
+        }
+
+        // Header settings
+        if (config.header) {
+            BoxArtEditor.setInputValue('boxart-header-color', config.header.color);
+        }
+
+        // Title settings
+        if (config.title) {
+            BoxArtEditor.setInputValue('boxart-title', config.title.text);
+            BoxArtEditor.setSelectValue('boxart-title-font-select', config.title.font);
+            BoxArtEditor.setInputValue('boxart-title-size', config.title.size);
+            BoxArtEditor.setInputValue('boxart-title-color', config.title.color);
+            BoxArtEditor.setCheckbox('boxart-title-bold', config.title.bold);
+            BoxArtEditor.setCheckbox('boxart-title-italic', config.title.italic);
+            BoxArtEditor.setCheckbox('boxart-title-underline', config.title.underline);
+            BoxArtEditor.setSelectValue('boxart-title-anchor', config.title.anchor);
+            BoxArtEditor.setInputValue('boxart-title-x', config.title.x);
+            BoxArtEditor.setInputValue('boxart-title-y', config.title.y);
+        }
+
+        // Subtitle settings
+        if (config.subtitle) {
+            BoxArtEditor.setInputValue('boxart-subtitle', config.subtitle.text);
+            BoxArtEditor.setSelectValue('boxart-subtitle-font-select', config.subtitle.font);
+            BoxArtEditor.setInputValue('boxart-subtitle-size', config.subtitle.size);
+            BoxArtEditor.setInputValue('boxart-subtitle-color', config.subtitle.color);
+            BoxArtEditor.setCheckbox('boxart-subtitle-bold', config.subtitle.bold);
+            BoxArtEditor.setCheckbox('boxart-subtitle-italic', config.subtitle.italic);
+            BoxArtEditor.setCheckbox('boxart-subtitle-underline', config.subtitle.underline);
+            BoxArtEditor.setSelectValue('boxart-subtitle-anchor', config.subtitle.anchor);
+            BoxArtEditor.setInputValue('boxart-subtitle-x', config.subtitle.x);
+            BoxArtEditor.setInputValue('boxart-subtitle-y', config.subtitle.y);
+        }
+
+        // Frame settings
+        if (config.frame) {
+            BoxArtEditor.setInputValue('boxart-frame-color', config.frame.color);
+            BoxArtEditor.setInputValue('boxart-frame-stroke', config.frame.strokeWidth);
+            BoxArtEditor.setInputValue('boxart-frame-fill', config.frame.fill);
+            BoxArtEditor.setInputValue('boxart-frame-top', config.frame.top);
+        }
+
+        // Stripe settings
+        if (config.stripes) {
+            BoxArtEditor.setInputValue('boxart-stripe-count', config.stripes.count);
+            BoxArtEditor.setInputValue('boxart-stripe-width', config.stripes.width);
+            BoxArtEditor.setInputValue('boxart-stripe-line-color', config.stripes.lineColor);
+            BoxArtEditor.setInputValue('boxart-stripe1-color', config.stripes.stripe1Color);
+            BoxArtEditor.setInputValue('boxart-stripe2-color', config.stripes.stripe2Color);
+            BoxArtEditor.setInputValue('boxart-stripe3-color', config.stripes.stripe3Color);
+            BoxArtEditor.setCheckbox('boxart-stripes-ontop', config.stripes.alwaysOnTop ?? true);
+        }
+
+        // Main artwork settings (transforms only)
+        if (config.artwork) {
+            BoxArtEditor.setInputValue('boxart-art-x', config.artwork.x);
+            BoxArtEditor.setInputValue('boxart-art-y', config.artwork.y);
+            BoxArtEditor.setInputValue('boxart-art-scale', config.artwork.scale);
+            BoxArtEditor.setInputValue('boxart-art-opacity', config.artwork.opacity);
+        }
+
+        // Vignette settings
+        if (config.vignette) {
+            BoxArtEditor.setCheckbox('boxart-vignette-enabled', config.vignette.enabled);
+            BoxArtEditor.setInputValue('boxart-vignette-x', config.vignette.x);
+            BoxArtEditor.setInputValue('boxart-vignette-y', config.vignette.y);
+            BoxArtEditor.setInputValue('boxart-vignette-rx', config.vignette.rx);
+            BoxArtEditor.setInputValue('boxart-vignette-ry', config.vignette.ry);
+            BoxArtEditor.setCheckbox('boxart-vignette-lock-ratio', config.vignette.lockRatio);
+            BoxArtEditor.setInputValue('boxart-vignette-stroke-color', config.vignette.strokeColor);
+            BoxArtEditor.setInputValue('boxart-vignette-stroke-width', config.vignette.strokeWidth);
+        }
+
+        // Vignette artwork settings (transforms only)
+        if (config.vignetteArtwork) {
+            BoxArtEditor.setInputValue('boxart-vignette-art-x', config.vignetteArtwork.x);
+            BoxArtEditor.setInputValue('boxart-vignette-art-y', config.vignetteArtwork.y);
+            BoxArtEditor.setInputValue('boxart-vignette-art-scale', config.vignetteArtwork.scale);
+            BoxArtEditor.setInputValue('boxart-vignette-art-opacity', config.vignetteArtwork.opacity);
+            BoxArtEditor.setInputValue('boxart-vignette-art-rotation', config.vignetteArtwork.rotation);
+            BoxArtEditor.setCheckbox('boxart-vignette-art-remove-white', config.vignetteArtwork.removeWhite);
+            BoxArtEditor.setInputValue('boxart-vignette-art-threshold', config.vignetteArtwork.threshold);
+        }
+
+        // Badge settings
+        if (config.badges) {
+            BoxArtEditor.setCheckbox('boxart-voice-badge', config.badges.voiceBadge);
+            BoxArtEditor.setInputValue('boxart-player-count', config.badges.playerCount);
+        }
+
+        // Export settings
+        if (config.exportSettings) {
+            BoxArtEditor.setCheckbox('boxart-export-include-template', config.exportSettings.includeTemplate);
+        }
+    }
+
+    /**
+     * Helper to set input value
+     */
+    static setInputValue(id, value) {
+        const el = document.getElementById(id);
+        if (el && value !== undefined && value !== null) {
+            el.value = value;
+        }
+    }
+
+    /**
+     * Helper to set checkbox state
+     */
+    static setCheckbox(id, checked) {
+        const el = document.getElementById(id);
+        if (el && checked !== undefined) {
+            el.checked = checked;
+        }
+    }
+
+    /**
+     * Helper to set select value
+     */
+    static setSelectValue(id, value) {
+        const el = document.getElementById(id);
+        if (el && value !== undefined && value !== null) {
+            el.value = value;
+        }
+    }
+
+    /**
+     * Trigger all update functions to refresh the SVG
+     */
+    static async triggerAllUpdates() {
+        // Brand updates
+        BoxArtEditor.updateBrand();
+        BoxArtEditor.updateBrandFont();
+        BoxArtEditor.updateBrandSize();
+        BoxArtEditor.updateBrandColor();
+        BoxArtEditor.updateBrandStyle();
+        BoxArtEditor.updateBrandPosition();
+
+        // Tagline updates
+        BoxArtEditor.updateTagline();
+        BoxArtEditor.updateTaglineFont();
+        BoxArtEditor.updateTaglineSize();
+        BoxArtEditor.updateTaglineColor();
+        BoxArtEditor.updateTaglineStyle();
+        BoxArtEditor.updateTaglinePosition();
+
+        // Header updates
+        BoxArtEditor.updateHeaderColor();
+
+        // Title updates
+        BoxArtEditor.updateTitle();
+        BoxArtEditor.updateTitleFont();
+        BoxArtEditor.updateTitleSize();
+        BoxArtEditor.updateTitleColor();
+        BoxArtEditor.updateTitleStyle();
+        BoxArtEditor.updateTitleAnchor();
+        BoxArtEditor.updateTitlePosition();
+
+        // Subtitle updates
+        BoxArtEditor.updateSubtitle();
+        BoxArtEditor.updateSubtitleFont();
+        BoxArtEditor.updateSubtitleSize();
+        BoxArtEditor.updateSubtitleColor();
+        BoxArtEditor.updateSubtitleStyle();
+        BoxArtEditor.updateSubtitleAnchor();
+        BoxArtEditor.updateSubtitlePosition();
+
+        // Frame updates
+        BoxArtEditor.updateFrameColor();
+        BoxArtEditor.updateFrameStroke();
+        BoxArtEditor.updateFrameFill();
+        BoxArtEditor.updateFrameTop();
+
+        // Stripe updates
+        BoxArtEditor.updateStripes();
+
+        // Vignette updates
+        BoxArtEditor.toggleVignette();
+        BoxArtEditor.updateVignette();
+
+        // Badge updates
+        BoxArtEditor.toggleVoiceBadge();
+        BoxArtEditor.updatePlayerCount();
+
+        // Update display values
+        BoxArtEditor.updateValueDisplays();
+    }
+
+    /**
+     * Update the value display spans for sliders
+     */
+    static updateValueDisplays() {
+        const displays = [
+            ['boxart-brand-size', 'boxart-brand-size-value'],
+            ['boxart-brand-x', 'boxart-brand-x-value'],
+            ['boxart-brand-y', 'boxart-brand-y-value'],
+            ['boxart-tagline-size', 'boxart-tagline-size-value'],
+            ['boxart-tagline-x', 'boxart-tagline-x-value'],
+            ['boxart-tagline-y', 'boxart-tagline-y-value'],
+            ['boxart-title-size', 'boxart-title-size-value'],
+            ['boxart-title-x', 'boxart-title-x-value'],
+            ['boxart-title-y', 'boxart-title-y-value'],
+            ['boxart-subtitle-size', 'boxart-subtitle-size-value'],
+            ['boxart-subtitle-x', 'boxart-subtitle-x-value'],
+            ['boxart-subtitle-y', 'boxart-subtitle-y-value'],
+            ['boxart-frame-stroke', 'boxart-frame-stroke-value'],
+            ['boxart-frame-top', 'boxart-frame-top-value'],
+            ['boxart-stripe-width', 'boxart-stripe-width-value'],
+            ['boxart-vignette-x', 'boxart-vignette-x-value'],
+            ['boxart-vignette-y', 'boxart-vignette-y-value'],
+            ['boxart-vignette-rx', 'boxart-vignette-rx-value'],
+            ['boxart-vignette-ry', 'boxart-vignette-ry-value'],
+            ['boxart-vignette-stroke-width', 'boxart-vignette-stroke-width-value']
+        ];
+
+        for (const [inputId, valueId] of displays) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(valueId);
+            if (input && display) {
+                display.textContent = input.value;
+            }
+        }
+
+        // Handle percentage displays
+        const percentDisplays = [
+            ['boxart-art-scale', 'boxart-art-scale-value'],
+            ['boxart-art-opacity', 'boxart-art-opacity-value'],
+            ['boxart-vignette-art-scale', 'boxart-vignette-art-scale-value'],
+            ['boxart-vignette-art-opacity', 'boxart-vignette-art-opacity-value']
+        ];
+
+        for (const [inputId, valueId] of percentDisplays) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(valueId);
+            if (input && display) {
+                display.textContent = Math.round(parseFloat(input.value) * 100);
+            }
+        }
+    }
+
+    /**
+     * Convert a data URL to a Blob
+     * @param {string} dataURL - Base64 data URL
+     * @returns {Blob|null} Blob object or null if conversion fails
+     */
+    static dataURLtoBlob(dataURL) {
+        if (!dataURL || !dataURL.startsWith('data:')) {
+            return null;
+        }
+
+        try {
+            const parts = dataURL.split(',');
+            const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/png';
+            const bstr = atob(parts[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        } catch (err) {
+            console.error('Failed to convert data URL to blob:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Convert a Blob to a data URL
+     * @param {Blob} blob - Blob to convert
+     * @returns {Promise<string>} Data URL string
+     */
+    static blobToDataURL(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    /**
+     * Sanitize a string for use as a filename
+     * @param {string} name - Original name
+     * @returns {string} Sanitized filename
+     */
+    static sanitizeFilename(name) {
+        return name
+            .replace(/[^a-z0-9]/gi, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_|_$/g, '')
+            .toLowerCase() || 'untitled';
+    }
+
+    /**
+     * Export project as a ZIP file containing config.json and all artwork images
+     */
+    static async exportProject() {
+        // Check if JSZip is available
+        if (typeof JSZip === 'undefined') {
+            console.error('JSZip library not loaded');
+            BoxArtEditor.showStatus('Error: JSZip library not loaded', 'error');
+            return;
+        }
+
+        const config = BoxArtEditor.collectConfig();
+        const zip = new JSZip();
+
+        // Add config.json
+        const jsonString = JSON.stringify(config, null, 2);
+        zip.file('config.json', jsonString);
+
+        // Add main artwork if present
+        const mainArtwork = appState.getBoxArtArtworkData();
+        if (mainArtwork) {
+            const imageData = BoxArtEditor.dataURLtoBlob(mainArtwork);
+            if (imageData) {
+                zip.file('main_artwork.png', imageData);
+            }
+        }
+
+        // Add vignette artwork if present
+        const vignetteArtwork = appState.getBoxArtVignetteArtworkOriginal?.() ||
+                               appState._boxArtVignetteArtworkOriginal ||
+                               appState.getBoxArtVignetteArtworkData?.() ||
+                               appState._boxArtVignetteArtworkData;
+        if (vignetteArtwork) {
+            const imageData = BoxArtEditor.dataURLtoBlob(vignetteArtwork);
+            if (imageData) {
+                zip.file('vignette_artwork.png', imageData);
+            }
+        }
+
+        // Generate ZIP and download
+        try {
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const filename = BoxArtEditor.sanitizeFilename(config.name) + '_boxart_project.zip';
+
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+
+            BoxArtEditor.showStatus('Project exported successfully', 'success');
+            console.log('Exported box art project:', filename);
+        } catch (err) {
+            console.error('Failed to create ZIP file:', err);
+            BoxArtEditor.showStatus('Failed to export project: ' + err.message, 'error');
+        }
+    }
+
+    /**
+     * Import project from a ZIP or JSON file
+     */
+    static async importProject() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.zip,.json,application/zip,application/json';
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                if (file.name.endsWith('.json')) {
+                    // JSON-only import
+                    const text = await file.text();
+                    const config = JSON.parse(text);
+                    if (!config.version) {
+                        throw new Error('Invalid configuration file: missing version');
+                    }
+                    await BoxArtEditor.applyConfig(config);
+                    console.log('Imported box art configuration (JSON):', file.name);
+                } else if (file.name.endsWith('.zip')) {
+                    // ZIP project import
+                    await BoxArtEditor.importFromZip(file);
+                } else {
+                    throw new Error('Unsupported file type. Please use .zip or .json files.');
+                }
+
+                BoxArtEditor.showStatus(`Loaded project from ${file.name}`, 'success');
+            } catch (err) {
+                console.error('Failed to import project:', err);
+                BoxArtEditor.showStatus('Failed to import: ' + err.message, 'error');
+            }
+        };
+
+        input.click();
+    }
+
+    /**
+     * Import project from a ZIP file
+     * @param {File} file - ZIP file to import
+     */
+    static async importFromZip(file) {
+        // Check if JSZip is available
+        if (typeof JSZip === 'undefined') {
+            throw new Error('JSZip library not loaded. Please refresh the page.');
+        }
+
+        const zip = await JSZip.loadAsync(file);
+
+        // Load and parse config.json
+        const configFile = zip.file('config.json');
+        if (!configFile) {
+            throw new Error('Invalid project file: missing config.json');
+        }
+
+        const configText = await configFile.async('text');
+        const config = JSON.parse(configText);
+
+        if (!config.version) {
+            throw new Error('Invalid configuration: missing version');
+        }
+
+        // Reset box art state and load fresh SVG template (without applying default updates)
+        appState.resetBoxArt();
+        await BoxArtEditor.loadTemplate();
+
+        // Apply the configuration (sets UI values but DON'T trigger updates yet)
+        await BoxArtEditor.applyConfigValues(config);
+
+        // Load main artwork if present
+        const mainArtworkFile = zip.file('main_artwork.png');
+        if (mainArtworkFile) {
+            const blob = await mainArtworkFile.async('blob');
+            const dataURL = await BoxArtEditor.blobToDataURL(blob);
+            if (dataURL) {
+                // Get artwork settings from config
+                const artworkSettings = config.artwork || {};
+
+                // Set artwork state
+                appState.setBoxArtArtworkData(dataURL);
+                appState.setBoxArtArtworkPosition(artworkSettings.x || 0, artworkSettings.y || 0);
+                appState.setBoxArtArtworkScale(artworkSettings.scale || 1.0);
+                appState.setBoxArtArtworkOpacity(artworkSettings.opacity || 1.0);
+
+                // Show artwork controls
+                document.getElementById('boxart-artwork-controls').style.display = 'block';
+
+                // Update display values
+                document.getElementById('boxart-art-x-value').textContent = artworkSettings.x || 0;
+                document.getElementById('boxart-art-y-value').textContent = artworkSettings.y || 0;
+                document.getElementById('boxart-art-scale-value').textContent = Math.round((artworkSettings.scale || 1) * 100);
+                document.getElementById('boxart-art-opacity-value').textContent = Math.round((artworkSettings.opacity || 1) * 100);
+            }
+        }
+
+        // Load vignette artwork if present
+        const vignetteArtworkFile = zip.file('vignette_artwork.png');
+        if (vignetteArtworkFile) {
+            const blob = await vignetteArtworkFile.async('blob');
+            const dataURL = await BoxArtEditor.blobToDataURL(blob);
+            if (dataURL) {
+                // Get artwork settings from config
+                const artSettings = config.vignetteArtwork || {};
+
+                // Store original and current data
+                appState.setBoxArtVignetteArtworkOriginal?.(dataURL) || (appState._boxArtVignetteArtworkOriginal = dataURL);
+                appState.setBoxArtVignetteArtworkData?.(dataURL) || (appState._boxArtVignetteArtworkData = dataURL);
+
+                // Show artwork controls
+                document.getElementById('boxart-vignette-artwork-controls').style.display = 'block';
+
+                // Update display values
+                document.getElementById('boxart-vignette-art-x-value').textContent = artSettings.x || 0;
+                document.getElementById('boxart-vignette-art-y-value').textContent = artSettings.y || 0;
+                document.getElementById('boxart-vignette-art-scale-value').textContent = Math.round((artSettings.scale || 1) * 100);
+                document.getElementById('boxart-vignette-art-opacity-value').textContent = Math.round((artSettings.opacity || 1) * 100);
+                document.getElementById('boxart-vignette-art-rotation-value').textContent = artSettings.rotation || 0;
+
+                // Show/hide threshold control based on removeWhite setting
+                document.getElementById('boxart-vignette-art-threshold-control').style.display =
+                    artSettings.removeWhite ? 'block' : 'none';
+
+                // If removeWhite is enabled, process the image
+                if (artSettings.removeWhite) {
+                    const { ImageProcessor } = await import('./imageProcessor.js');
+                    const processedData = await ImageProcessor.removeWhiteBackground(dataURL, artSettings.threshold || 245);
+                    appState.setBoxArtVignetteArtworkData?.(processedData) || (appState._boxArtVignetteArtworkData = processedData);
+                }
+            }
+        }
+
+        // Now trigger all updates AFTER artwork is loaded
+        await BoxArtEditor.triggerAllUpdates();
+
+        // Insert artwork into SVG (after updates so layer order is correct)
+        const mainArtwork = appState.getBoxArtArtworkData();
+        if (mainArtwork) {
+            BoxArtEditor.insertArtwork(mainArtwork);
+        }
+
+        // Insert vignette artwork
+        const vignetteArtwork = appState.getBoxArtVignetteArtworkData?.() || appState._boxArtVignetteArtworkData;
+        if (vignetteArtwork) {
+            BoxArtEditor.insertVignetteArtwork(vignetteArtwork);
+        }
+
+        // Final refresh to ensure everything is rendered
+        BoxArtEditor.refreshPreview();
+
+        console.log('Imported box art project (ZIP):', file.name);
     }
 
     /**

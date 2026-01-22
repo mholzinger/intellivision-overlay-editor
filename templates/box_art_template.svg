@@ -65,32 +65,92 @@
           x="10" y="20"
           width="166" height="206"
           fill="#FFFFFF"
-          stroke="#666666"
-          stroke-width="1"
+          stroke="none"
           rx="4" ry="4"/>
   </g>
 
   <!-- ============================================ -->
-  <!-- LAYER 3: BRANDING (top area)                 -->
+  <!-- LAYER 3: ARTWORK PLACEHOLDERS                -->
+  <!-- ============================================ -->
+  <g id="artwork-layer">
+    <!-- Background artwork placeholder - extends to bottom of content frame -->
+    <rect id="background-artwork-placeholder"
+          x="10" y="56"
+          width="166" height="160"
+          fill="none"
+          stroke="#cccccc"
+          stroke-width="0.5"
+          stroke-dasharray="4,2"/>
+
+    <!-- Center crosshair for artwork alignment (centered in artwork area) -->
+    <line x1="93" y1="56" x2="93" y2="216" stroke="#cccccc" stroke-width="0.25"/>
+    <line x1="20" y1="136" x2="166" y2="136" stroke="#cccccc" stroke-width="0.25"/>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- LAYER 4: FRAME STRIPES                       -->
+  <!-- Decorative border stripes around content     -->
+  <!-- Structure (outside to inside):               -->
+  <!--   - Thin separator line                      -->
+  <!--   - Stripe 1 (outer)                         -->
+  <!--   - Thin separator line                      -->
+  <!--   - Stripe 2 (middle) - only in 3-stripe    -->
+  <!--   - Thin separator line                      -->
+  <!--   - Stripe 3 (inner) - only in 3-stripe     -->
+  <!--   - Thin separator line                      -->
+  <!-- ============================================ -->
+  <g id="frame-stripes-layer">
+    <!-- Stripes will be dynamically generated here by JavaScript -->
+    <!-- Default: 1 stripe with thin lines on either side -->
+  </g>
+
+  <!-- ============================================ -->
+  <!-- LAYER 5: BRANDING (top header area)          -->
   <!-- ============================================ -->
   <g id="branding-layer">
     <!-- Brand logo -->
     <text id="brand-logo"
-          x="12" y="11"
+          x="12" y="13"
           font-family="'SF Intellivised', sans-serif"
           font-size="12"
           fill="#FFFFFF">Intellivision</text>
 
     <!-- Tagline -->
     <text id="brand-tagline"
-          x="118" y="11"
+          x="118" y="13"
           font-family="sans-serif"
           font-size="5"
           fill="#FFFFFF">Intelligent Television</text>
   </g>
 
   <!-- ============================================ -->
-  <!-- LAYER 4: TITLE AREA                          -->
+  <!-- LAYER 6: VIGNETTE FRAME (optional)           -->
+  <!-- Hidden by default - enable via editor        -->
+  <!-- Default is circle (rx=ry), can be adjusted   -->
+  <!-- Clipped to content frame boundary            -->
+  <!-- ============================================ -->
+  <g id="vignette-layer" style="display: none;" clip-path="url(#content-frame-clip)">
+    <!-- Vignette artwork placeholder (inserted here when uploaded) -->
+
+    <!-- Outer vignette ring (decorative border) -->
+    <ellipse id="vignette-outer"
+             cx="93" cy="136"
+             rx="65" ry="65"
+             fill="none"
+             stroke="#666666"
+             stroke-width="2"/>
+
+    <!-- Inner vignette ring (clip boundary indicator) -->
+    <ellipse id="vignette-inner"
+             cx="93" cy="136"
+             rx="60" ry="60"
+             fill="none"
+             stroke="#999999"
+             stroke-width="0.5"/>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- LAYER 7: TITLE AREA (renders on top)         -->
   <!-- ============================================ -->
   <g id="title-layer">
     <!-- Title area boundary -->
@@ -120,50 +180,7 @@
   </g>
 
   <!-- ============================================ -->
-  <!-- LAYER 5: ARTWORK PLACEHOLDERS                -->
-  <!-- ============================================ -->
-  <g id="artwork-layer">
-    <!-- Background artwork placeholder - extends to bottom of content frame -->
-    <rect id="background-artwork-placeholder"
-          x="10" y="56"
-          width="166" height="160"
-          fill="none"
-          stroke="#cccccc"
-          stroke-width="0.5"
-          stroke-dasharray="4,2"/>
-
-    <!-- Center crosshair for artwork alignment (centered in artwork area) -->
-    <line x1="93" y1="56" x2="93" y2="216" stroke="#cccccc" stroke-width="0.25"/>
-    <line x1="20" y1="136" x2="166" y2="136" stroke="#cccccc" stroke-width="0.25"/>
-  </g>
-
-  <!-- ============================================ -->
-  <!-- LAYER 6: VIGNETTE FRAME (optional)           -->
-  <!-- Hidden by default - enable via editor        -->
-  <!-- Default is circle (rx=ry), can be adjusted   -->
-  <!-- ============================================ -->
-  <g id="vignette-layer" style="display: none;">
-    <!-- Vignette artwork placeholder (inserted here when uploaded) -->
-
-    <!-- Outer vignette ring (decorative border) -->
-    <ellipse id="vignette-outer"
-             cx="93" cy="136"
-             rx="65" ry="65"
-             fill="none"
-             stroke="#666666"
-             stroke-width="2"/>
-
-    <!-- Inner vignette ring (clip boundary indicator) -->
-    <ellipse id="vignette-inner"
-             cx="93" cy="136"
-             rx="60" ry="60"
-             fill="none"
-             stroke="#999999"
-             stroke-width="0.5"/>
-  </g>
-
-  <!-- ============================================ -->
-  <!-- LAYER 7: BADGE AREAS (optional)              -->
+  <!-- LAYER 8: BADGE AREAS (optional)              -->
   <!-- ============================================ -->
   <g id="badge-layer">
     <!-- Voice badge area (speech bubble) -->
@@ -188,7 +205,7 @@
   </g>
 
   <!-- ============================================ -->
-  <!-- LAYER 8: BOTTOM MARGIN                       -->
+  <!-- LAYER 9: BOTTOM MARGIN                       -->
   <!-- (colored border area around content frame,   -->
   <!--  matching original box art design)           -->
   <!-- ============================================ -->

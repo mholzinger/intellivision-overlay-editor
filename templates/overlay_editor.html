@@ -22,7 +22,7 @@
                 🎮 Overlay Editor
             </button>
             <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
-                📦 Box Art Editor
+                📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA FEATURE</span>
             </button>
         </div>
 
@@ -1517,8 +1517,8 @@
                                             <input type="range" id="boxart-brand-x" min="0" max="100" value="12" step="1" oninput="updateBoxArtBrandPosition()" style="width: 100%;">
                                         </div>
                                         <div>
-                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-brand-y-value">11</span></label>
-                                            <input type="range" id="boxart-brand-y" min="5" max="18" value="11" step="0.5" oninput="updateBoxArtBrandPosition()" style="width: 100%;">
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-brand-y-value">13</span></label>
+                                            <input type="range" id="boxart-brand-y" min="5" max="18" value="13" step="0.5" oninput="updateBoxArtBrandPosition()" style="width: 100%;">
                                         </div>
                                     </div>
                                 </div>
@@ -1567,8 +1567,8 @@
                                             <input type="range" id="boxart-tagline-x" min="50" max="180" value="118" step="1" oninput="updateBoxArtTaglinePosition()" style="width: 100%;">
                                         </div>
                                         <div>
-                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-tagline-y-value">11</span></label>
-                                            <input type="range" id="boxart-tagline-y" min="5" max="18" value="11" step="0.5" oninput="updateBoxArtTaglinePosition()" style="width: 100%;">
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-tagline-y-value">13</span></label>
+                                            <input type="range" id="boxart-tagline-y" min="5" max="18" value="13" step="0.5" oninput="updateBoxArtTaglinePosition()" style="width: 100%;">
                                         </div>
                                     </div>
                                 </div>
@@ -1703,13 +1703,69 @@
                     <div class="control-section">
                         <h2>Content Frame</h2>
                         <div class="input-group">
-                            <label for="boxart-frame-color">Frame Color</label>
-                            <input type="color" id="boxart-frame-color" value="#8B4513" oninput="updateBoxArtFrameColor()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            <label for="boxart-frame-top">Top Position: <span id="boxart-frame-top-value">20</span>mm</label>
+                            <input type="range" id="boxart-frame-top" min="14" max="80" value="20" step="1" oninput="updateBoxArtFrameTop()">
+                            <div class="helper-text">Adjust the top edge of the content frame (shrink/expand title area)</div>
                         </div>
+
+                        <!-- Frame Border Stripes -->
                         <div class="input-group">
-                            <label for="boxart-frame-stroke">Stroke Width</label>
-                            <input type="range" id="boxart-frame-stroke" min="0.5" max="4" value="1" step="0.5" oninput="updateBoxArtFrameStroke()">
-                            <div class="helper-text">Width: <span id="boxart-frame-stroke-value">1</span>px</div>
+                            <label for="boxart-stripe-count">Border Stripes</label>
+                            <select id="boxart-stripe-count" onchange="updateBoxArtStripes()" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                                <option value="0">None (simple stroke only)</option>
+                                <option value="1" selected>1 Stripe</option>
+                                <option value="3">3 Stripes (authentic)</option>
+                            </select>
+                            <div class="helper-text">Classic Intellivision boxes have 3 colored stripes with thin separators</div>
+                        </div>
+
+                        <!-- Stripe Width Control -->
+                        <div class="input-group">
+                            <label for="boxart-stripe-width">Stripe Width: <span id="boxart-stripe-width-value">3</span>mm</label>
+                            <input type="range" id="boxart-stripe-width" min="1" max="8" value="3" step="0.5" oninput="updateBoxArtStripes()">
+                        </div>
+
+                        <!-- Thin Line Color -->
+                        <div class="input-group">
+                            <label for="boxart-stripe-line-color">Separator Line Color</label>
+                            <input type="color" id="boxart-stripe-line-color" value="#333333" oninput="updateBoxArtStripes()" style="width: 100%; height: 30px; padding: 2px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            <div class="helper-text">Color of thin lines between stripes</div>
+                        </div>
+
+                        <!-- Stripe 1 Color (always visible when stripes > 0) -->
+                        <div id="boxart-stripe1-controls">
+                            <div class="input-group">
+                                <label for="boxart-stripe1-color">Stripe 1 Color (outer)</label>
+                                <input type="color" id="boxart-stripe1-color" value="#8B4513" oninput="updateBoxArtStripes()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            </div>
+                        </div>
+
+                        <!-- Stripe 2 & 3 Colors (only for 3-stripe mode) -->
+                        <div id="boxart-stripe23-controls" style="display: none;">
+                            <div class="input-group">
+                                <label for="boxart-stripe2-color">Stripe 2 Color (middle)</label>
+                                <input type="color" id="boxart-stripe2-color" value="#D4AF37" oninput="updateBoxArtStripes()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            </div>
+                            <div class="input-group">
+                                <label for="boxart-stripe3-color">Stripe 3 Color (inner)</label>
+                                <input type="color" id="boxart-stripe3-color" value="#8B4513" oninput="updateBoxArtStripes()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            </div>
+                        </div>
+
+                        <!-- Stripes Always On Top Option -->
+                        <div class="input-group" id="boxart-stripes-ontop-controls">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="boxart-stripes-ontop" checked onchange="updateBoxArtStripesLayer()">
+                                <span>Stripes always on top</span>
+                            </label>
+                            <div class="helper-text">When checked, stripes render above vignette and artwork. Uncheck to allow vignette to overlay stripes.</div>
+                        </div>
+
+                        <!-- Content Frame Fill (inside the stripes) -->
+                        <div class="input-group">
+                            <label for="boxart-frame-fill">Content Fill Color</label>
+                            <input type="color" id="boxart-frame-fill" value="#FFFFFF" oninput="updateBoxArtFrameFill()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            <div class="helper-text">Background color inside the frame</div>
                         </div>
                     </div>
 
@@ -1849,18 +1905,24 @@
                                     </div>
                                 </div>
                                 <div class="input-group">
-                                    <label>Size (adjust to make oval)</label>
+                                    <label style="display: flex; align-items: center; gap: 10px;">
+                                        Size (adjust to make oval)
+                                        <span style="font-size: 11px; font-weight: normal;">
+                                            <input type="checkbox" id="boxart-vignette-lock-ratio" checked style="margin-right: 4px;">
+                                            Lock aspect ratio
+                                        </span>
+                                    </label>
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <div>
                                             <label style="font-size: 11px; color: #666;">Width (rx): <span id="boxart-vignette-rx-value">65</span>mm</label>
-                                            <input type="range" id="boxart-vignette-rx" min="20" max="85" value="65" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                            <input type="range" id="boxart-vignette-rx" min="20" max="85" value="65" step="1" oninput="updateBoxArtVignetteSize('rx')" style="width: 100%;">
                                         </div>
                                         <div>
                                             <label style="font-size: 11px; color: #666;">Height (ry): <span id="boxart-vignette-ry-value">65</span>mm</label>
-                                            <input type="range" id="boxart-vignette-ry" min="20" max="100" value="65" step="1" oninput="updateBoxArtVignette()" style="width: 100%;">
+                                            <input type="range" id="boxart-vignette-ry" min="20" max="100" value="65" step="1" oninput="updateBoxArtVignetteSize('ry')" style="width: 100%;">
                                         </div>
                                     </div>
-                                    <div class="helper-text">Equal values = circle, different values = oval</div>
+                                    <div class="helper-text">Lock keeps circle/oval shape; unlock to adjust independently</div>
                                 </div>
                                 <div class="input-group">
                                     <label for="boxart-vignette-stroke-color">Stroke Color</label>
