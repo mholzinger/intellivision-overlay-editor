@@ -137,6 +137,11 @@ body {
     display: block;
 }
 
+/* Box Art Editor uses a larger preview area (50/50 split) */
+#boxart-editor-content .main-content {
+    grid-template-columns: 1fr 1fr;
+}
+
 .main-content {
     display: grid;
     grid-template-columns: 1fr 2fr;

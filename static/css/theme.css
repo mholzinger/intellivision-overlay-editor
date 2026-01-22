@@ -14,7 +14,7 @@
     --gradient-header: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     --gradient-primary: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     --gradient-success: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-    --gradient-secondary: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+    --gradient-secondary: #5b8a9a; /* Flat teal - clearly active, not disabled */
 
     /* Neutral Colors */
     --white: #ffffff;
