@@ -7,13 +7,15 @@ import { appState } from '../services/stateManager.js';
 import { UIManager } from './uiManager.js';
 
 export class TitleArtwork {
-    // Title area dimensions (from SVG template)
-    static TITLE_AREA = {
-        x: 3.5,
-        y: 2.4,
-        width: 48.6,
-        height: 11.5
-    };
+    // Title area dimensions - dynamic getter that reads from state
+    static get TITLE_AREA() {
+        return {
+            x: appState.getTitleAreaX() ?? 3.5,
+            y: appState.getTitleAreaY() ?? 2.4,
+            width: appState.getTitleAreaWidth() ?? 48.6,
+            height: appState.getTitleAreaHeight() ?? 11.5
+        };
+    }
 
     /**
      * Handle title artwork file upload

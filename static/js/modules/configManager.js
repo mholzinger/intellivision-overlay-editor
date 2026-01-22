@@ -63,6 +63,25 @@ export class ConfigManager {
         if (btnShapeControls) {
             btnShapeControls.style.display = 'none';
         }
+
+        // Reset title area dimension sliders to defaults
+        const titleAreaX = document.getElementById('title-area-x');
+        const titleAreaY = document.getElementById('title-area-y');
+        const titleAreaWidth = document.getElementById('title-area-width');
+        const titleAreaHeight = document.getElementById('title-area-height');
+        if (titleAreaX) titleAreaX.value = 3.5;
+        if (titleAreaY) titleAreaY.value = 2.4;
+        if (titleAreaWidth) titleAreaWidth.value = 48.6;
+        if (titleAreaHeight) titleAreaHeight.value = 11.5;
+
+        const titleAreaXValue = document.getElementById('title-area-x-value');
+        const titleAreaYValue = document.getElementById('title-area-y-value');
+        const titleAreaWidthValue = document.getElementById('title-area-width-value');
+        const titleAreaHeightValue = document.getElementById('title-area-height-value');
+        if (titleAreaXValue) titleAreaXValue.textContent = '3.5';
+        if (titleAreaYValue) titleAreaYValue.textContent = '2.4';
+        if (titleAreaWidthValue) titleAreaWidthValue.textContent = '48.6';
+        if (titleAreaHeightValue) titleAreaHeightValue.textContent = '11.5';
     }
 
     /**
@@ -84,6 +103,12 @@ export class ConfigManager {
                 bold: document.getElementById('title-bold')?.checked || false,
                 italic: document.getElementById('title-italic')?.checked || false,
                 underline: document.getElementById('title-underline')?.checked || false,
+                areaDimensions: {
+                    x: parseFloat(document.getElementById('title-area-x')?.value) || 3.5,
+                    y: parseFloat(document.getElementById('title-area-y')?.value) || 2.4,
+                    width: parseFloat(document.getElementById('title-area-width')?.value) || 48.6,
+                    height: parseFloat(document.getElementById('title-area-height')?.value) || 11.5
+                },
                 gradient: {
                     enabled: document.getElementById('title-gradient-enabled')?.checked || false,
                     endColor: document.getElementById('title-gradient-end')?.value || '#000000',
@@ -509,6 +534,31 @@ export class ConfigManager {
                     this.setSelectValue('title-bg-gradient-direction', config.title.background.gradient.direction);
                 }
             }
+
+            // Title area dimensions
+            if (config.title.areaDimensions) {
+                const dims = config.title.areaDimensions;
+                this.setInputValue('title-area-x', dims.x);
+                this.setInputValue('title-area-y', dims.y);
+                this.setInputValue('title-area-width', dims.width);
+                this.setInputValue('title-area-height', dims.height);
+                appState.setTitleAreaDimensions(dims);
+                // Update display values
+                const xValue = document.getElementById('title-area-x-value');
+                const yValue = document.getElementById('title-area-y-value');
+                const widthValue = document.getElementById('title-area-width-value');
+                const heightValue = document.getElementById('title-area-height-value');
+                if (xValue) xValue.textContent = dims.x.toFixed(1);
+                if (yValue) yValue.textContent = dims.y.toFixed(1);
+                if (widthValue) widthValue.textContent = dims.width.toFixed(1);
+                if (heightValue) heightValue.textContent = dims.height.toFixed(1);
+            } else if (config.title.areaHeight !== undefined) {
+                // Backward compatibility with old configs that only had height
+                this.setInputValue('title-area-height', config.title.areaHeight);
+                appState.setTitleAreaHeight(config.title.areaHeight);
+                const heightValue = document.getElementById('title-area-height-value');
+                if (heightValue) heightValue.textContent = config.title.areaHeight.toFixed(1);
+            }
         }
 
         // Copyright settings
@@ -809,6 +859,11 @@ export class ConfigManager {
         if (window.updateTitleBackground) {
             window.updateTitleBackground();
         }
+        // Title area dimensions (X, Y, Width, Height)
+        if (window.updateTitleAreaX) window.updateTitleAreaX();
+        if (window.updateTitleAreaY) window.updateTitleAreaY();
+        if (window.updateTitleAreaWidth) window.updateTitleAreaWidth();
+        if (window.updateTitleAreaHeight) window.updateTitleAreaHeight();
 
         // Copyright updates
         if (window.updateCopyrightText) window.updateCopyrightText();

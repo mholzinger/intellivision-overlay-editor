@@ -32,6 +32,12 @@ export class StateManager {
         this.titleArtworkRemoveWhite = false;
         this.titleArtworkWhiteThreshold = 245;
 
+        // Title area dimensions (all in mm)
+        this._titleAreaX = 3.5;       // Default X position
+        this._titleAreaY = 2.4;       // Default Y position
+        this._titleAreaWidth = 48.6;  // Default width
+        this._titleAreaHeight = 11.5; // Default height
+
         // Button artwork state
         this.buttonArtwork = {}; // Maps button IDs to artwork data
         this.selectedButtonForArtwork = null;
@@ -378,6 +384,96 @@ export class StateManager {
      */
     getTitleArtworkWhiteThreshold() {
         return this.titleArtworkWhiteThreshold;
+    }
+
+    // ========== Title Area Dimensions ==========
+
+    /**
+     * Set title area X position
+     * @param {number} x - X position in mm
+     */
+    setTitleAreaX(x) {
+        this._titleAreaX = x;
+    }
+
+    /**
+     * Get title area X position
+     * @returns {number} X position in mm
+     */
+    getTitleAreaX() {
+        return this._titleAreaX;
+    }
+
+    /**
+     * Set title area Y position
+     * @param {number} y - Y position in mm
+     */
+    setTitleAreaY(y) {
+        this._titleAreaY = y;
+    }
+
+    /**
+     * Get title area Y position
+     * @returns {number} Y position in mm
+     */
+    getTitleAreaY() {
+        return this._titleAreaY;
+    }
+
+    /**
+     * Set title area width
+     * @param {number} width - Width in mm
+     */
+    setTitleAreaWidth(width) {
+        this._titleAreaWidth = width;
+    }
+
+    /**
+     * Get title area width
+     * @returns {number} Width in mm
+     */
+    getTitleAreaWidth() {
+        return this._titleAreaWidth;
+    }
+
+    /**
+     * Set title area height
+     * @param {number} height - Height in mm
+     */
+    setTitleAreaHeight(height) {
+        this._titleAreaHeight = height;
+    }
+
+    /**
+     * Get title area height
+     * @returns {number} Height in mm
+     */
+    getTitleAreaHeight() {
+        return this._titleAreaHeight;
+    }
+
+    /**
+     * Get all title area dimensions
+     * @returns {Object} {x, y, width, height}
+     */
+    getTitleAreaDimensions() {
+        return {
+            x: this._titleAreaX,
+            y: this._titleAreaY,
+            width: this._titleAreaWidth,
+            height: this._titleAreaHeight
+        };
+    }
+
+    /**
+     * Set all title area dimensions
+     * @param {Object} dims - {x, y, width, height}
+     */
+    setTitleAreaDimensions(dims) {
+        if (dims.x !== undefined) this._titleAreaX = dims.x;
+        if (dims.y !== undefined) this._titleAreaY = dims.y;
+        if (dims.width !== undefined) this._titleAreaWidth = dims.width;
+        if (dims.height !== undefined) this._titleAreaHeight = dims.height;
     }
 
     /**
@@ -787,6 +883,11 @@ export class StateManager {
         this.titleArtworkTiled = false;
         this.titleArtworkRemoveWhite = false;
         this.titleArtworkWhiteThreshold = 245;
+        // Title area dimensions
+        this._titleAreaX = 3.5;
+        this._titleAreaY = 2.4;
+        this._titleAreaWidth = 48.6;
+        this._titleAreaHeight = 11.5;
         // Button artwork and shapes
         this.buttonArtwork = {};
         this.selectedButtonForArtwork = null;

@@ -191,6 +191,31 @@
                             Show gradient options
                         </label>
                     </div>
+                    <div class="input-group">
+                        <label>Title Area Dimensions</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                            <div>
+                                <label style="font-size: 11px; color: #666;">X: <span id="title-area-x-value">3.5</span>mm</label>
+                                <input type="range" id="title-area-x" min="0.5" max="10" value="3.5" step="0.5" oninput="updateTitleAreaX()" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #666;">Y: <span id="title-area-y-value">2.4</span>mm</label>
+                                <input type="range" id="title-area-y" min="0.5" max="10" value="2.4" step="0.5" oninput="updateTitleAreaY()" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #666;">Width: <span id="title-area-width-value">48.6</span>mm</label>
+                                <input type="range" id="title-area-width" min="30" max="54.6" value="48.6" step="0.5" oninput="updateTitleAreaWidth()" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #666;">Height: <span id="title-area-height-value">11.5</span>mm</label>
+                                <input type="range" id="title-area-height" min="8" max="22" value="11.5" step="0.5" oninput="updateTitleAreaHeight()" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div class="helper-text" style="margin-top: 8px;">
+                            Adjust to stretch the title area. Default: X=3.5, Y=2.4, W=48.6, H=11.5mm
+                            <button type="button" onclick="resetTitleAreaDimensions()" style="margin-left: 8px; padding: 2px 8px; font-size: 11px; cursor: pointer;">Reset</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Title Space Artwork -->
@@ -200,7 +225,7 @@
                         <label class="file-upload">
                             <div class="upload-icon">🖼️</div>
                             <div><strong>Click to upload title artwork</strong></div>
-                            <div class="helper-text">Artwork will be clipped to the title space area (48.6mm x 11.5mm)</div>
+                            <div class="helper-text">Artwork will be clipped to the title space area</div>
                             <input type="file" id="title-artwork-upload" accept="image/*" onchange="handleTitleArtworkUpload(event)">
                         </label>
                     </div>
