@@ -141,13 +141,19 @@
     margin-bottom: var(--spacing-sm);
 }
 
-/* Status Messages */
+/* Status Messages - positioned absolutely to avoid layout shifts */
 .status-message {
-    padding: 12px;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    padding: 8px 16px;
     border-radius: var(--radius-md);
-    margin-top: var(--spacing-md);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     display: none;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .status-success {

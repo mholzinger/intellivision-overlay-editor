@@ -90,6 +90,32 @@ def get_boxart_template():
     return jsonify({'error': 'Box art template not found'}), 404
 
 
+@app.route('/templates/<path:filename>')
+def serve_template_file(filename):
+    """Serve static files from templates directory (controller templates, etc.)"""
+    templates_dir = Path(__file__).parent / 'templates'
+    safe_path = (templates_dir / filename).resolve()
+    try:
+        # Security check: ensure path is within templates directory
+        if not str(safe_path).startswith(str(templates_dir.resolve())):
+            return jsonify({'error': 'Invalid path'}), 400
+        if not safe_path.exists() or not safe_path.is_file():
+            return jsonify({'error': 'File not found'}), 404
+        # Determine mimetype based on extension
+        ext = safe_path.suffix.lower()
+        mimetypes = {
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.svg': 'image/svg+xml',
+            '.gif': 'image/gif'
+        }
+        mimetype = mimetypes.get(ext, 'application/octet-stream')
+        return send_file(str(safe_path), mimetype=mimetype)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/get_shape_templates')
 def get_shape_templates():
     """Return list of available button shape templates"""

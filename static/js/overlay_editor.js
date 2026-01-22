@@ -428,7 +428,26 @@ window.rotateShape = (delta) => ButtonShape.rotateShape(delta);
 window.selectButtonForEditor = () => ButtonEditorUI.selectButtonForEditor();
 window.updateButtonEditorBackground = () => ButtonEditorUI.updateButtonEditorBackground();
 window.exportPNG = () => ExportManager.exportPNG();
+window.exportFramedOverlay = (frameType) => ExportManager.exportFramedOverlay(frameType);
+window.exportSprintBundle = (frameType) => ExportManager.exportSprintBundle(frameType);
 window.resetOverlay = () => ExportManager.resetOverlay();
+
+// Toggle controller frame dropdown
+window.toggleControllerFrameDropdown = () => {
+    const menu = document.getElementById('controller-frame-dropdown-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+};
+
+// Close controller frame dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.controller-frame-dropdown');
+    const menu = document.getElementById('controller-frame-dropdown-menu');
+    if (dropdown && menu && !dropdown.contains(event.target)) {
+        menu.style.display = 'none';
+    }
+});
 window.updateRowDescription = (rowNum) => RowDescriptions.updateRowDescription(rowNum);
 window.updateAllRowDescriptions = () => RowDescriptions.updateAllRowDescriptions();
 window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();

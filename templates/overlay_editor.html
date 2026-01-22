@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="/static/css/theme.css">
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/components.css">
+    <!-- JSZip for Sprint bundle export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -38,6 +40,22 @@
                     <button class="btn btn-success btn-sm" onclick="exportPNG()" style="padding: 8px 12px; font-size: 13px;">
                         📥 Download PNG
                     </button>
+                    <div class="controller-frame-dropdown" style="position: relative; display: inline-block;">
+                        <button class="btn btn-success btn-sm" onclick="toggleControllerFrameDropdown()" style="padding: 8px 12px; font-size: 13px;">
+                            🎮 Sprint Export ▾
+                        </button>
+                        <div id="controller-frame-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 200px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
+                            <div style="padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 11px; color: #666;">Export for Sprint carousel:</div>
+                            <div onclick="exportFramedOverlay('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🔵 Sprint Controller</div>
+                            <div onclick="exportFramedOverlay('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟤 INTV Controller</div>
+                            <div onclick="exportFramedOverlay('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟡 Sears Controller</div>
+                            <div style="border-top: 1px solid #eee; margin-top: 4px;"></div>
+                            <div style="padding: 8px 12px; font-size: 11px; color: #666;">Download ZIP bundle:</div>
+                            <div onclick="exportSprintBundle('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sprint Bundle</div>
+                            <div onclick="exportSprintBundle('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV Bundle</div>
+                            <div onclick="exportSprintBundle('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sears Bundle</div>
+                        </div>
+                    </div>
                     <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
                         💾 Export Overlay
                     </button>

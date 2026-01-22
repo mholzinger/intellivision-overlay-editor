@@ -161,6 +161,8 @@ body {
     top: 0;
     height: 100%;
     overflow-y: auto;
+    /* Ensure status messages position relative to this container */
+    isolation: isolate;
 }
 
 .preview-container {

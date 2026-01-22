@@ -14,6 +14,55 @@ export class ExportManager {
     static fontCache = new Map();
 
     /**
+     * Overlay shape path data (from outer_boundary in SVG template)
+     * Coordinates are in mm (SVG viewBox is 55.6 x 90.4)
+     */
+    static OVERLAY_SHAPE = {
+        // Path commands matching outer_boundary: M 2.26 0 L 53.34 0 Q 55.6 0 55.6 2.26 ...
+        topLeftRadius: 2.26,
+        topRightX: 53.34,
+        bottomCornerRadius: 9.0,  // Large radius at bottom corners
+        bottomY: 81.4,            // Where the large radius starts
+        width: 55.6,
+        height: 90.4
+    };
+
+    /**
+     * Apply the overlay mask (rounded corners) to a canvas context
+     * This clips the canvas to match the Intellivision overlay shape
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to apply mask to
+     * @param {number} canvasWidth - Canvas width in pixels
+     * @param {number} canvasHeight - Canvas height in pixels
+     */
+    static applyOverlayMask(ctx, canvasWidth, canvasHeight) {
+        const shape = ExportManager.OVERLAY_SHAPE;
+        const scaleX = canvasWidth / shape.width;
+        const scaleY = canvasHeight / shape.height;
+
+        ctx.beginPath();
+        // M 2.26 0 - start at top-left rounded corner
+        ctx.moveTo(shape.topLeftRadius * scaleX, 0);
+        // L 53.34 0 - line to top-right
+        ctx.lineTo(shape.topRightX * scaleX, 0);
+        // Q 55.6 0 55.6 2.26 - top-right corner
+        ctx.quadraticCurveTo(shape.width * scaleX, 0, shape.width * scaleX, shape.topLeftRadius * scaleY);
+        // L 55.6 81.4 - right side
+        ctx.lineTo(shape.width * scaleX, shape.bottomY * scaleY);
+        // Q 55.6 90.4 46.6 90.4 - bottom-right corner (large radius)
+        ctx.quadraticCurveTo(shape.width * scaleX, shape.height * scaleY, (shape.width - shape.bottomCornerRadius) * scaleX, shape.height * scaleY);
+        // L 9.0 90.4 - bottom edge
+        ctx.lineTo(shape.bottomCornerRadius * scaleX, shape.height * scaleY);
+        // Q 0 90.4 0 81.4 - bottom-left corner (large radius)
+        ctx.quadraticCurveTo(0, shape.height * scaleY, 0, shape.bottomY * scaleY);
+        // L 0 2.26 - left side
+        ctx.lineTo(0, shape.topLeftRadius * scaleY);
+        // Q 0 0 2.26 0 - top-left corner
+        ctx.quadraticCurveTo(0, 0, shape.topLeftRadius * scaleX, 0);
+        ctx.closePath();
+        ctx.clip();
+    }
+
+    /**
      * Convert hex color and opacity to RGBA string
      * This bakes opacity into the color for better CairoSVG compatibility
      * @param {string} hexColor - Hex color (e.g., '#3fe628')
@@ -987,5 +1036,363 @@ export class ExportManager {
         if (confirm('Reset all changes? This cannot be undone.')) {
             location.reload();
         }
+    }
+
+    /**
+     * Controller template frame dimensions
+     * Based on Intellivision Sprint carousel spec
+     */
+    static FRAME_CONFIG = {
+        // Output dimensions for framed overlay
+        OUTPUT_WIDTH: 228,
+        OUTPUT_HEIGHT: 478,
+        // Window area inside the controller frame (where overlay goes)
+        // Based on analysis of official Sprint overlays (e.g., Astrosmash)
+        // The overlay top slides into a notch, but the bottom content (arrows/DIRECTION text)
+        // must remain visible in the window
+        WINDOW_HEIGHT: 280,    // Height of visible window area (above disc bezel)
+        WINDOW_OFFSET_Y: 12,   // Window starts below top frame edge
+        // Big overlay (raw export) dimensions
+        BIG_OVERLAY_WIDTH: 300,
+        BIG_OVERLAY_HEIGHT: 478
+    };
+
+    /**
+     * Export overlay with a controller frame (framed overlay for Sprint carousel)
+     * @param {string} frameType - 'sprint', 'intv', or 'sears'
+     */
+    static async exportFramedOverlay(frameType) {
+        try {
+            const svgDoc = appState.getSvgDoc();
+            if (!svgDoc) {
+                UIManager.showStatus('No SVG loaded', 'error');
+                return;
+            }
+
+            UIManager.showStatus('Generating framed overlay...', 'success');
+
+            // First, get the big overlay PNG data by calling the server export
+            const bigOverlayDataURL = await ExportManager.generateBigOverlayDataURL();
+            if (!bigOverlayDataURL) {
+                UIManager.showStatus('Failed to generate overlay', 'error');
+                return;
+            }
+
+            // Load the controller template frame
+            const templatePath = `/templates/controller_template_${frameType}.png`;
+            const templateImg = await ExportManager.loadImage(templatePath);
+            if (!templateImg) {
+                UIManager.showStatus(`Failed to load ${frameType} controller template`, 'error');
+                return;
+            }
+
+            // Load the big overlay image
+            const overlayImg = await ExportManager.loadImage(bigOverlayDataURL);
+            if (!overlayImg) {
+                UIManager.showStatus('Failed to process overlay image', 'error');
+                return;
+            }
+
+            // Create canvas for compositing
+            const canvas = document.createElement('canvas');
+            canvas.width = ExportManager.FRAME_CONFIG.OUTPUT_WIDTH;
+            canvas.height = ExportManager.FRAME_CONFIG.OUTPUT_HEIGHT;
+            const ctx = canvas.getContext('2d');
+
+            // Scale overlay proportionally to fit window height
+            const windowHeight = ExportManager.FRAME_CONFIG.WINDOW_HEIGHT;
+            const scale = windowHeight / overlayImg.height;
+            const scaledWidth = overlayImg.width * scale;
+            const scaledHeight = windowHeight;
+
+            // Center the overlay horizontally
+            const x = (canvas.width - scaledWidth) / 2;
+            const y = ExportManager.FRAME_CONFIG.WINDOW_OFFSET_Y;
+
+            // Draw the overlay first (behind the frame)
+            ctx.drawImage(overlayImg, x, y, scaledWidth, scaledHeight);
+
+            // Draw the controller template frame on top (it has transparency for the window)
+            ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+
+            // Convert to blob and download
+            canvas.toBlob((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const title = document.getElementById('title').value.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'overlay';
+                a.download = `${title}_overlay_${frameType}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                UIManager.showStatus(`Framed overlay (${frameType}) downloaded!`, 'success');
+            }, 'image/png');
+
+        } catch (error) {
+            console.error('Error exporting framed overlay:', error);
+            UIManager.showStatus('Error: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Generate the big overlay as a data URL (client-side rendering)
+     * This creates the 300x478 overlay image
+     * @returns {Promise<string|null>} Data URL of the rendered overlay
+     */
+    static async generateBigOverlayDataURL() {
+        try {
+            const svgDoc = appState.getSvgDoc();
+            if (!svgDoc) return null;
+
+            // Pre-render all text elements
+            const textRenderings = await ExportManager.preRenderAllText(svgDoc);
+            const preRenderedTiles = await ExportManager.preRenderTiledArtwork();
+            const preRenderedBg = await ExportManager.preRenderBackground();
+            const preRenderedTitleBg = await ExportManager.preRenderTitleBackground();
+
+            // Clone the SVG
+            const exportCopy = svgDoc.cloneNode(true);
+
+            // Apply all the same transformations as exportPNG
+            // Replace background rect
+            const bgRect = exportCopy.querySelector('#overlay-background');
+            if (bgRect && preRenderedBg) {
+                const xlinkNS = 'http://www.w3.org/1999/xlink';
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const bgImage = document.createElementNS(svgNS, 'image');
+                bgImage.setAttribute('id', 'overlay-background-rendered');
+                bgImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedBg.dataURL);
+                bgImage.setAttribute('x', '0');
+                bgImage.setAttribute('y', '0');
+                bgImage.setAttribute('width', '55.6');
+                bgImage.setAttribute('height', '90.4');
+                bgImage.setAttribute('preserveAspectRatio', 'none');
+                bgRect.parentNode.insertBefore(bgImage, bgRect);
+                bgRect.remove();
+            }
+
+            // Replace text with pre-rendered images
+            ExportManager.replaceTextWithImages(exportCopy, textRenderings);
+
+            // Handle tiled artwork
+            if (preRenderedTiles) {
+                const tiledRect = exportCopy.querySelector('#custom-artwork-tiled');
+                const pattern = exportCopy.querySelector('#artwork-pattern');
+                if (tiledRect) {
+                    const xlinkNS = 'http://www.w3.org/1999/xlink';
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const newImage = document.createElementNS(svgNS, 'image');
+                    newImage.setAttribute('id', 'custom-artwork-prerendered');
+                    newImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedTiles);
+                    newImage.setAttribute('x', '0');
+                    newImage.setAttribute('y', '0');
+                    newImage.setAttribute('width', '55.6');
+                    newImage.setAttribute('height', '90.4');
+                    newImage.setAttribute('preserveAspectRatio', 'none');
+                    newImage.setAttribute('opacity', appState.getArtworkOpacity().toString());
+                    tiledRect.parentNode.insertBefore(newImage, tiledRect);
+                    tiledRect.remove();
+                }
+                if (pattern) pattern.remove();
+            }
+
+            // Handle title background
+            const exportTitleBg = exportCopy.querySelector('#title-background');
+            const titleBgEnabled = document.getElementById('title-bg-enabled')?.checked;
+            if (exportTitleBg && titleBgEnabled && preRenderedTitleBg) {
+                const xlinkNS = 'http://www.w3.org/1999/xlink';
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const titleBgImage = document.createElementNS(svgNS, 'image');
+                titleBgImage.setAttribute('id', 'title-background-rendered');
+                titleBgImage.setAttributeNS(xlinkNS, 'xlink:href', preRenderedTitleBg.dataURL);
+                titleBgImage.setAttribute('x', preRenderedTitleBg.x.toString());
+                titleBgImage.setAttribute('y', preRenderedTitleBg.y.toString());
+                titleBgImage.setAttribute('width', preRenderedTitleBg.width.toString());
+                titleBgImage.setAttribute('height', preRenderedTitleBg.height.toString());
+                titleBgImage.setAttribute('preserveAspectRatio', 'none');
+                exportTitleBg.parentNode.insertBefore(titleBgImage, exportTitleBg);
+                exportTitleBg.remove();
+            } else if (exportTitleBg) {
+                exportTitleBg.setAttribute('fill', 'none');
+            }
+
+            // Remove template elements (we don't want the guides in the framed export)
+            const templateIds = ['outer_boundary', 'title_bar_zone', 'title-border', 'grid_info'];
+            templateIds.forEach(id => {
+                const el = exportCopy.querySelector(`#${id}`);
+                if (el) el.remove();
+            });
+
+            // Remove template classes but keep text elements
+            const buttonLabelIds = ['btn-1', 'btn-2', 'btn-3', 'btn-4', 'btn-5', 'btn-6', 'btn-7', 'btn-8', 'btn-9', 'btn-clear', 'btn-0', 'btn-enter'];
+            const actionLabelIds = ['top-left-label', 'top-right-label', 'bottom-left-label', 'bottom-right-label'];
+            const bottomLabelIds = ['bottom-text'];
+            const classSelectors = ['.outline', '.guide', '.button', '.button_center', '.label', '.label_small', '.zone'];
+            classSelectors.forEach(selector => {
+                const elements = exportCopy.querySelectorAll(selector);
+                elements.forEach(el => {
+                    if (el.id !== 'title-text' && !buttonLabelIds.includes(el.id) && !actionLabelIds.includes(el.id) && !bottomLabelIds.includes(el.id)) {
+                        el.remove();
+                    }
+                });
+            });
+
+            // Convert SVG to data URL
+            const svgString = new XMLSerializer().serializeToString(exportCopy);
+            const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+            // Render to canvas at big_overlay size (300x478) with overlay mask for rounded corners
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = ExportManager.FRAME_CONFIG.BIG_OVERLAY_WIDTH;
+                    canvas.height = ExportManager.FRAME_CONFIG.BIG_OVERLAY_HEIGHT;
+                    const ctx = canvas.getContext('2d');
+
+                    // Apply the overlay mask (rounded corners)
+                    ExportManager.applyOverlayMask(ctx, canvas.width, canvas.height);
+
+                    // Draw the overlay image within the clipped region
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = function() {
+                    console.error('Failed to render SVG to image');
+                    resolve(null);
+                };
+                img.src = svgDataUrl;
+            });
+        } catch (error) {
+            console.error('Error generating big overlay:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Load an image from URL or data URL
+     * @param {string} src - Image source URL
+     * @returns {Promise<HTMLImageElement|null>}
+     */
+    static loadImage(src) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                console.error('Failed to load image:', src.substring(0, 100));
+                resolve(null);
+            };
+            img.src = src;
+        });
+    }
+
+    /**
+     * Export Sprint bundle as ZIP containing big_overlay and framed overlay
+     * @param {string} frameType - 'sprint', 'intv', or 'sears'
+     */
+    static async exportSprintBundle(frameType) {
+        try {
+            const svgDoc = appState.getSvgDoc();
+            if (!svgDoc) {
+                UIManager.showStatus('No SVG loaded', 'error');
+                return;
+            }
+
+            // Check if JSZip is available
+            if (typeof JSZip === 'undefined') {
+                UIManager.showStatus('ZIP library not loaded', 'error');
+                return;
+            }
+
+            UIManager.showStatus('Generating Sprint bundle...', 'success');
+
+            // Generate the big overlay PNG data URL
+            const bigOverlayDataURL = await ExportManager.generateBigOverlayDataURL();
+            if (!bigOverlayDataURL) {
+                UIManager.showStatus('Failed to generate overlay', 'error');
+                return;
+            }
+
+            // Load the controller template frame
+            const templatePath = `/templates/controller_template_${frameType}.png`;
+            const templateImg = await ExportManager.loadImage(templatePath);
+            if (!templateImg) {
+                UIManager.showStatus(`Failed to load ${frameType} controller template`, 'error');
+                return;
+            }
+
+            // Load the big overlay image for framing
+            const overlayImg = await ExportManager.loadImage(bigOverlayDataURL);
+            if (!overlayImg) {
+                UIManager.showStatus('Failed to process overlay image', 'error');
+                return;
+            }
+
+            // Create framed overlay
+            const framedCanvas = document.createElement('canvas');
+            framedCanvas.width = ExportManager.FRAME_CONFIG.OUTPUT_WIDTH;
+            framedCanvas.height = ExportManager.FRAME_CONFIG.OUTPUT_HEIGHT;
+            const framedCtx = framedCanvas.getContext('2d');
+
+            // Scale overlay proportionally to fit window height
+            const windowHeight = ExportManager.FRAME_CONFIG.WINDOW_HEIGHT;
+            const scale = windowHeight / overlayImg.height;
+            const scaledWidth = overlayImg.width * scale;
+            const scaledHeight = windowHeight;
+
+            // Center the overlay horizontally
+            const x = (framedCanvas.width - scaledWidth) / 2;
+            const y = ExportManager.FRAME_CONFIG.WINDOW_OFFSET_Y;
+
+            // Draw the overlay first (behind the frame)
+            framedCtx.drawImage(overlayImg, x, y, scaledWidth, scaledHeight);
+
+            // Draw the controller template frame on top
+            framedCtx.drawImage(templateImg, 0, 0, framedCanvas.width, framedCanvas.height);
+
+            // Get title for filenames
+            const title = document.getElementById('title').value.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'overlay';
+
+            // Convert images to blobs
+            const bigOverlayBlob = await ExportManager.dataURLToBlob(bigOverlayDataURL);
+            const framedOverlayBlob = await new Promise(resolve => {
+                framedCanvas.toBlob(resolve, 'image/png');
+            });
+
+            // Create ZIP file
+            const zip = new JSZip();
+            zip.file(`${title}_big_overlay.png`, bigOverlayBlob);
+            zip.file(`${title}_overlay.png`, framedOverlayBlob);
+
+            // Generate and download ZIP
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const url = window.URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}_sprint_${frameType}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            UIManager.showStatus(`Sprint bundle (${frameType}) downloaded!`, 'success');
+
+        } catch (error) {
+            console.error('Error exporting Sprint bundle:', error);
+            UIManager.showStatus('Error: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Convert a data URL to a Blob
+     * @param {string} dataURL - The data URL to convert
+     * @returns {Promise<Blob>}
+     */
+    static async dataURLToBlob(dataURL) {
+        const response = await fetch(dataURL);
+        return response.blob();
     }
 }
