@@ -14,6 +14,7 @@ import { BottomControls } from './bottomControls.js';
 import { BackgroundControls } from './backgroundControls.js';
 import { RowDescriptions } from './rowDescriptions.js';
 import { PreviewInteraction } from './previewInteraction.js';
+import { DraggableArtwork } from './draggableArtwork.js';
 
 export class SVGManager {
     /**
@@ -56,6 +57,7 @@ export class SVGManager {
                     BackgroundControls.initBackground();     // Initialize background element reference
                     RowDescriptions.initRowDescriptions();   // Clear row description placeholders
                     PreviewInteraction.init();               // Enable click-to-navigate on preview
+                    DraggableArtwork.init();                 // Enable drag-to-position for artwork
                 }
 
                 if (showStatus) {

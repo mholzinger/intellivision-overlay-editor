@@ -6,6 +6,7 @@
 import { appState } from '../services/stateManager.js';
 import { ExportManager } from './exportManager.js';
 import { PreviewInteraction } from './previewInteraction.js';
+import { DraggableArtwork } from './draggableArtwork.js';
 
 export class BoxArtEditor {
     /**
@@ -47,6 +48,8 @@ export class BoxArtEditor {
 
                     // Initialize click-to-navigate for box art preview
                     PreviewInteraction.initBoxArt();
+                    // Initialize drag-to-position for artwork
+                    DraggableArtwork.initBoxArt();
                 }
             }
         } catch (error) {

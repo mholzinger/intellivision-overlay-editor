@@ -325,6 +325,28 @@ body {
     cursor: pointer;
 }
 
+/* Draggable artwork cursor - move cursor when hovering over artwork */
+#svg-preview svg #custom-artwork,
+#svg-preview svg #custom-artwork-tiled,
+#svg-preview svg #custom-title-artwork,
+#svg-preview svg #custom-title-artwork-tiled,
+#svg-preview svg #title-artwork-group image,
+#svg-preview svg #title-artwork-group rect {
+    cursor: move;
+}
+
+/* Grabbing cursor when actively dragging */
+body.artwork-dragging,
+body.artwork-dragging * {
+    cursor: grabbing !important;
+}
+
+/* Prevent text selection during drag */
+body.artwork-dragging {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 /* SVG preview clickable cursor - Box Art Editor */
 #boxart-svg-preview svg {
     cursor: pointer;
@@ -338,6 +360,13 @@ body {
 #boxart-svg-preview svg circle,
 #boxart-svg-preview svg line {
     cursor: pointer;
+}
+
+/* Draggable artwork cursor - Box Art Editor */
+#boxart-svg-preview svg #boxart-main-artwork,
+#boxart-svg-preview svg #boxart-vignette-artwork,
+#boxart-svg-preview svg #vignette-artwork-group image {
+    cursor: move;
 }
 
 /* Responsive: stack panels vertically on narrow viewports */
