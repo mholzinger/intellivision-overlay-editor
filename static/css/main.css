@@ -77,6 +77,12 @@ body {
     border-bottom-color: #3498db;
 }
 
+.header-credits {
+    font-size: var(--font-size-xs);
+    color: var(--gray-400);
+    font-style: italic;
+}
+
 /* Editor Tabs with Toolbar */
 .editor-tabs-toolbar {
     display: flex;
