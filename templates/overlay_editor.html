@@ -1675,8 +1675,8 @@
                                             <input type="range" id="boxart-title-x" min="10" max="176" value="93" step="1" oninput="updateBoxArtTitlePosition()" style="width: 100%;">
                                         </div>
                                         <div>
-                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-title-y-value">36</span></label>
-                                            <input type="range" id="boxart-title-y" min="20" max="60" value="36" step="1" oninput="updateBoxArtTitlePosition()" style="width: 100%;">
+                                            <label style="font-size: 10px; color: #666;">Y: <span id="boxart-title-y-value">41</span></label>
+                                            <input type="range" id="boxart-title-y" min="20" max="60" value="41" step="1" oninput="updateBoxArtTitlePosition()" style="width: 100%;">
                                         </div>
                                     </div>
                                 </div>
@@ -1756,22 +1756,22 @@
                             <label for="boxart-stripe-count">Border Stripes</label>
                             <select id="boxart-stripe-count" onchange="updateBoxArtStripes()" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
                                 <option value="0">None (simple stroke only)</option>
-                                <option value="1" selected>1 Stripe</option>
-                                <option value="3">3 Stripes (authentic)</option>
+                                <option value="1">1 Stripe</option>
+                                <option value="3" selected>3 Stripes (authentic)</option>
                             </select>
                             <div class="helper-text">Classic Intellivision boxes have 3 colored stripes with thin separators</div>
                         </div>
 
                         <!-- Stripe Width Control -->
                         <div class="input-group">
-                            <label for="boxart-stripe-width">Stripe Width: <span id="boxart-stripe-width-value">3</span>mm</label>
-                            <input type="range" id="boxart-stripe-width" min="1" max="8" value="3" step="0.5" oninput="updateBoxArtStripes()">
+                            <label for="boxart-stripe-width">Stripe Width: <span id="boxart-stripe-width-value">1</span>mm</label>
+                            <input type="range" id="boxart-stripe-width" min="1" max="8" value="1" step="0.5" oninput="updateBoxArtStripes()">
                         </div>
 
                         <!-- Thin Line Color -->
                         <div class="input-group">
                             <label for="boxart-stripe-line-color">Separator Line Color</label>
-                            <input type="color" id="boxart-stripe-line-color" value="#333333" oninput="updateBoxArtStripes()" style="width: 100%; height: 30px; padding: 2px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            <input type="color" id="boxart-stripe-line-color" value="#808080" oninput="updateBoxArtStripes()" style="width: 100%; height: 30px; padding: 2px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                             <div class="helper-text">Color of thin lines between stripes</div>
                         </div>
 
@@ -1791,7 +1791,7 @@
                             </div>
                             <div class="input-group">
                                 <label for="boxart-stripe3-color">Stripe 3 Color (inner)</label>
-                                <input type="color" id="boxart-stripe3-color" value="#8B4513" oninput="updateBoxArtStripes()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                                <input type="color" id="boxart-stripe3-color" value="#228B22" oninput="updateBoxArtStripes()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                             </div>
                         </div>
 
