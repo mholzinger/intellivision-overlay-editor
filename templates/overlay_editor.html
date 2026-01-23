@@ -18,14 +18,63 @@
             <span class="header-link-text">{% if git_info and git_info.hash %}Release <code>{{ git_info.hash }}</code>{% if git_info.date %} &middot; Updated {{ git_info.date }}{% endif %} &middot; {% endif %}View this project on <a href="https://github.com/mholzinger/intellivision-overlay-editor" target="_blank" rel="noopener noreferrer" class="header-link">GitHub</a></span>
         </div>
 
-        <!-- Tab Navigation -->
-        <div class="editor-tabs">
-            <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')">
-                🎮 Overlay Editor
-            </button>
-            <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
-                📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA FEATURE</span>
-            </button>
+        <!-- Tab Navigation with Action Buttons -->
+        <div class="editor-tabs-toolbar">
+            <div class="editor-tabs">
+                <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')">
+                    🎮 Overlay Editor
+                </button>
+                <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
+                    📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
+            </div>
+
+            <!-- Overlay Editor Action Buttons -->
+            <div id="overlay-toolbar" class="editor-toolbar active">
+                <button class="btn btn-success btn-sm" onclick="exportPNG()">📥 Download PNG</button>
+                <div class="controller-frame-dropdown" style="position: relative; display: inline-block;">
+                    <button class="btn btn-success btn-sm" onclick="toggleControllerFrameDropdown()">🎮 Sprint Export ▾</button>
+                    <div id="controller-frame-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 200px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
+                        <div style="padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 11px; color: #666;">Export for Sprint carousel:</div>
+                        <div onclick="exportFramedOverlay('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🔵 Sprint Controller</div>
+                        <div onclick="exportFramedOverlay('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟤 INTV Controller</div>
+                        <div onclick="exportFramedOverlay('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟡 Sears Controller</div>
+                        <div style="border-top: 1px solid #eee; margin-top: 4px;"></div>
+                        <div style="padding: 8px 12px; font-size: 11px; color: #666;">Download ZIP bundle:</div>
+                        <div onclick="exportSprintBundle('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sprint Bundle</div>
+                        <div onclick="exportSprintBundle('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV Bundle</div>
+                        <div onclick="exportSprintBundle('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sears Bundle</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()">💾 Export</button>
+                <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()">📂 Import</button>
+                <div class="layout-template-dropdown" style="position: relative; display: inline-block;">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleLayoutTemplateDropdown()">📋 Templates ▾</button>
+                    <div id="layout-template-dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 180px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
+                        <div id="layout-template-list" style="max-height: 200px; overflow-y: auto;">
+                            <div style="padding: 8px 12px; color: #666; font-size: 12px;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="resetOverlay()">🔄 Reset</button>
+                <button class="btn btn-secondary btn-sm" onclick="clearArtwork()">🗑️ Clear Art</button>
+            </div>
+
+            <!-- Box Art Editor Action Buttons -->
+            <div id="boxart-toolbar" class="editor-toolbar">
+                <button class="btn btn-success btn-sm" onclick="exportBoxArtPNG()">📥 Download PNG</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportBoxArtProject()">💾 Export</button>
+                <button class="btn btn-secondary btn-sm" onclick="importBoxArtProject()">📂 Import</button>
+                <div class="boxart-template-dropdown" style="position: relative; display: inline-block;">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleBoxArtTemplateDropdown()">📋 Templates ▾</button>
+                    <div id="boxart-template-dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 180px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
+                        <div id="boxart-template-list" style="max-height: 200px; overflow-y: auto;">
+                            <div style="padding: 8px 12px; color: #666; font-size: 12px;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()">🔄 Reset</button>
+            </div>
         </div>
 
         <!-- Overlay Editor Content -->
@@ -36,50 +85,7 @@
                     <div id="svg-preview"></div>
                 </div>
 
-                <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn btn-success btn-sm" onclick="exportPNG()" style="padding: 8px 12px; font-size: 13px;">
-                        📥 Download PNG
-                    </button>
-                    <div class="controller-frame-dropdown" style="position: relative; display: inline-block;">
-                        <button class="btn btn-success btn-sm" onclick="toggleControllerFrameDropdown()" style="padding: 8px 12px; font-size: 13px;">
-                            🎮 Sprint Export ▾
-                        </button>
-                        <div id="controller-frame-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 200px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
-                            <div style="padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 11px; color: #666;">Export for Sprint carousel:</div>
-                            <div onclick="exportFramedOverlay('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🔵 Sprint Controller</div>
-                            <div onclick="exportFramedOverlay('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟤 INTV Controller</div>
-                            <div onclick="exportFramedOverlay('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟡 Sears Controller</div>
-                            <div style="border-top: 1px solid #eee; margin-top: 4px;"></div>
-                            <div style="padding: 8px 12px; font-size: 11px; color: #666;">Download ZIP bundle:</div>
-                            <div onclick="exportSprintBundle('sprint')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sprint Bundle</div>
-                            <div onclick="exportSprintBundle('intv')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV Bundle</div>
-                            <div onclick="exportSprintBundle('sears')" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sears Bundle</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
-                        💾 Export Overlay
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()" style="padding: 8px 12px; font-size: 13px;">
-                        📂 Import Overlay
-                    </button>
-                    <div class="layout-template-dropdown" style="position: relative; display: inline-block;">
-                        <button class="btn btn-secondary btn-sm" onclick="toggleLayoutTemplateDropdown()" style="padding: 8px 12px; font-size: 13px;">
-                            📋 Templates ▾
-                        </button>
-                        <div id="layout-template-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 180px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
-                            <div id="layout-template-list" style="max-height: 200px; overflow-y: auto;">
-                                <div style="padding: 8px 12px; color: #666; font-size: 12px;">Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" style="padding: 8px 12px; font-size: 13px;">
-                        🔄 Reset
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="clearArtwork()" style="padding: 8px 12px; font-size: 13px;">
-                        🗑️ Clear Art
-                    </button>
-                </div>
-                <div style="margin: 8px 0 0 0;">
+                <div class="preview-options">
                     <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
                         <input type="checkbox" id="export-include-template">
                         Include overlay template in export
@@ -1482,21 +1488,7 @@
                     <div id="boxart-svg-preview"></div>
                 </div>
 
-                <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn btn-success btn-sm" onclick="exportBoxArtPNG()" style="padding: 8px 12px; font-size: 13px;">
-                        📥 Download PNG
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="exportBoxArtProject()" style="padding: 8px 12px; font-size: 13px;">
-                        💾 Export Project
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="importBoxArtProject()" style="padding: 8px 12px; font-size: 13px;">
-                        📂 Import Project
-                    </button>
-                    <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()" style="padding: 8px 12px; font-size: 13px;">
-                        🔄 Reset
-                    </button>
-                </div>
-                <div style="margin: 8px 0 0 0;">
+                <div class="preview-options">
                     <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;">
                         <input type="checkbox" id="boxart-export-include-template">
                         Include template guides in export
@@ -1967,13 +1959,41 @@
                                     </div>
                                     <div class="helper-text">Lock keeps circle/oval shape; unlock to adjust independently</div>
                                 </div>
+
+                                <!-- Outer Circle (always visible) -->
+                                <h5 style="margin: 12px 0 8px 0; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">Outer Circle</h5>
                                 <div class="input-group">
-                                    <label for="boxart-vignette-stroke-color">Stroke Color</label>
+                                    <label for="boxart-vignette-stroke-color">Color</label>
                                     <input type="color" id="boxart-vignette-stroke-color" value="#666666" oninput="updateBoxArtVignette()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                                 </div>
                                 <div class="input-group">
-                                    <label for="boxart-vignette-stroke-width">Stroke Width: <span id="boxart-vignette-stroke-width-value">2</span>px</label>
+                                    <label for="boxart-vignette-stroke-width">Stroke Width: <span id="boxart-vignette-stroke-width-value">2</span>mm</label>
                                     <input type="range" id="boxart-vignette-stroke-width" min="0.5" max="6" value="2" step="0.5" oninput="updateBoxArtVignette()">
+                                </div>
+
+                                <!-- Inner Circle Option -->
+                                <h5 style="margin: 12px 0 8px 0; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px;">Inner Circle (Optional)</h5>
+                                <div class="input-group">
+                                    <label style="display: flex; align-items: center; gap: 6px;">
+                                        <input type="checkbox" id="boxart-vignette-inner-enabled" onchange="updateBoxArtVignette()">
+                                        Enable inner circle
+                                    </label>
+                                    <div class="helper-text">Adds a second decorative ring inside the outer circle</div>
+                                </div>
+                                <div id="boxart-vignette-inner-controls" style="display: none;">
+                                    <div class="input-group">
+                                        <label for="boxart-vignette-inner-color">Inner Circle Color</label>
+                                        <input type="color" id="boxart-vignette-inner-color" value="#999999" oninput="updateBoxArtVignette()" style="width: 100%; height: 40px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="boxart-vignette-inner-width">Inner Stroke Width: <span id="boxart-vignette-inner-width-value">1</span>mm</label>
+                                        <input type="range" id="boxart-vignette-inner-width" min="0.5" max="4" value="1" step="0.5" oninput="updateBoxArtVignette()">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="boxart-vignette-inner-offset">Gap from Outer: <span id="boxart-vignette-inner-offset-value">3</span>mm</label>
+                                        <input type="range" id="boxart-vignette-inner-offset" min="1" max="10" value="3" step="0.5" oninput="updateBoxArtVignette()">
+                                        <div class="helper-text">Distance between outer and inner circles</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

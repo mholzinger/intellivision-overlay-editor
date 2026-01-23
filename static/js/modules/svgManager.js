@@ -17,8 +17,9 @@ import { RowDescriptions } from './rowDescriptions.js';
 export class SVGManager {
     /**
      * Load the SVG template from the server
+     * @param {boolean} showStatus - Whether to show status message (default: true)
      */
-    static async loadTemplate() {
+    static async loadTemplate(showStatus = true) {
         try {
             const response = await APIService.getTemplate();
             const data = JSON.parse(response);
@@ -55,7 +56,9 @@ export class SVGManager {
                     RowDescriptions.initRowDescriptions();   // Clear row description placeholders
                 }
 
-                UIManager.showStatus('Template loaded successfully!', 'success');
+                if (showStatus) {
+                    UIManager.showStatus('Template loaded successfully!', 'success');
+                }
             } else {
                 UIManager.showStatus('Error loading template', 'error');
             }

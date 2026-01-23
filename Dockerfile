@@ -38,6 +38,7 @@ COPY intellivision_overlay_RECTANGULAR.svg .
 COPY templates/ templates/
 COPY svg-templates/ svg-templates/
 COPY layout-templates/ layout-templates/
+COPY boxart-templates/ boxart-templates/
 COPY static/ static/
 COPY sf_intellivised/ sf_intellivised/
 

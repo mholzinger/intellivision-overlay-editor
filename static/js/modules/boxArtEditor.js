@@ -1103,12 +1103,30 @@ export class BoxArtEditor {
         const strokeColor = document.getElementById('boxart-vignette-stroke-color')?.value || '#666666';
         const strokeWidth = parseFloat(document.getElementById('boxart-vignette-stroke-width')?.value || 2);
 
+        // Inner circle settings
+        const innerEnabled = document.getElementById('boxart-vignette-inner-enabled')?.checked || false;
+        const innerColor = document.getElementById('boxart-vignette-inner-color')?.value || '#999999';
+        const innerWidth = parseFloat(document.getElementById('boxart-vignette-inner-width')?.value || 1);
+        const innerOffset = parseFloat(document.getElementById('boxart-vignette-inner-offset')?.value || 3);
+
         // Update display values
         document.getElementById('boxart-vignette-x-value').textContent = x;
         document.getElementById('boxart-vignette-y-value').textContent = y;
         document.getElementById('boxart-vignette-rx-value').textContent = rx;
         document.getElementById('boxart-vignette-ry-value').textContent = ry;
         document.getElementById('boxart-vignette-stroke-width-value').textContent = strokeWidth;
+
+        // Update inner circle display values
+        const innerWidthValue = document.getElementById('boxart-vignette-inner-width-value');
+        const innerOffsetValue = document.getElementById('boxart-vignette-inner-offset-value');
+        if (innerWidthValue) innerWidthValue.textContent = innerWidth;
+        if (innerOffsetValue) innerOffsetValue.textContent = innerOffset;
+
+        // Show/hide inner circle controls
+        const innerControls = document.getElementById('boxart-vignette-inner-controls');
+        if (innerControls) {
+            innerControls.style.display = innerEnabled ? 'block' : 'none';
+        }
 
         // Update state
         appState.setBoxArtVignettePosition(x, y);
@@ -1131,18 +1149,40 @@ export class BoxArtEditor {
             outerEllipse.setAttribute('stroke-width', strokeWidth);
         }
 
+        // Update inner circle if enabled
         if (innerEllipse) {
-            innerEllipse.setAttribute('cx', x);
-            innerEllipse.setAttribute('cy', y);
-            innerEllipse.setAttribute('rx', rx - 3);  // Inner ring slightly smaller
-            innerEllipse.setAttribute('ry', ry - 3);
+            if (innerEnabled) {
+                innerEllipse.style.display = '';
+                // Inner circle is positioned inside the outer circle with the specified gap
+                const innerRx = rx - innerOffset;
+                const innerRy = ry - innerOffset;
+                innerEllipse.setAttribute('cx', x);
+                innerEllipse.setAttribute('cy', y);
+                innerEllipse.setAttribute('rx', innerRx);
+                innerEllipse.setAttribute('ry', innerRy);
+                innerEllipse.setAttribute('stroke', innerColor);
+                innerEllipse.setAttribute('stroke-width', innerWidth);
+            } else {
+                innerEllipse.style.display = 'none';
+            }
         }
 
+        // Update clip path to align with inner edge of the innermost visible stroke
+        // If inner circle enabled, clip to that; otherwise clip to outer circle edge
         if (clipEllipse) {
             clipEllipse.setAttribute('cx', x);
             clipEllipse.setAttribute('cy', y);
-            clipEllipse.setAttribute('rx', rx - 5);
-            clipEllipse.setAttribute('ry', ry - 5);
+            if (innerEnabled) {
+                // Clip to inner edge of inner circle
+                const innerRx = rx - innerOffset;
+                const innerRy = ry - innerOffset;
+                clipEllipse.setAttribute('rx', innerRx - (innerWidth / 2));
+                clipEllipse.setAttribute('ry', innerRy - (innerWidth / 2));
+            } else {
+                // Clip to inner edge of outer circle
+                clipEllipse.setAttribute('rx', rx - (strokeWidth / 2));
+                clipEllipse.setAttribute('ry', ry - (strokeWidth / 2));
+            }
         }
 
         // Re-insert vignette artwork if it exists (to update position and clip path)
@@ -1438,24 +1478,53 @@ export class BoxArtEditor {
     static reset() {
         appState.resetBoxArt();
 
-        // Reset all controls to defaults
-        document.getElementById('boxart-brand-text').value = 'INTELLIVISION';
-        document.getElementById('boxart-tagline').value = 'Intelligent Television';
-        document.getElementById('boxart-header-color').value = '#1a1a6e';
-        document.getElementById('boxart-title').value = 'GAME TITLE';
-        document.getElementById('boxart-subtitle').value = 'by MATTEL ELECTRONICS';
-        document.getElementById('boxart-title-color').value = '#ffffff';
-        document.getElementById('boxart-title-size').value = 14;
-        document.getElementById('boxart-title-size-value').textContent = '14';
-        document.getElementById('boxart-frame-color').value = '#8B4513';
-        document.getElementById('boxart-frame-stroke').value = 1;
-        document.getElementById('boxart-frame-stroke-value').textContent = '1';
-        document.getElementById('boxart-vignette-enabled').checked = false;
-        document.getElementById('boxart-vignette-controls').style.display = 'none';
-        document.getElementById('boxart-artwork-controls').style.display = 'none';
-        document.getElementById('boxart-artwork-upload').value = '';
-        document.getElementById('boxart-voice-badge').checked = false;
-        document.getElementById('boxart-player-count').value = '';
+        // Reset all controls to defaults using safe setters
+        BoxArtEditor.setInputValue('boxart-brand-text', 'INTELLIVISION');
+        BoxArtEditor.setInputValue('boxart-tagline', 'Intelligent Television');
+        BoxArtEditor.setInputValue('boxart-header-color', '#1a1a6e');
+        BoxArtEditor.setInputValue('boxart-title', 'GAME TITLE');
+        BoxArtEditor.setInputValue('boxart-subtitle', 'by MATTEL ELECTRONICS');
+        BoxArtEditor.setInputValue('boxart-title-color', '#ffffff');
+        BoxArtEditor.setInputValue('boxart-title-size', 14);
+        BoxArtEditor.setTextContent('boxart-title-size-value', '14');
+
+        // Frame/stripe controls
+        BoxArtEditor.setInputValue('boxart-frame-top', 20);
+        BoxArtEditor.setTextContent('boxart-frame-top-value', '20');
+        BoxArtEditor.setInputValue('boxart-stripe-count', '1');
+        BoxArtEditor.setInputValue('boxart-stripe-width', 1);
+        BoxArtEditor.setTextContent('boxart-stripe-width-value', '1');
+        BoxArtEditor.setInputValue('boxart-stripe-line-color', '#808080');
+        BoxArtEditor.setInputValue('boxart-stripe1-color', '#8B4513');
+        BoxArtEditor.setInputValue('boxart-stripe2-color', '#D4AF37');
+        BoxArtEditor.setInputValue('boxart-stripe3-color', '#228B22');
+        BoxArtEditor.setInputValue('boxart-frame-fill', '#FFFFFF');
+        BoxArtEditor.setCheckbox('boxart-stripes-ontop', true);
+
+        // Hide stripe 2/3 controls
+        const stripe23Controls = document.getElementById('boxart-stripe23-controls');
+        if (stripe23Controls) stripe23Controls.style.display = 'none';
+
+        // Vignette controls
+        BoxArtEditor.setCheckbox('boxart-vignette-enabled', false);
+        const vignetteControls = document.getElementById('boxart-vignette-controls');
+        if (vignetteControls) vignetteControls.style.display = 'none';
+        BoxArtEditor.setCheckbox('boxart-vignette-inner-enabled', false);
+        const vignetteInnerControls = document.getElementById('boxart-vignette-inner-controls');
+        if (vignetteInnerControls) vignetteInnerControls.style.display = 'none';
+        BoxArtEditor.setInputValue('boxart-vignette-inner-color', '#999999');
+        BoxArtEditor.setInputValue('boxart-vignette-inner-width', 1);
+        BoxArtEditor.setInputValue('boxart-vignette-inner-offset', 3);
+
+        // Artwork controls
+        const artworkControls = document.getElementById('boxart-artwork-controls');
+        if (artworkControls) artworkControls.style.display = 'none';
+        const artworkUpload = document.getElementById('boxart-artwork-upload');
+        if (artworkUpload) artworkUpload.value = '';
+
+        // Badge controls
+        BoxArtEditor.setCheckbox('boxart-voice-badge', false);
+        BoxArtEditor.setInputValue('boxart-player-count', '');
 
         // Re-initialize
         BoxArtEditor.init();
@@ -1569,7 +1638,12 @@ export class BoxArtEditor {
                 ry: parseFloat(document.getElementById('boxart-vignette-ry')?.value) || 55,
                 lockRatio: document.getElementById('boxart-vignette-lock-ratio')?.checked || false,
                 strokeColor: document.getElementById('boxart-vignette-stroke-color')?.value || '#666666',
-                strokeWidth: parseFloat(document.getElementById('boxart-vignette-stroke-width')?.value) || 2
+                strokeWidth: parseFloat(document.getElementById('boxart-vignette-stroke-width')?.value) || 2,
+                // Inner circle settings
+                innerEnabled: document.getElementById('boxart-vignette-inner-enabled')?.checked || false,
+                innerColor: document.getElementById('boxart-vignette-inner-color')?.value || '#999999',
+                innerWidth: parseFloat(document.getElementById('boxart-vignette-inner-width')?.value) || 1,
+                innerOffset: parseFloat(document.getElementById('boxart-vignette-inner-offset')?.value) || 3
             },
 
             // Vignette artwork
@@ -1707,6 +1781,11 @@ export class BoxArtEditor {
             BoxArtEditor.setCheckbox('boxart-vignette-lock-ratio', config.vignette.lockRatio);
             BoxArtEditor.setInputValue('boxart-vignette-stroke-color', config.vignette.strokeColor);
             BoxArtEditor.setInputValue('boxart-vignette-stroke-width', config.vignette.strokeWidth);
+            // Inner circle settings
+            BoxArtEditor.setCheckbox('boxart-vignette-inner-enabled', config.vignette.innerEnabled);
+            BoxArtEditor.setInputValue('boxart-vignette-inner-color', config.vignette.innerColor);
+            BoxArtEditor.setInputValue('boxart-vignette-inner-width', config.vignette.innerWidth);
+            BoxArtEditor.setInputValue('boxart-vignette-inner-offset', config.vignette.innerOffset);
         }
 
         // Vignette artwork settings (transforms only)
@@ -1739,6 +1818,16 @@ export class BoxArtEditor {
         const el = document.getElementById(id);
         if (el && value !== undefined && value !== null) {
             el.value = value;
+        }
+    }
+
+    /**
+     * Helper to set text content
+     */
+    static setTextContent(id, text) {
+        const el = document.getElementById(id);
+        if (el && text !== undefined && text !== null) {
+            el.textContent = text;
         }
     }
 
@@ -1848,7 +1937,9 @@ export class BoxArtEditor {
             ['boxart-vignette-y', 'boxart-vignette-y-value'],
             ['boxart-vignette-rx', 'boxart-vignette-rx-value'],
             ['boxart-vignette-ry', 'boxart-vignette-ry-value'],
-            ['boxart-vignette-stroke-width', 'boxart-vignette-stroke-width-value']
+            ['boxart-vignette-stroke-width', 'boxart-vignette-stroke-width-value'],
+            ['boxart-vignette-inner-width', 'boxart-vignette-inner-width-value'],
+            ['boxart-vignette-inner-offset', 'boxart-vignette-inner-offset-value']
         ];
 
         for (const [inputId, valueId] of displays) {
@@ -2215,9 +2306,13 @@ export class BoxArtEditor {
                 ctx.drawImage(img, 0, 0, width, height);
                 URL.revokeObjectURL(url);
 
+                // Get game title for filename
+                const gameTitle = document.getElementById('boxart-title')?.value || 'box_art';
+                const filename = gameTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'box_art';
+
                 // Download
                 const link = document.createElement('a');
-                link.download = 'intellivision_box_art.png';
+                link.download = `${filename}_box_art.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
 
@@ -2236,3 +2331,84 @@ export class BoxArtEditor {
         }
     }
 }
+
+// Box art template loading functions (pre-made box art projects)
+let boxartTemplatesLoaded = false;
+
+window.toggleBoxArtTemplateDropdown = async function() {
+    const menu = document.getElementById('boxart-template-dropdown-menu');
+    const isVisible = menu.style.display !== 'none';
+
+    if (isVisible) {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'block';
+
+        // Load templates list if not already loaded
+        if (!boxartTemplatesLoaded) {
+            await loadBoxArtTemplatesList();
+        }
+    }
+};
+
+async function loadBoxArtTemplatesList() {
+    const listContainer = document.getElementById('boxart-template-list');
+
+    try {
+        const response = await fetch('/get_boxart_examples');
+        if (!response.ok) throw new Error('Failed to load templates');
+
+        const data = await response.json();
+        const templates = data.examples || [];
+
+        if (templates.length === 0) {
+            listContainer.innerHTML = '<div style="padding: 8px 12px; color: #666; font-size: 12px;">No templates available</div>';
+        } else {
+            listContainer.innerHTML = templates.map(tpl =>
+                `<div class="boxart-template-item" onclick="loadBoxArtTemplate('${tpl.name}')" style="padding: 8px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s; color: #333;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'">${tpl.displayName}</div>`
+            ).join('');
+        }
+        boxartTemplatesLoaded = true;
+    } catch (error) {
+        console.error('Error loading box art templates:', error);
+        listContainer.innerHTML = '<div style="padding: 8px 12px; color: #e74c3c; font-size: 12px;">Error loading templates</div>';
+    }
+}
+
+window.loadBoxArtTemplate = async function(templateName) {
+    // Close the dropdown
+    document.getElementById('boxart-template-dropdown-menu').style.display = 'none';
+
+    // Confirm with user
+    if (!confirm(`Load the "${templateName.replace(/_/g, ' ')}" template? This will replace your current work.`)) {
+        return;
+    }
+
+    try {
+        // Reset box art to clean state
+        BoxArtEditor.reset();
+
+        const response = await fetch(`/get_boxart_example/${templateName}`);
+        if (!response.ok) throw new Error('Failed to load template');
+
+        const blob = await response.blob();
+        const file = new File([blob], `${templateName}.zip`, { type: 'application/zip' });
+
+        // Import the template
+        await BoxArtEditor.importFromZip(file);
+
+        BoxArtEditor.showStatus(`Loaded template: ${templateName.replace(/_/g, ' ')}`, 'success');
+    } catch (error) {
+        console.error('Error loading box art template:', error);
+        BoxArtEditor.showStatus('Error loading template: ' + error.message, 'error');
+    }
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.querySelector('.boxart-template-dropdown');
+    const menu = document.getElementById('boxart-template-dropdown-menu');
+    if (dropdown && menu && !dropdown.contains(event.target)) {
+        menu.style.display = 'none';
+    }
+});

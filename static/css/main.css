@@ -77,12 +77,20 @@ body {
     border-bottom-color: #3498db;
 }
 
-/* Editor Tabs */
-.editor-tabs {
+/* Editor Tabs with Toolbar */
+.editor-tabs-toolbar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: var(--gray-100);
     border-bottom: 1px solid var(--gray-200);
     padding: 0 var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.editor-tabs {
+    display: flex;
 }
 
 .editor-tab {
@@ -111,6 +119,32 @@ body {
     background: var(--white);
 }
 
+/* Editor Toolbar (action buttons next to tabs) */
+.editor-toolbar {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+
+.editor-toolbar.active {
+    display: flex;
+}
+
+.editor-toolbar .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* Preview options (checkbox below preview) */
+.preview-options {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-200);
+}
+
 /* Editor Content Panels */
 .editor-content {
     display: none;
@@ -120,32 +154,38 @@ body {
     display: block;
 }
 
-/* Box Art Preview adjustments - use contain to prevent layout recalculation */
-#boxart-svg-preview {
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-    box-sizing: border-box;
-    contain: layout style;  /* Prevent layout thrashing on content changes */
-}
-
-#boxart-svg-preview svg {
-    width: 100%;
-    height: auto;
-    max-height: calc(100vh - 250px);
-    display: block;
-}
-
-/* Box art preview panel needs fixed height to prevent jitter */
+/* Box Art Preview - fill available space */
 #boxart-editor-content .preview-panel {
-    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 #boxart-editor-content .preview-container {
-    min-height: 400px;
-    contain: layout;  /* Isolate layout calculations */
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;  /* Allow flexbox to shrink */
+    overflow: hidden;
+}
+
+#boxart-svg-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+#boxart-svg-preview svg {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    object-fit: contain;
 }
 
 /* Box Art Editor uses a larger preview area (50/50 split) */

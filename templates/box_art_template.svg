@@ -33,8 +33,9 @@
     </clipPath>
 
     <!-- Clip path for artwork inside the vignette frame (when enabled) -->
+    <!-- Sized to align with inner edge of vignette stroke (rx - strokeWidth/2) -->
     <clipPath id="vignette-clip">
-      <ellipse id="vignette-clip-shape" cx="93" cy="136" rx="60" ry="60"/>
+      <ellipse id="vignette-clip-shape" cx="93" cy="136" rx="64" ry="64"/>
     </clipPath>
   </defs>
 
@@ -140,13 +141,14 @@
              stroke="#666666"
              stroke-width="2"/>
 
-    <!-- Inner vignette ring (clip boundary indicator) -->
+    <!-- Inner vignette ring (optional second circle, hidden by default) -->
     <ellipse id="vignette-inner"
              cx="93" cy="136"
-             rx="60" ry="60"
+             rx="62" ry="62"
              fill="none"
              stroke="#999999"
-             stroke-width="0.5"/>
+             stroke-width="1"
+             style="display: none;"/>
   </g>
 
   <!-- ============================================ -->

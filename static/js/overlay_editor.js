@@ -26,8 +26,8 @@ import { BoxArtEditor } from './modules/boxArtEditor.js';
  * Initialize the application
  */
 function initializeApp() {
-    // Load the SVG template
-    SVGManager.loadTemplate();
+    // Load the SVG template (suppress status message on initial load)
+    SVGManager.loadTemplate(false);
 
     // Initialize button shape templates
     ButtonShape.initialize();
@@ -463,6 +463,11 @@ window.switchEditorTab = (tabName) => {
     // Update content panels
     document.querySelectorAll('.editor-content').forEach(content => {
         content.classList.toggle('active', content.id === `${tabName}-editor-content`);
+    });
+
+    // Update toolbars (show the appropriate action buttons)
+    document.querySelectorAll('.editor-toolbar').forEach(toolbar => {
+        toolbar.classList.toggle('active', toolbar.id === `${tabName}-toolbar`);
     });
 
     // Initialize box art editor on first switch to that tab

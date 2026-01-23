@@ -157,6 +157,9 @@ def get_shape(name):
 # Path to layout templates (pre-made overlay projects)
 LAYOUT_TEMPLATES_DIR = Path(__file__).parent / "layout-templates"
 
+# Path to box art templates (pre-made box art projects)
+BOXART_TEMPLATES_DIR = Path(__file__).parent / "boxart-templates"
+
 
 @app.route('/get_examples')
 def get_examples():
@@ -189,6 +192,51 @@ def get_example(name):
     # Security check: ensure path is within LAYOUT_TEMPLATES_DIR
     try:
         if not str(example_path).startswith(str(LAYOUT_TEMPLATES_DIR.resolve())):
+            return jsonify({'error': 'Invalid example path'}), 400
+        if not example_path.exists() or not example_path.is_file():
+            return jsonify({'error': 'Example not found'}), 404
+
+        return send_file(
+            example_path,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=safe_name
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/get_boxart_examples')
+def get_boxart_examples():
+    """Return list of available example box art projects"""
+    examples = []
+    if BOXART_TEMPLATES_DIR.exists():
+        for p in sorted(BOXART_TEMPLATES_DIR.iterdir()):
+            if p.suffix.lower() == '.zip' and p.is_file():
+                # Use filename without extension as the example name
+                # Convert underscores to spaces and title case for display
+                display_name = p.stem.replace('_', ' ').replace('boxart project', '').replace('box art project', '').strip().title()
+                examples.append({
+                    'name': p.stem,
+                    'file': p.name,
+                    'displayName': display_name
+                })
+    return jsonify({'examples': examples}), 200
+
+
+@app.route('/get_boxart_example/<name>')
+def get_boxart_example(name):
+    """Return the zip file for a specific example box art project"""
+    # Sanitize name to prevent path traversal
+    safe_name = Path(name).name
+    if not safe_name.endswith('.zip'):
+        safe_name += '.zip'
+
+    example_path = (BOXART_TEMPLATES_DIR / safe_name).resolve()
+
+    # Security check: ensure path is within BOXART_TEMPLATES_DIR
+    try:
+        if not str(example_path).startswith(str(BOXART_TEMPLATES_DIR.resolve())):
             return jsonify({'error': 'Invalid example path'}), 400
         if not example_path.exists() or not example_path.is_file():
             return jsonify({'error': 'Example not found'}), 404
