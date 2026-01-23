@@ -13,6 +13,7 @@ import { ActionButtons } from './actionButtons.js';
 import { BottomControls } from './bottomControls.js';
 import { BackgroundControls } from './backgroundControls.js';
 import { RowDescriptions } from './rowDescriptions.js';
+import { PreviewInteraction } from './previewInteraction.js';
 
 export class SVGManager {
     /**
@@ -54,6 +55,7 @@ export class SVGManager {
                     BottomControls.toggleBottomArrowFill();  // Apply default brown bottom arrow fill
                     BackgroundControls.initBackground();     // Initialize background element reference
                     RowDescriptions.initRowDescriptions();   // Clear row description placeholders
+                    PreviewInteraction.init();               // Enable click-to-navigate on preview
                 }
 
                 if (showStatus) {

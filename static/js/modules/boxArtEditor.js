@@ -5,6 +5,7 @@
 
 import { appState } from '../services/stateManager.js';
 import { ExportManager } from './exportManager.js';
+import { PreviewInteraction } from './previewInteraction.js';
 
 export class BoxArtEditor {
     /**
@@ -43,6 +44,9 @@ export class BoxArtEditor {
                     preview.innerHTML = '';
                     const svgElement = svgDoc.documentElement.cloneNode(true);
                     preview.appendChild(svgElement);
+
+                    // Initialize click-to-navigate for box art preview
+                    PreviewInteraction.initBoxArt();
                 }
             }
         } catch (error) {

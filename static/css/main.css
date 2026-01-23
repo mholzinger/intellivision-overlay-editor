@@ -296,6 +296,50 @@ body {
     border-radius: var(--radius-sm);
 }
 
+/* Click-to-navigate highlight effect */
+.control-section.section-highlight {
+    animation: section-pulse 1.5s ease-out;
+    box-shadow: 0 0 0 3px var(--primary-color), var(--shadow-sm);
+}
+
+@keyframes section-pulse {
+    0% {
+        box-shadow: 0 0 0 3px var(--primary-color), var(--shadow-sm);
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent, var(--shadow-sm);
+    }
+}
+
+/* SVG preview clickable cursor - Overlay Editor */
+#svg-preview svg {
+    cursor: pointer;
+}
+
+#svg-preview svg text,
+#svg-preview svg rect,
+#svg-preview svg polygon,
+#svg-preview svg path,
+#svg-preview svg ellipse,
+#svg-preview svg circle {
+    cursor: pointer;
+}
+
+/* SVG preview clickable cursor - Box Art Editor */
+#boxart-svg-preview svg {
+    cursor: pointer;
+}
+
+#boxart-svg-preview svg text,
+#boxart-svg-preview svg rect,
+#boxart-svg-preview svg polygon,
+#boxart-svg-preview svg path,
+#boxart-svg-preview svg ellipse,
+#boxart-svg-preview svg circle,
+#boxart-svg-preview svg line {
+    cursor: pointer;
+}
+
 /* Responsive: stack panels vertically on narrow viewports */
 @media (max-width: 900px) {
     .main-content {
