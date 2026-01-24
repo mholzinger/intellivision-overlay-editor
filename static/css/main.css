@@ -347,38 +347,6 @@ body.artwork-dragging {
     -webkit-user-select: none;
 }
 
-/* Resize handles */
-.resize-handles {
-    pointer-events: all;
-}
-
-.resize-handle {
-    pointer-events: all;
-    opacity: 0.9;
-    transition: opacity 0.15s ease;
-}
-
-.resize-handle:hover {
-    opacity: 1;
-}
-
-/* Resize handle corner cursors */
-.resize-handle-nw { cursor: nw-resize; }
-.resize-handle-ne { cursor: ne-resize; }
-.resize-handle-sw { cursor: sw-resize; }
-.resize-handle-se { cursor: se-resize; }
-
-/* Resizing cursor state */
-body.artwork-resizing,
-body.artwork-resizing * {
-    cursor: nwse-resize !important;
-}
-
-body.artwork-resizing {
-    user-select: none;
-    -webkit-user-select: none;
-}
-
 /* SVG preview clickable cursor - Box Art Editor */
 #boxart-svg-preview svg {
     cursor: pointer;
