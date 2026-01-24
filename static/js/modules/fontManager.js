@@ -213,7 +213,9 @@ export class FontManager {
 
         // Parse font data
         const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
+        // Use displayName as unique font-family to avoid conflicts between variants
+        // e.g., "SF Intellivised Outline" vs "SF Intellivised Bold"
+        const fontFamily = fontData.displayName || fontData.family;
         const isSystem = fontData.type === 'system';
 
         // Create or replace a <style id="embedded-font-style"> inside the SVG
@@ -226,12 +228,12 @@ export class FontManager {
 
         if (isSystem) {
             // System font: just set font-family, no @font-face needed
-            styleEl.textContent = `#title-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `#title-text { font-family: "${fontFamily}" !important; }`;
         } else {
             // Custom font: use @font-face for browser preview
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#title-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#title-text { font-family: "${fontFamily}" !important; }`;
 
             // Also load in browser for preview
             let headStyle = document.getElementById('preview-embedded-font-style');
@@ -240,13 +242,13 @@ export class FontManager {
                 headStyle.id = 'preview-embedded-font-style';
                 document.head.appendChild(headStyle);
             }
-            headStyle.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+            headStyle.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
         }
 
         if (titleElement) {
             // Apply font-family directly as attribute for maximum priority
-            titleElement.setAttribute('font-family', family);
-            titleElement.style.fontFamily = family;
+            titleElement.setAttribute('font-family', fontFamily);
+            titleElement.style.fontFamily = fontFamily;
             titleElement.style.fill = UIManager.getSelectedFontColor();
         }
     }
@@ -262,7 +264,7 @@ export class FontManager {
 
         // Parse font data
         const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
+        const fontFamily = fontData.displayName || fontData.family;
         const isSystem = fontData.type === 'system';
 
         // For button labels, we'll embed font info in SVG styles
@@ -275,12 +277,12 @@ export class FontManager {
 
         if (isSystem) {
             // System font: just set font-family for button labels
-            styleEl.textContent = `.button-label-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `.button-label-text { font-family: "${fontFamily}" !important; }`;
         } else {
             // Custom font: use @font-face for button labels
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.button-label-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.button-label-text { font-family: "${fontFamily}" !important; }`;
 
             // Also load in browser for preview (reuse or add to existing preview style)
             let headStyle = document.getElementById('preview-embedded-font-style');
@@ -290,8 +292,8 @@ export class FontManager {
                 document.head.appendChild(headStyle);
             }
             // Append button font if not already there
-            if (!headStyle.textContent.includes(`font-family: "${family}"`)) {
-                headStyle.textContent += `\n@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+            if (!headStyle.textContent.includes(`font-family: "${fontFamily}"`)) {
+                headStyle.textContent += `\n@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
             }
         }
 
@@ -310,7 +312,7 @@ export class FontManager {
 
         // Parse font data
         const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
+        const fontFamily = fontData.displayName || fontData.family;
         const isSystem = fontData.type === 'system';
 
         // For action button labels, we'll embed font info in SVG styles
@@ -323,12 +325,12 @@ export class FontManager {
 
         if (isSystem) {
             // System font: just set font-family for action labels
-            styleEl.textContent = `.action-label-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `.action-label-text { font-family: "${fontFamily}" !important; }`;
         } else {
             // Custom font: use @font-face for action labels
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.action-label-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n.action-label-text { font-family: "${fontFamily}" !important; }`;
 
             // Also load in browser for preview (reuse or add to existing preview style)
             let headStyle = document.getElementById('preview-embedded-font-style');
@@ -338,8 +340,8 @@ export class FontManager {
                 document.head.appendChild(headStyle);
             }
             // Append action font if not already there
-            if (!headStyle.textContent.includes(`font-family: "${family}"`)) {
-                headStyle.textContent += `\n@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+            if (!headStyle.textContent.includes(`font-family: "${fontFamily}"`)) {
+                headStyle.textContent += `\n@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
             }
         }
 
@@ -358,7 +360,7 @@ export class FontManager {
         if (!fontValue || !textElement) return;
 
         const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
+        const fontFamily = fontData.displayName || fontData.family;
         const isSystem = fontData.type === 'system';
 
         // Create or update embedded font style for bottom text
@@ -370,14 +372,14 @@ export class FontManager {
         }
 
         if (isSystem) {
-            styleEl.textContent = `#bottom-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `#bottom-text { font-family: "${fontFamily}" !important; }`;
         } else {
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#bottom-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#bottom-text { font-family: "${fontFamily}" !important; }`;
         }
 
-        textElement.style.fontFamily = family;
+        textElement.style.fontFamily = fontFamily;
     }
 
     /**
@@ -391,7 +393,7 @@ export class FontManager {
         if (!fontValue || !textElement) return;
 
         const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
+        const fontFamily = fontData.displayName || fontData.family;
         const isSystem = fontData.type === 'system';
 
         // Create or update embedded font style for copyright text
@@ -408,13 +410,13 @@ export class FontManager {
         }
 
         if (isSystem) {
-            styleEl.textContent = `#copyright-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `#copyright-text { font-family: "${fontFamily}" !important; }`;
         } else {
             const fontFile = fontData.file;
             const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            styleEl.textContent = `@font-face { font-family: "${family}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#copyright-text { font-family: "${family}" !important; }`;
+            styleEl.textContent = `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }\n#copyright-text { font-family: "${fontFamily}" !important; }`;
         }
 
-        textElement.style.fontFamily = family;
+        textElement.style.fontFamily = fontFamily;
     }
 }
