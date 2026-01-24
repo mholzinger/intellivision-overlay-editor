@@ -41,47 +41,52 @@ export class FontManager {
             if (boxartSubtitleSelect) boxartSubtitleSelect.innerHTML = '';
 
             if (data.fonts && data.fonts.length > 0) {
-                let arialIndex = -1;
-                let arialBlackIndex = -1;
-                let eurostileBQIndex = -1;
+                // Track indices for bundled font defaults
+                // Liberation Sans replaces Arial, Open Sans ExtraBold replaces Arial Black
+                let liberationSansIndex = -1;
+                let openSansExtraBoldIndex = -1;
                 let eurostileBoldExtIndex = -1;
                 let sfIntellivisedIndex = -1;
+
                 data.fonts.forEach((f, index) => {
+                    // Use displayName if available, otherwise family name
+                    const displayText = f.displayName || f.family;
+
                     // Create option for title font selector
                     const opt = document.createElement('option');
                     opt.value = JSON.stringify(f);
-                    opt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    opt.textContent = displayText;
                     select.appendChild(opt);
 
                     // Create option for button font selector
                     const btnOpt = document.createElement('option');
                     btnOpt.value = JSON.stringify(f);
-                    btnOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    btnOpt.textContent = displayText;
                     buttonSelect.appendChild(btnOpt);
 
                     // Create option for action button font selector
                     const actionOpt = document.createElement('option');
                     actionOpt.value = JSON.stringify(f);
-                    actionOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    actionOpt.textContent = displayText;
                     actionSelect.appendChild(actionOpt);
 
                     // Create option for bottom text font selector
                     const bottomOpt = document.createElement('option');
                     bottomOpt.value = JSON.stringify(f);
-                    bottomOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    bottomOpt.textContent = displayText;
                     bottomSelect.appendChild(bottomOpt);
 
                     // Create option for copyright font selector
                     const copyrightOpt = document.createElement('option');
                     copyrightOpt.value = JSON.stringify(f);
-                    copyrightOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                    copyrightOpt.textContent = displayText;
                     copyrightSelect.appendChild(copyrightOpt);
 
                     // Create option for row description font selector
                     if (rowDescSelect) {
                         const rowDescOpt = document.createElement('option');
                         rowDescOpt.value = JSON.stringify(f);
-                        rowDescOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        rowDescOpt.textContent = displayText;
                         rowDescSelect.appendChild(rowDescOpt);
                     }
 
@@ -89,46 +94,45 @@ export class FontManager {
                     if (boxartBrandSelect) {
                         const brandOpt = document.createElement('option');
                         brandOpt.value = JSON.stringify(f);
-                        brandOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        brandOpt.textContent = displayText;
                         boxartBrandSelect.appendChild(brandOpt);
                     }
                     if (boxartTaglineSelect) {
                         const taglineOpt = document.createElement('option');
                         taglineOpt.value = JSON.stringify(f);
-                        taglineOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        taglineOpt.textContent = displayText;
                         boxartTaglineSelect.appendChild(taglineOpt);
                     }
                     if (boxartTitleSelect) {
                         const titleOpt = document.createElement('option');
                         titleOpt.value = JSON.stringify(f);
-                        titleOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        titleOpt.textContent = displayText;
                         boxartTitleSelect.appendChild(titleOpt);
                     }
                     if (boxartSubtitleSelect) {
                         const subtitleOpt = document.createElement('option');
                         subtitleOpt.value = JSON.stringify(f);
-                        subtitleOpt.textContent = f.type === 'system' ? f.family + ' (system)' : f.family;
+                        subtitleOpt.textContent = displayText;
                         boxartSubtitleSelect.appendChild(subtitleOpt);
                     }
 
-                    // Track indices for different default fonts
-                    if (f.family === 'Arial' && f.type === 'system') {
-                        arialIndex = index;
-                        console.log('✓ Found Arial at index', index);
+                    // Track indices for bundled font defaults
+                    // Liberation Sans Regular (replaces Arial)
+                    if (f.family === 'Liberation Sans' && f.weight === 'Regular') {
+                        liberationSansIndex = index;
+                        console.log('✓ Found Liberation Sans at index', index);
                     }
-                    if (f.family === 'Arial Black' && f.type === 'system') {
-                        arialBlackIndex = index;
-                        console.log('✓ Found Arial Black at index', index);
+                    // Open Sans ExtraBold (replaces Arial Black)
+                    if (f.family === 'Open Sans' && f.weight === 'ExtraBold') {
+                        openSansExtraBoldIndex = index;
+                        console.log('✓ Found Open Sans ExtraBold at index', index);
                     }
-                    if (f.family === 'Eurostile BQ' && f.type === 'system') {
-                        eurostileBQIndex = index;
-                        console.log('✓ Found Eurostile BQ at index', index);
-                    }
-                    if (f.family === 'Eurostile Bold Extended' && f.type === 'system') {
+                    // Eurostile Bold Extended (bundled custom font)
+                    if (f.family === 'Eurostile Bold Extended') {
                         eurostileBoldExtIndex = index;
                         console.log('✓ Found Eurostile Bold Extended at index', index);
                     }
-                    // Track SF Intellivised for box art brand
+                    // SF Intellivised for box art brand
                     if (f.family === 'SF Intellivised') {
                         sfIntellivisedIndex = index;
                         console.log('✓ Found SF Intellivised at index', index);
@@ -136,40 +140,40 @@ export class FontManager {
                 });
 
                 // Select appropriate default fonts for each selector
-                // Title: Arial
-                select.selectedIndex = arialIndex >= 0 ? arialIndex : (arialBlackIndex >= 0 ? arialBlackIndex : 0);
-                // Copyright: Arial Black
-                copyrightSelect.selectedIndex = arialBlackIndex >= 0 ? arialBlackIndex : 0;
+                // Title: Liberation Sans (replaces Arial)
+                select.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
+                // Copyright: Open Sans ExtraBold (replaces Arial Black)
+                copyrightSelect.selectedIndex = openSansExtraBoldIndex >= 0 ? openSansExtraBoldIndex : 0;
                 // Button labels: Eurostile Bold Extended
-                buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : (eurostileBQIndex >= 0 ? eurostileBQIndex : 0);
-                // Action buttons: Arial
-                actionSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
-                // Bottom text: Arial
-                bottomSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
-                // Row descriptions: Eurostile BQ
+                buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : 0;
+                // Action buttons: Liberation Sans
+                actionSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
+                // Bottom text: Liberation Sans
+                bottomSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
+                // Row descriptions: Eurostile Bold Extended (or Liberation Sans as fallback)
                 if (rowDescSelect) {
-                    rowDescSelect.selectedIndex = eurostileBQIndex >= 0 ? eurostileBQIndex : 0;
+                    rowDescSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : (liberationSansIndex >= 0 ? liberationSansIndex : 0);
                 }
 
                 // Box art font defaults
-                // Brand: SF Intellivised (falls back to Arial)
+                // Brand: SF Intellivised (falls back to Liberation Sans)
                 if (boxartBrandSelect) {
-                    boxartBrandSelect.selectedIndex = sfIntellivisedIndex >= 0 ? sfIntellivisedIndex : (arialIndex >= 0 ? arialIndex : 0);
+                    boxartBrandSelect.selectedIndex = sfIntellivisedIndex >= 0 ? sfIntellivisedIndex : (liberationSansIndex >= 0 ? liberationSansIndex : 0);
                 }
-                // Tagline: Arial
+                // Tagline: Liberation Sans
                 if (boxartTaglineSelect) {
-                    boxartTaglineSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                    boxartTaglineSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
                 }
-                // Title: Arial
+                // Title: Liberation Sans
                 if (boxartTitleSelect) {
-                    boxartTitleSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                    boxartTitleSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
                 }
-                // Subtitle: Arial
+                // Subtitle: Liberation Sans
                 if (boxartSubtitleSelect) {
-                    boxartSubtitleSelect.selectedIndex = arialIndex >= 0 ? arialIndex : 0;
+                    boxartSubtitleSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
                 }
 
-                console.log('Font indices - Arial:', arialIndex, 'Arial Black:', arialBlackIndex, 'Eurostile BQ:', eurostileBQIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex, 'SF Intellivised:', sfIntellivisedIndex);
+                console.log('Font indices - Liberation Sans:', liberationSansIndex, 'Open Sans ExtraBold:', openSansExtraBoldIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex, 'SF Intellivised:', sfIntellivisedIndex);
 
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();

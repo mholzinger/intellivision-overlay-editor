@@ -382,39 +382,141 @@ def export_png():
 # Create fonts directory path
 FONT_DIR = Path(__file__).parent / 'sf_intellivised'
 
-@app.route('/fonts/list')
-def fonts_list():
-    """Return list of available fonts (custom fonts + system fonts that work with CairoSVG)"""
-    fonts = []
+def _parse_font_info(filename: str) -> dict:
+    """Parse font filename to extract family name and weight/style info.
 
-    # Add custom fonts from sf_intellivised folder
-    custom_fonts = []
-    if FONT_DIR.exists():
-        for p in sorted(FONT_DIR.iterdir()):
-            if p.suffix.lower() in ['.ttf', '.otf'] and p.is_file():
-                custom_fonts.append({
-                    'file': p.name,
-                    'family': p.stem,  # Filename without extension
-                    'type': 'custom'
-                })
+    Examples:
+        LiberationSans-Bold.ttf -> family='Liberation Sans', weight='Bold'
+        SF Intellivised Bold.ttf -> family='SF Intellivised', weight='Bold'
+        Roboto_Condensed-Medium.ttf -> family='Roboto Condensed', weight='Medium'
+    """
+    import re
 
-    # Add common system fonts that CairoSVG can render
-    system_fonts = [
-        {'family': 'Arial', 'type': 'system'},
-        {'family': 'Arial Black', 'type': 'system'},
-        {'family': 'Courier', 'type': 'system'},
-        {'family': 'Courier New', 'type': 'system'},
-        {'family': 'Georgia', 'type': 'system'},
-        {'family': 'Helvetica', 'type': 'system'},
-        {'family': 'Helvetica Neue', 'type': 'system'},
-        {'family': 'Impact', 'type': 'system'},
-        {'family': 'Times', 'type': 'system'},
-        {'family': 'Times New Roman', 'type': 'system'},
-        {'family': 'Verdana', 'type': 'system'},
-        {'family': 'Eurostile BQ', 'type': 'system'},  # Our installed custom font
+    stem = Path(filename).stem
+
+    # Weight/style suffixes (order matters - check longer ones first)
+    weight_styles = [
+        'Extra Bold Italic', 'Semi Bold Italic', 'Bold Italic', 'Light Italic',
+        'Medium Italic', 'Thin Italic', 'Extra Light Italic', 'Black Italic',
+        'Outline Italic', 'Extended Italic',
+        'ExtraBoldItalic', 'SemiBoldItalic', 'BoldItalic', 'LightItalic',
+        'MediumItalic', 'ThinItalic', 'ExtraLightItalic', 'BlackItalic',
+        'Extra Bold', 'Semi Bold', 'Extra Light',
+        'ExtraBold', 'SemiBold', 'ExtraLight',
+        'Bold', 'Medium', 'Regular', 'Light', 'Thin', 'Black',
+        'Outline', 'Extended', 'Italic',
+        'VariableFont_wdth,wght'
     ]
 
-    fonts = custom_fonts + system_fonts
+    # Special cases - fonts where the full name is the family
+    special_families = ['Eurostile Bold Extended']
+    for sf in special_families:
+        if stem == sf or stem.startswith(sf + ' '):
+            return {'family': sf, 'weight': 'Regular', 'style': ''}
+
+    # Check if filename has spaces (e.g., "SF Intellivised Bold.ttf")
+    if ' ' in stem:
+        # For space-separated names, check for weight suffix at end
+        family = stem
+        weight = 'Regular'
+        style = ''
+        for ws in weight_styles:
+            if stem.endswith(' ' + ws):
+                family = stem[:-len(ws)-1].strip()
+                if 'Italic' in ws:
+                    style = 'Italic'
+                    weight = ws.replace(' Italic', '').replace('Italic', '') or 'Regular'
+                else:
+                    weight = ws.replace(' ', '')
+                break
+        return {'family': family, 'weight': weight, 'style': style}
+
+    # Handle hyphen-separated weight (e.g., LiberationSans-Bold)
+    parts = stem.split('-')
+    if len(parts) >= 2:
+        base_name = parts[0]
+        weight_part = '-'.join(parts[1:])
+    else:
+        base_name = stem
+        weight_part = 'Regular'
+
+    # Convert underscores to spaces and expand CamelCase
+    family = base_name.replace('_', ' ')
+
+    # Add spaces before capital letters (CamelCase), but not between consecutive capitals
+    def expand_camelcase(word):
+        return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', word)
+
+    if ' ' not in family:
+        family = expand_camelcase(family)
+    else:
+        words = family.split(' ')
+        family = ' '.join(expand_camelcase(w) for w in words)
+
+    family = re.sub(r'\s+', ' ', family).strip()
+
+    # Determine weight from hyphen-separated part
+    weight = 'Regular'
+    style = ''
+    for ws in weight_styles:
+        if weight_part.endswith(ws) or weight_part == ws:
+            if 'Italic' in ws:
+                style = 'Italic'
+                weight = ws.replace('Italic', '').replace(' ', '') or 'Regular'
+            else:
+                weight = ws.replace(' ', '')
+            break
+
+    return {'family': family, 'weight': weight, 'style': style}
+
+
+@app.route('/fonts/list')
+def fonts_list():
+    """Return list of available bundled fonts.
+
+    All fonts are served from the sf_intellivised folder. No system fonts are
+    exposed to ensure consistent rendering across all platforms (Windows, macOS,
+    iOS, Linux, Docker).
+    """
+    fonts = []
+
+    if FONT_DIR.exists():
+        # Group fonts by family to provide clean selection options
+        families_seen = {}
+
+        for p in sorted(FONT_DIR.iterdir()):
+            if p.suffix.lower() in ['.ttf', '.otf'] and p.is_file():
+                info = _parse_font_info(p.name)
+                family = info['family']
+                weight = info['weight']
+
+                # Create a unique key for this font variant
+                variant_key = f"{family}-{weight}-{info['style']}"
+
+                # Build display name: Family + Weight + Style
+                if weight == 'Regular' and not info['style']:
+                    display_name = family
+                elif weight == 'Regular' and info['style']:
+                    display_name = f"{family} {info['style']}"
+                elif info['style']:
+                    display_name = f"{family} {weight} {info['style']}"
+                else:
+                    display_name = f"{family} {weight}"
+
+                fonts.append({
+                    'file': p.name,
+                    'family': family,
+                    'weight': weight,
+                    'style': info['style'],
+                    'type': 'custom',
+                    'displayName': display_name
+                })
+
+    # Sort by family name, then by weight order
+    weight_order = {'Thin': 0, 'ExtraLight': 1, 'Light': 2, 'Regular': 3,
+                    'Medium': 4, 'SemiBold': 5, 'Bold': 6, 'ExtraBold': 7, 'Black': 8}
+    fonts.sort(key=lambda f: (f['family'], weight_order.get(f['weight'], 3), f.get('style', '')))
+
     return jsonify({'fonts': fonts}), 200
 
 

@@ -12,6 +12,98 @@ export class ConfigManager {
     static CONFIG_VERSION = '1.0';
 
     /**
+     * Font migration map: maps old system font names to bundled equivalents.
+     * Used when importing projects that reference fonts no longer available.
+     */
+    static FONT_MIGRATION_MAP = {
+        // Sans-serif fonts -> Liberation Sans
+        'Arial': 'Liberation Sans',
+        'Helvetica': 'Liberation Sans',
+        'Helvetica Neue': 'Liberation Sans',
+        'Verdana': 'Liberation Sans',
+
+        // Heavy/Black fonts -> Open Sans ExtraBold
+        'Arial Black': 'Open Sans ExtraBold',
+        'Impact': 'Open Sans ExtraBold',
+
+        // Serif fonts -> Liberation Sans (no serif bundled)
+        'Times': 'Liberation Sans',
+        'Times New Roman': 'Liberation Sans',
+        'Georgia': 'Liberation Sans',
+
+        // Monospace fonts -> Liberation Sans (no mono bundled)
+        'Courier': 'Liberation Sans',
+        'Courier New': 'Liberation Sans',
+
+        // Eurostile variants -> Eurostile Bold Extended
+        'Eurostile BQ': 'Eurostile Bold Extended',
+        'Eurostile': 'Eurostile Bold Extended'
+    };
+
+    /**
+     * Migrate a font JSON string to use bundled fonts if needed.
+     * @param {string} fontJson - JSON string of font object from config
+     * @returns {string} Updated JSON string with migrated font
+     */
+    static migrateFontValue(fontJson) {
+        if (!fontJson) return fontJson;
+
+        try {
+            const fontData = JSON.parse(fontJson);
+
+            // If it's a system font, check if we need to migrate it
+            if (fontData.type === 'system' && this.FONT_MIGRATION_MAP[fontData.family]) {
+                const newFamily = this.FONT_MIGRATION_MAP[fontData.family];
+
+                // Parse the new family to get weight info
+                // e.g., "Open Sans ExtraBold" -> family="Open Sans", weight="ExtraBold"
+                let family = newFamily;
+                let weight = 'Regular';
+
+                // Check for weight suffix
+                const weights = ['ExtraBold', 'Bold', 'Medium', 'Light', 'Thin'];
+                for (const w of weights) {
+                    if (newFamily.endsWith(' ' + w)) {
+                        family = newFamily.slice(0, -w.length - 1);
+                        weight = w;
+                        break;
+                    }
+                }
+
+                // Build the file name based on the font family
+                let file;
+                if (newFamily === 'Liberation Sans') {
+                    file = 'LiberationSans-Regular.ttf';
+                } else if (newFamily === 'Open Sans ExtraBold') {
+                    file = 'OpenSans-ExtraBold.ttf';
+                } else if (newFamily === 'Eurostile Bold Extended') {
+                    file = 'Eurostile Bold Extended.otf';
+                } else {
+                    // Fallback
+                    file = 'LiberationSans-Regular.ttf';
+                    family = 'Liberation Sans';
+                }
+
+                console.log(`Migrating font: ${fontData.family} -> ${newFamily}`);
+
+                return JSON.stringify({
+                    family: family,
+                    weight: weight,
+                    style: '',
+                    type: 'custom',
+                    file: file,
+                    displayName: newFamily
+                });
+            }
+
+            return fontJson;
+        } catch (e) {
+            console.warn('Failed to parse font value for migration:', e);
+            return fontJson;
+        }
+    }
+
+    /**
      * Reset the overlay to a clean state without reloading the page.
      * Clears all state and reloads the fresh SVG template.
      */
@@ -833,11 +925,24 @@ export class ConfigManager {
     }
 
     /**
-     * Helper to set select value
+     * Helper to set select value.
+     * For font selects, applies migration to convert old system fonts to bundled equivalents.
      */
     static setSelectValue(id, value) {
         const el = document.getElementById(id);
         if (el && value !== undefined && value !== null) {
+            // Check if this is a font select that needs migration
+            const fontSelectIds = [
+                'font-select', 'copyright-font-select', 'button-font-select',
+                'action-font-select', 'bottom-text-font-select', 'row-desc-font-select',
+                'boxart-brand-font-select', 'boxart-tagline-font-select',
+                'boxart-title-font-select', 'boxart-subtitle-font-select'
+            ];
+
+            if (fontSelectIds.includes(id)) {
+                value = this.migrateFontValue(value);
+            }
+
             el.value = value;
         }
     }
