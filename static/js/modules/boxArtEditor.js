@@ -7,6 +7,7 @@ import { appState } from '../services/stateManager.js';
 import { ExportManager } from './exportManager.js';
 import { PreviewInteraction } from './previewInteraction.js';
 import { DraggableArtwork } from './draggableArtwork.js';
+import { FontManager } from './fontManager.js';
 
 export class BoxArtEditor {
     /**
@@ -113,22 +114,18 @@ export class BoxArtEditor {
         const brandElement = svgDoc?.querySelector('#brand-logo');
         if (!fontValue || !brandElement) return;
 
-        const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
-        const isSystem = fontData.type === 'system';
+        const { fontFamily, fontFile, fontFormat, isSystem } = FontManager.parseFontData(fontValue);
 
         // Update embedded font style in box art SVG
         let styleEl = svgDoc.querySelector('style');
         if (styleEl && !isSystem) {
-            const fontFile = fontData.file;
-            const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
             // Append font-face if not already present
-            if (!styleEl.textContent.includes(`font-family: '${family}'`)) {
-                styleEl.textContent += `\n@font-face { font-family: '${family}'; src: url('/fonts/${fontFile}') format('${fontFormat}'); }`;
+            if (!styleEl.textContent.includes(`font-family: '${fontFamily}'`)) {
+                styleEl.textContent += `\n${FontManager.generateFontFace(fontFamily, fontFile, fontFormat).replace(/"/g, "'")}`;
             }
         }
 
-        brandElement.setAttribute('font-family', `'${family}', sans-serif`);
+        brandElement.setAttribute('font-family', `'${fontFamily}', sans-serif`);
         BoxArtEditor.refreshPreview();
     }
 
@@ -142,20 +139,16 @@ export class BoxArtEditor {
         const taglineElement = svgDoc?.querySelector('#brand-tagline');
         if (!fontValue || !taglineElement) return;
 
-        const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
-        const isSystem = fontData.type === 'system';
+        const { fontFamily, fontFile, fontFormat, isSystem } = FontManager.parseFontData(fontValue);
 
         let styleEl = svgDoc.querySelector('style');
         if (styleEl && !isSystem) {
-            const fontFile = fontData.file;
-            const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            if (!styleEl.textContent.includes(`font-family: '${family}'`)) {
-                styleEl.textContent += `\n@font-face { font-family: '${family}'; src: url('/fonts/${fontFile}') format('${fontFormat}'); }`;
+            if (!styleEl.textContent.includes(`font-family: '${fontFamily}'`)) {
+                styleEl.textContent += `\n${FontManager.generateFontFace(fontFamily, fontFile, fontFormat).replace(/"/g, "'")}`;
             }
         }
 
-        taglineElement.setAttribute('font-family', `'${family}', sans-serif`);
+        taglineElement.setAttribute('font-family', `'${fontFamily}', sans-serif`);
         BoxArtEditor.refreshPreview();
     }
 
@@ -345,20 +338,16 @@ export class BoxArtEditor {
         const titleElement = svgDoc?.querySelector('#game-title');
         if (!fontValue || !titleElement) return;
 
-        const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
-        const isSystem = fontData.type === 'system';
+        const { fontFamily, fontFile, fontFormat, isSystem } = FontManager.parseFontData(fontValue);
 
         let styleEl = svgDoc.querySelector('style');
         if (styleEl && !isSystem) {
-            const fontFile = fontData.file;
-            const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            if (!styleEl.textContent.includes(`font-family: '${family}'`)) {
-                styleEl.textContent += `\n@font-face { font-family: '${family}'; src: url('/fonts/${fontFile}') format('${fontFormat}'); }`;
+            if (!styleEl.textContent.includes(`font-family: '${fontFamily}'`)) {
+                styleEl.textContent += `\n${FontManager.generateFontFace(fontFamily, fontFile, fontFormat).replace(/"/g, "'")}`;
             }
         }
 
-        titleElement.setAttribute('font-family', `'${family}', sans-serif`);
+        titleElement.setAttribute('font-family', `'${fontFamily}', sans-serif`);
         BoxArtEditor.refreshPreview();
     }
 
@@ -372,20 +361,16 @@ export class BoxArtEditor {
         const subtitleElement = svgDoc?.querySelector('#game-subtitle');
         if (!fontValue || !subtitleElement) return;
 
-        const fontData = JSON.parse(fontValue);
-        const family = fontData.family;
-        const isSystem = fontData.type === 'system';
+        const { fontFamily, fontFile, fontFormat, isSystem } = FontManager.parseFontData(fontValue);
 
         let styleEl = svgDoc.querySelector('style');
         if (styleEl && !isSystem) {
-            const fontFile = fontData.file;
-            const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
-            if (!styleEl.textContent.includes(`font-family: '${family}'`)) {
-                styleEl.textContent += `\n@font-face { font-family: '${family}'; src: url('/fonts/${fontFile}') format('${fontFormat}'); }`;
+            if (!styleEl.textContent.includes(`font-family: '${fontFamily}'`)) {
+                styleEl.textContent += `\n${FontManager.generateFontFace(fontFamily, fontFile, fontFormat).replace(/"/g, "'")}`;
             }
         }
 
-        subtitleElement.setAttribute('font-family', `'${family}', sans-serif`);
+        subtitleElement.setAttribute('font-family', `'${fontFamily}', sans-serif`);
         BoxArtEditor.refreshPreview();
     }
 

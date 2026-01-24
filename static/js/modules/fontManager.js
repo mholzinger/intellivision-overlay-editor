@@ -11,6 +11,56 @@ import { ActionButtons } from './actionButtons.js';
 
 export class FontManager {
     /**
+     * Parse font data and return normalized info for CSS usage.
+     * This is the single source of truth for extracting font-family name from font data.
+     * @param {Object|string} fontData - Font object or JSON string
+     * @returns {Object} { fontFamily, fontFile, fontFormat, isSystem }
+     */
+    static parseFontData(fontData) {
+        if (typeof fontData === 'string') {
+            fontData = JSON.parse(fontData);
+        }
+
+        // Use displayName as unique font-family to avoid conflicts between variants
+        // e.g., "SF Intellivised Outline" vs "SF Intellivised Bold"
+        const fontFamily = fontData.displayName || fontData.family;
+        const isSystem = fontData.type === 'system';
+        const fontFile = fontData.file || '';
+        const fontFormat = fontFile.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+
+        return { fontFamily, fontFile, fontFormat, isSystem };
+    }
+
+    /**
+     * Generate @font-face CSS rule for a custom font.
+     * @param {string} fontFamily - The font-family name to use in CSS
+     * @param {string} fontFile - The font filename
+     * @param {string} fontFormat - 'opentype' or 'truetype'
+     * @returns {string} The @font-face CSS rule
+     */
+    static generateFontFace(fontFamily, fontFile, fontFormat) {
+        return `@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); }`;
+    }
+
+    /**
+     * Ensure a font-face is loaded in the browser for preview.
+     * @param {string} fontFamily - The font-family name
+     * @param {string} fontFile - The font filename
+     * @param {string} fontFormat - 'opentype' or 'truetype'
+     */
+    static ensureFontLoaded(fontFamily, fontFile, fontFormat) {
+        let headStyle = document.getElementById('preview-embedded-font-style');
+        if (!headStyle) {
+            headStyle = document.createElement('style');
+            headStyle.id = 'preview-embedded-font-style';
+            document.head.appendChild(headStyle);
+        }
+        if (!headStyle.textContent.includes(`font-family: "${fontFamily}"`)) {
+            headStyle.textContent += `\n@font-face { font-family: "${fontFamily}"; src: url('/fonts/${fontFile}') format('${fontFormat}'); font-display: swap; }`;
+        }
+    }
+
+    /**
      * Load available fonts from the server and populate selectors
      */
     static async loadFonts() {
