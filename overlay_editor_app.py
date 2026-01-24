@@ -12,6 +12,10 @@ from PIL import Image
 import cairosvg
 import os
 import subprocess
+import logging
+
+# Import configuration
+from config import Config
 
 # Configure fontconfig to find our custom fonts BEFORE importing cairosvg
 FONTS_CONF = Path(__file__).parent / "fonts.conf"
@@ -19,19 +23,51 @@ if FONTS_CONF.exists():
     os.environ['FONTCONFIG_FILE'] = str(FONTS_CONF)
     os.environ['FONTCONFIG_PATH'] = str(Path(__file__).parent)
 
-
+# Configure logging
+logging.basicConfig(level=getattr(logging, Config.LOG_LEVEL), format=Config.LOG_FORMAT)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
 
-# Path to the SVG template
-TEMPLATE_PATH = Path(__file__).parent / "intellivision_overlay_RECTANGULAR.svg"
+# Optional CORS support (install with: pip install flask-cors)
+try:
+    from flask_cors import CORS
+    if Config.CORS_ENABLED:
+        CORS(app, origins=Config.CORS_ORIGINS)
+        logger.info(f"CORS enabled for origins: {Config.CORS_ORIGINS}")
+except ImportError:
+    logger.debug("flask-cors not installed, CORS support disabled")
 
-# Path to box art template
-BOXART_TEMPLATE_PATH = Path(__file__).parent / "templates" / "box_art_template.svg"
+# Optional rate limiting (install with: pip install flask-limiter)
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    if Config.RATE_LIMIT_ENABLED:
+        limiter = Limiter(
+            get_remote_address,
+            app=app,
+            default_limits=[Config.RATE_LIMIT_DEFAULT],
+            storage_uri="memory://"
+        )
+        logger.info(f"Rate limiting enabled: {Config.RATE_LIMIT_DEFAULT}")
+    else:
+        limiter = None
+except ImportError:
+    limiter = None
+    logger.debug("flask-limiter not installed, rate limiting disabled")
 
-# Path to shape templates
-SHAPES_DIR = Path(__file__).parent / "svg-templates"
+# Paths from configuration
+TEMPLATE_PATH = Config.get_template_path()
+BOXART_TEMPLATE_PATH = Config.get_boxart_template_path()
+SHAPES_DIR = Config.get_shapes_dir()
+LAYOUT_TEMPLATES_DIR = Config.get_layout_templates_dir()
+BOXART_TEMPLATES_DIR = Config.get_boxart_templates_dir()
+FONT_DIR = Config.get_font_dir()
+
+# Font cache (populated at startup, refreshed on demand)
+_font_cache = None
+_font_cache_mtime = None
 
 
 def get_git_info():
@@ -154,11 +190,7 @@ def get_shape(name):
         return jsonify({'error': str(e)}), 500
 
 
-# Path to layout templates (pre-made overlay projects)
-LAYOUT_TEMPLATES_DIR = Path(__file__).parent / "layout-templates"
-
-# Path to box art templates (pre-made box art projects)
-BOXART_TEMPLATES_DIR = Path(__file__).parent / "boxart-templates"
+# Note: LAYOUT_TEMPLATES_DIR and BOXART_TEMPLATES_DIR are defined from Config above
 
 
 @app.route('/get_examples')
@@ -379,8 +411,7 @@ def export_png():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Create fonts directory path
-FONT_DIR = Path(__file__).parent / 'sf_intellivised'
+# Note: FONT_DIR is defined from Config above
 
 def _parse_font_info(filename: str) -> dict:
     """Parse font filename to extract family name and weight/style info.
@@ -470,28 +501,19 @@ def _parse_font_info(filename: str) -> dict:
     return {'family': family, 'weight': weight, 'style': style}
 
 
-@app.route('/fonts/list')
-def fonts_list():
-    """Return list of available bundled fonts.
+def _scan_fonts() -> list:
+    """Scan font directory and return list of font metadata.
 
-    All fonts are served from the sf_intellivised folder. No system fonts are
-    exposed to ensure consistent rendering across all platforms (Windows, macOS,
-    iOS, Linux, Docker).
+    This is the internal implementation that does the actual disk scan.
     """
     fonts = []
 
     if FONT_DIR.exists():
-        # Group fonts by family to provide clean selection options
-        families_seen = {}
-
         for p in sorted(FONT_DIR.iterdir()):
             if p.suffix.lower() in ['.ttf', '.otf'] and p.is_file():
                 info = _parse_font_info(p.name)
                 family = info['family']
                 weight = info['weight']
-
-                # Create a unique key for this font variant
-                variant_key = f"{family}-{weight}-{info['style']}"
 
                 # Build display name: Family + Weight + Style
                 if weight == 'Regular' and not info['style']:
@@ -517,12 +539,68 @@ def fonts_list():
                     'Medium': 4, 'SemiBold': 5, 'Bold': 6, 'ExtraBold': 7, 'Black': 8}
     fonts.sort(key=lambda f: (f['family'], weight_order.get(f['weight'], 3), f.get('style', '')))
 
+    return fonts
+
+
+def _get_fonts_cached() -> list:
+    """Get font list with caching support.
+
+    When FONT_CACHE_ENABLED is True, scans fonts once and caches the result.
+    Cache is invalidated if the font directory modification time changes.
+    """
+    global _font_cache, _font_cache_mtime
+
+    if not Config.FONT_CACHE_ENABLED:
+        return _scan_fonts()
+
+    # Check if cache needs refresh
+    try:
+        current_mtime = FONT_DIR.stat().st_mtime if FONT_DIR.exists() else None
+    except OSError:
+        current_mtime = None
+
+    if _font_cache is None or _font_cache_mtime != current_mtime:
+        logger.info(f"Scanning fonts from {FONT_DIR}")
+        _font_cache = _scan_fonts()
+        _font_cache_mtime = current_mtime
+        logger.info(f"Font cache populated with {len(_font_cache)} fonts")
+
+    return _font_cache
+
+
+@app.route('/fonts/list')
+def fonts_list():
+    """Return list of available bundled fonts.
+
+    All fonts are served from the sf_intellivised folder. No system fonts are
+    exposed to ensure consistent rendering across all platforms (Windows, macOS,
+    iOS, Linux, Docker).
+
+    Results are cached for performance (see Config.FONT_CACHE_ENABLED).
+    """
+    fonts = _get_fonts_cached()
     return jsonify({'fonts': fonts}), 200
+
+
+@app.route('/fonts/refresh', methods=['POST'])
+def fonts_refresh():
+    """Force refresh of the font cache.
+
+    Call this endpoint after adding new fonts to the font directory.
+    """
+    global _font_cache, _font_cache_mtime
+    _font_cache = None
+    _font_cache_mtime = None
+    fonts = _get_fonts_cached()
+    return jsonify({'status': 'ok', 'count': len(fonts)}), 200
 
 
 @app.route('/fonts/<path:font_name>')
 def serve_font(font_name):
-    """Serve a TTF or OTF font file from the sf_intellivised folder"""
+    """Serve a TTF or OTF font file from the sf_intellivised folder.
+
+    Includes cache headers for browser caching (fonts rarely change).
+    """
     safe_path = (FONT_DIR / font_name).resolve()
     try:
         if not str(safe_path).startswith(str(FONT_DIR.resolve())):
@@ -531,8 +609,12 @@ def serve_font(font_name):
             return jsonify({'error': 'font not found'}), 404
         # Determine mimetype based on extension
         mimetype = 'font/otf' if safe_path.suffix.lower() == '.otf' else 'font/ttf'
-        return send_file(str(safe_path), mimetype=mimetype)
+        response = send_file(str(safe_path), mimetype=mimetype)
+        # Cache fonts for 1 year (they don't change often)
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        return response
     except Exception as e:
+        logger.error(f"Error serving font {font_name}: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -595,31 +677,49 @@ def _inline_fonts(svg_text: str) -> str:
     return svg_text
 
 
+@app.route('/health')
+def health():
+    """Health check endpoint for load balancers and monitoring."""
+    return jsonify({'status': 'ok'}), 200
+
+
+@app.route('/config')
+def get_config():
+    """Return non-sensitive configuration for debugging (development only)."""
+    if not Config.DEBUG:
+        return jsonify({'error': 'not available in production'}), 403
+    return jsonify(Config.to_dict()), 200
+
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     templates_dir = Path(__file__).parent / 'templates'
     templates_dir.mkdir(exist_ok=True)
 
+    # Validate configuration
+    warnings = Config.validate()
+    for warning in warnings:
+        logger.warning(f"Config warning: {warning}")
+
     print("=" * 70)
     print("Intellivision Overlay Editor - Flask Application")
     print("=" * 70)
     print(f"\nTemplate: {TEMPLATE_PATH}")
-    # Determine host/port from environment so we can avoid ports claimed by other processes.
-    host = os.environ.get('OVL_HOST', '127.0.0.1')
-    port = int(os.environ.get('OVL_PORT', os.environ.get('PORT', '5000')))
+    print(f"Fonts: {FONT_DIR} ({len(_get_fonts_cached())} fonts loaded)")
+
+    # Use configuration for host/port
+    host = Config.HOST
+    port = Config.PORT
 
     print(f"\nStarting server at http://{host}:{port}")
+    if Config.CORS_ENABLED:
+        print(f"CORS enabled for: {Config.CORS_ORIGINS}")
+    if Config.RATE_LIMIT_ENABLED:
+        print(f"Rate limiting: {Config.RATE_LIMIT_DEFAULT}")
     print("Press CTRL+C to quit\n")
 
-    # Health endpoint
-    @app.route('/health')
-    def health():
-        return jsonify({'status': 'ok'}), 200
-
-    # Determine debug mode from environment (default: disabled). Set OVL_DEBUG=1 to opt-in.
-    debug_mode = os.environ.get('OVL_DEBUG', '0').lower() in ('1', 'true', 'yes')
-    if debug_mode:
+    if Config.DEBUG:
         # Disable Werkzeug's debug PIN requirement when intentionally running in debug mode locally
         os.environ['WERKZEUG_DEBUG_PIN'] = 'off'
 
-    app.run(debug=debug_mode, host=host, port=port)
+    app.run(debug=Config.DEBUG, host=host, port=port)

@@ -196,18 +196,30 @@ export class MainArtwork {
         const tiledArtwork = svgDoc.querySelector('#custom-artwork-tiled');
         const pattern = svgDoc.querySelector('#artwork-pattern');
 
+        // Remove SVG elements if they exist
         if (artwork) artwork.remove();
         if (tiledArtwork) tiledArtwork.remove();
         if (pattern) pattern.remove();
 
-        if (artwork || tiledArtwork) {
-            appState.setArtworkData(null);
-            appState.setArtworkPosition(0, 0);
-            appState.setArtworkScale(1.0);
-            appState.setArtworkRotation(0);
-            appState.setArtworkTiled(false);
-            document.getElementById('artwork-upload').value = '';
-            document.getElementById('artwork-controls').style.display = 'none';
+        // Always clear state, even if SVG elements weren't found
+        // (e.g., artwork may have been loaded from imported project but element IDs differ)
+        const hadArtwork = artwork || tiledArtwork || appState.getArtworkData();
+
+        appState.setArtworkData(null);
+        appState.setArtworkOriginalData(null);
+        appState.setArtworkPosition(0, 0);
+        appState.setArtworkScale(1.0);
+        appState.setArtworkOpacity(0.9);
+        appState.setArtworkRotation(0);
+        appState.setArtworkTiled(false);
+        appState.setArtworkRemoveWhite(false);
+        appState.setArtworkWhiteThreshold(245);
+
+        // Reset UI
+        document.getElementById('artwork-upload').value = '';
+        document.getElementById('artwork-controls').style.display = 'none';
+
+        if (hadArtwork) {
             UIManager.showStatus('Artwork cleared', 'success');
         }
     }

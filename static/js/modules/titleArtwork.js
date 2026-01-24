@@ -229,19 +229,29 @@ export class TitleArtwork {
         const artworkGroup = svgDoc?.querySelector('#title-artwork-group');
         const pattern = svgDoc?.querySelector('#title-artwork-pattern');
 
+        // Remove SVG elements if they exist
         if (artworkGroup) artworkGroup.remove();
         if (pattern) pattern.remove();
 
-        if (artworkGroup) {
-            appState.setTitleArtworkData(null);
-            appState.setTitleArtworkOriginalData(null);
-            appState.setTitleArtworkPosition(0, 0);
-            appState.setTitleArtworkScale(1.0);
-            appState.setTitleArtworkOpacity(1.0);
-            appState.setTitleArtworkRotation(0);
-            appState.setTitleArtworkTiled(false);
-            document.getElementById('title-artwork-upload').value = '';
-            document.getElementById('title-artwork-controls').style.display = 'none';
+        // Always clear state, even if SVG elements weren't found
+        // (e.g., artwork may have been loaded from imported project but element IDs differ)
+        const hadArtwork = artworkGroup || appState.getTitleArtworkData();
+
+        appState.setTitleArtworkData(null);
+        appState.setTitleArtworkOriginalData(null);
+        appState.setTitleArtworkPosition(0, 0);
+        appState.setTitleArtworkScale(1.0);
+        appState.setTitleArtworkOpacity(1.0);
+        appState.setTitleArtworkRotation(0);
+        appState.setTitleArtworkTiled(false);
+        appState.setTitleArtworkRemoveWhite(false);
+        appState.setTitleArtworkWhiteThreshold(245);
+
+        // Reset UI
+        document.getElementById('title-artwork-upload').value = '';
+        document.getElementById('title-artwork-controls').style.display = 'none';
+
+        if (hadArtwork) {
             UIManager.showStatus('Title artwork cleared', 'success');
         }
     }
