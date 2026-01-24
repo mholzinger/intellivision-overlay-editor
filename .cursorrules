@@ -1,0 +1,100 @@
+# Cursor Rules for Intellivision Overlay Editor
+
+## Project Context
+This is a web-based SVG overlay editor for Intellivision game controllers. The frontend is vanilla JavaScript (ES6 modules), the backend is Flask/Python, and PNG export uses CairoSVG.
+
+## Code Style
+
+### JavaScript
+- Use ES6 modules with explicit imports/exports
+- Use static class methods (no instantiation)
+- Use `const` over `let` where possible
+- Use optional chaining `?.` for DOM queries
+- Add JSDoc comments to public methods
+- All UI event handlers wire through `window.` functions in `overlay_editor.js`
+
+### Python
+- Follow PEP 8
+- Use type hints where helpful
+- Configuration via `config.py` with `OVL_` prefixed env vars
+
+### CSS
+- Use CSS custom properties (variables) in `theme.css`
+- Component styles in `components.css`
+- Layout in `main.css`
+
+## Architecture Rules
+
+### State Management
+- All state lives in `appState` singleton from `stateManager.js`
+- Never store state in DOM attributes - always use appState
+- When clearing artwork, clear BOTH `data` AND `originalData` unconditionally
+
+### Module Pattern
+```javascript
+// Each module exports a static class
+export class FeatureName {
+    static methodName() { ... }
+}
+```
+
+### Adding Features
+1. Add UI in `overlay_editor.html`
+2. Add state in `stateManager.js` if needed
+3. Add logic in appropriate module
+4. Wire to window in `overlay_editor.js`
+5. Add to `configManager.js` for save/load
+6. Update export in `exportManager.js` if needed
+
+### Font Handling
+- Use `FontManager.parseFontData()` to get correct font family name
+- Never use raw `fontData.family` - use `displayName` for CSS font-family
+
+### Export Pipeline
+- Pre-render text elements to images (CairoSVG font limitation)
+- Pre-render gradients to canvas images
+- Pre-render tiled artwork to single image
+- Clone SVG, replace elements, send to server
+
+## File Locations
+
+| Feature Area | Module File |
+|-------------|-------------|
+| Title text/styling | `titleEditor.js` |
+| Title artwork | `titleArtwork.js` |
+| Main overlay artwork | `mainArtwork.js` |
+| Button labels | `buttonEditor.js` |
+| Button artwork | `buttonArtwork.js` |
+| Button shapes | `buttonShape.js` |
+| Action buttons | `actionButtons.js` |
+| Bottom arrows | `bottomControls.js` |
+| Background fill | `backgroundControls.js` |
+| Row descriptions | `rowDescriptions.js` |
+| Export logic | `exportManager.js` |
+| Project save/load | `configManager.js` |
+
+## Common Pitfalls
+
+1. **Artwork not clearing**: Must clear state unconditionally, not just when SVG elements found
+2. **Fonts not rendering**: Use `FontManager.parseFontData()`, not raw font data
+3. **Gradients in export**: Must pre-render to canvas, CairoSVG support is limited
+4. **Multiline text**: Use `|` separator, handled by `TextUtils.setMultilineText()`
+
+## Testing Changes
+
+```bash
+# Local
+python overlay_editor_app.py
+# Open http://127.0.0.1:5001
+
+# Docker
+docker-compose up
+# Open http://localhost:5000
+```
+
+## Don't
+
+- Don't add npm/node dependencies - this is vanilla JS
+- Don't use React/Vue/Angular - keep it simple
+- Don't modify SVG template IDs without updating all references
+- Don't store base64 image data in multiple places - single source in appState
