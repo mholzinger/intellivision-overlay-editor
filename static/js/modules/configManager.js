@@ -22,9 +22,9 @@ export class ConfigManager {
         'Helvetica Neue': 'Liberation Sans',
         'Verdana': 'Liberation Sans',
 
-        // Heavy/Black fonts -> Open Sans ExtraBold
-        'Arial Black': 'Open Sans ExtraBold',
-        'Impact': 'Open Sans ExtraBold',
+        // Heavy/Black fonts -> Archivo Black
+        'Arial Black': 'Archivo Black',
+        'Impact': 'Archivo Black',
 
         // Serif fonts -> Liberation Sans (no serif bundled)
         'Times': 'Liberation Sans',
@@ -74,6 +74,10 @@ export class ConfigManager {
                 let file;
                 if (newFamily === 'Liberation Sans') {
                     file = 'LiberationSans-Regular.ttf';
+                } else if (newFamily === 'Archivo Black') {
+                    file = 'ArchivoBlack-Regular.ttf';
+                    family = 'Archivo Black';
+                    weight = 'Regular';
                 } else if (newFamily === 'Open Sans ExtraBold') {
                     file = 'OpenSans-ExtraBold.ttf';
                 } else if (newFamily === 'Eurostile Bold Extended') {

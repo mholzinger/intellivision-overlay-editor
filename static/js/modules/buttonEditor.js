@@ -6,6 +6,7 @@
 import { appState } from '../services/stateManager.js';
 import { UIManager } from './uiManager.js';
 import { ButtonShape } from './buttonShape.js';
+import { FontManager } from './fontManager.js';
 
 // Default line spacing multiplier for multiline text
 const DEFAULT_LINE_SPACING = 1.2;
@@ -129,8 +130,8 @@ export class ButtonEditor {
             let fontFamily = 'Arial, sans-serif';
             if (fontValue) {
                 try {
-                    const fontData = JSON.parse(fontValue);
-                    fontFamily = fontData.family;
+                    const { fontFamily: parsedFamily } = FontManager.parseFontData(fontValue);
+                    fontFamily = parsedFamily;
                 } catch (e) {
                     console.error('Error parsing button font:', e);
                 }
@@ -159,8 +160,8 @@ export class ButtonEditor {
         let fontFamily = 'Arial, sans-serif';
         if (fontValue) {
             try {
-                const fontData = JSON.parse(fontValue);
-                fontFamily = fontData.family;
+                const { fontFamily: parsedFamily } = FontManager.parseFontData(fontValue);
+                fontFamily = parsedFamily;
             } catch (e) {
                 console.error('Error parsing button font:', e);
             }

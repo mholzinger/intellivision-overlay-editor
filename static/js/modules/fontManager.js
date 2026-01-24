@@ -92,9 +92,9 @@ export class FontManager {
 
             if (data.fonts && data.fonts.length > 0) {
                 // Track indices for bundled font defaults
-                // Liberation Sans replaces Arial, Open Sans ExtraBold replaces Arial Black
+                // Liberation Sans replaces Arial, Archivo Black replaces Arial Black
                 let liberationSansIndex = -1;
-                let openSansExtraBoldIndex = -1;
+                let archivoBlackIndex = -1;
                 let eurostileBoldExtIndex = -1;
                 let sfIntellivisedIndex = -1;
 
@@ -172,10 +172,10 @@ export class FontManager {
                         liberationSansIndex = index;
                         console.log('✓ Found Liberation Sans at index', index);
                     }
-                    // Open Sans ExtraBold (replaces Arial Black)
-                    if (f.family === 'Open Sans' && f.weight === 'ExtraBold') {
-                        openSansExtraBoldIndex = index;
-                        console.log('✓ Found Open Sans ExtraBold at index', index);
+                    // Archivo Black (replaces Arial Black)
+                    if (f.family === 'Archivo Black') {
+                        archivoBlackIndex = index;
+                        console.log('✓ Found Archivo Black at index', index);
                     }
                     // Eurostile Bold Extended (bundled custom font)
                     if (f.family === 'Eurostile Bold Extended') {
@@ -192,8 +192,8 @@ export class FontManager {
                 // Select appropriate default fonts for each selector
                 // Title: Liberation Sans (replaces Arial)
                 select.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
-                // Copyright: Open Sans ExtraBold (replaces Arial Black)
-                copyrightSelect.selectedIndex = openSansExtraBoldIndex >= 0 ? openSansExtraBoldIndex : 0;
+                // Copyright: Archivo Black (replaces Arial Black)
+                copyrightSelect.selectedIndex = archivoBlackIndex >= 0 ? archivoBlackIndex : 0;
                 // Button labels: Eurostile Bold Extended
                 buttonSelect.selectedIndex = eurostileBoldExtIndex >= 0 ? eurostileBoldExtIndex : 0;
                 // Action buttons: Liberation Sans
@@ -223,7 +223,7 @@ export class FontManager {
                     boxartSubtitleSelect.selectedIndex = liberationSansIndex >= 0 ? liberationSansIndex : 0;
                 }
 
-                console.log('Font indices - Liberation Sans:', liberationSansIndex, 'Open Sans ExtraBold:', openSansExtraBoldIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex, 'SF Intellivised:', sfIntellivisedIndex);
+                console.log('Font indices - Liberation Sans:', liberationSansIndex, 'Archivo Black:', archivoBlackIndex, 'Eurostile Bold Ext:', eurostileBoldExtIndex, 'SF Intellivised:', sfIntellivisedIndex);
 
                 FontManager.updateTitleFont();
                 FontManager.updateButtonFont();
