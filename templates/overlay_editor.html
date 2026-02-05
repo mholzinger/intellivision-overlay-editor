@@ -2086,14 +2086,19 @@
                         </div>
                     </div>
 
-                    <!-- Image Import -->
+                    <!-- Import Section -->
                     <div class="sprite-import-section">
-                        <h4>Import Image</h4>
-                        <input type="file" id="sprite-import-input" accept="image/*" onchange="importSpriteImage(event)" style="display: none;">
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sprite-import-input').click()">
-                            📷 Import from Image
-                        </button>
-                        <p class="helper-text">Import an image and it will be converted to the Intellivision palette</p>
+                        <h4>Import</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="file" id="sprite-import-input" accept="image/*" onchange="importSpriteImage(event)" style="display: none;">
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sprite-import-input').click()">
+                                📷 Import from Image
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="pasteBitmapText()">
+                                📋 Paste BITMAP Code
+                            </button>
+                        </div>
+                        <p class="helper-text">Import from image or paste IntyBASIC BITMAP code</p>
                     </div>
                 </div>
 
@@ -2134,6 +2139,35 @@
                             <canvas id="sprite-preview-canvas" width="16" height="32"></canvas>
                         </div>
                         <p class="helper-text">8x8 or 8x16 pixels at 2x zoom</p>
+                    </div>
+
+                    <!-- Animation Preview Section -->
+                    <div class="animation-section">
+                        <h4>Animation Preview</h4>
+                        <div class="animation-sequence-container">
+                            <div class="animation-sequence-label">Sequence:</div>
+                            <div id="animation-sequence" class="animation-sequence">
+                                <span class="animation-empty">Click sprites to add to sequence</span>
+                            </div>
+                        </div>
+                        <div class="animation-sequence-actions">
+                            <button class="btn btn-secondary btn-xs" onclick="addAllToAnimation()" title="Add all sprites">+ All</button>
+                            <button class="btn btn-secondary btn-xs" onclick="clearAnimationSequence()" title="Clear sequence">Clear</button>
+                        </div>
+                        <div class="animation-controls">
+                            <button id="animation-play-btn" class="btn btn-success btn-sm" onclick="toggleAnimation()">▶ Play</button>
+                            <button class="btn btn-secondary btn-sm" onclick="stopAnimation()">⏹ Stop</button>
+                            <span id="animation-frame-display" class="animation-frame-display">0/0</span>
+                        </div>
+                        <div class="animation-fps-control">
+                            <label for="animation-fps">FPS:</label>
+                            <input type="range" id="animation-fps" min="1" max="30" value="10" oninput="updateAnimationFps()">
+                            <span id="animation-fps-value">10</span>
+                        </div>
+                        <div class="animation-preview-container">
+                            <canvas id="animation-preview-canvas" width="32" height="32"></canvas>
+                        </div>
+                        <p class="helper-text">Click sprites in the list to add them to the animation sequence</p>
                     </div>
                 </div>
             </div>

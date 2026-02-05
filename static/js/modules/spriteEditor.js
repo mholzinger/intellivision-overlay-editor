@@ -34,6 +34,13 @@ export class SpriteEditor {
     static isDrawing = false;
     static drawMode = 1;           // 1 = draw foreground, 0 = erase to background
 
+    // Animation state
+    static animationSequence = []; // Array of sprite indices for animation
+    static animationFps = 10;      // Frames per second
+    static isAnimating = false;
+    static animationFrame = 0;     // Current frame in sequence
+    static animationInterval = null;
+
     /**
      * Initialize the sprite editor
      */
@@ -568,6 +575,102 @@ export class SpriteEditor {
     }
 
     /**
+     * Parse IntyBASIC BITMAP text and create a sprite
+     * @param {string} text - BITMAP text to parse
+     * @returns {boolean} Success
+     */
+    static parseBitmapText(text) {
+        if (!text || !text.trim()) {
+            alert('Please paste BITMAP text first');
+            return false;
+        }
+
+        // Try to extract sprite name from "name:" pattern
+        let spriteName = `sprite_${this.sprites.length}`;
+        const nameMatch = text.match(/^(\w+):/m);
+        if (nameMatch) {
+            spriteName = nameMatch[1];
+        }
+
+        // Find all BITMAP lines
+        const bitmapRegex = /BITMAP\s*"([.X]{1,8})"/gi;
+        const rows = [];
+        let match;
+
+        while ((match = bitmapRegex.exec(text)) !== null) {
+            const pattern = match[1];
+            const row = [];
+            for (let i = 0; i < 8; i++) {
+                const char = pattern[i] || '.';
+                row.push(char.toUpperCase() === 'X' ? 1 : 0);
+            }
+            rows.push(row);
+        }
+
+        if (rows.length === 0) {
+            alert('No valid BITMAP lines found.\n\nExpected format:\n    BITMAP "..XXXX.."\n    BITMAP "XXXXXXXX"');
+            return false;
+        }
+
+        // Limit to 8 or 16 rows
+        if (rows.length > 16) {
+            rows.length = 16;
+        }
+
+        // Determine if 8x8 or 8x16
+        const height = rows.length <= 8 ? 8 : 16;
+
+        // Pad to full height if needed
+        while (rows.length < height) {
+            rows.push(new Array(8).fill(0));
+        }
+
+        // Create the sprite
+        const sprite = {
+            name: spriteName,
+            width: 8,
+            height: height,
+            pixels: rows,
+            fgColor: this.selectedFgColor,
+            bgColor: this.selectedBgColor
+        };
+
+        this.sprites.push(sprite);
+        this.currentSpriteIndex = this.sprites.length - 1;
+        this.gridSize = height;
+
+        // Update UI
+        this.updateSpriteList();
+        this.renderPalette();
+        this.renderGrid();
+        this.renderPreview();
+        this.updateOutput();
+        this.updateSizeToggle();
+
+        return true;
+    }
+
+    /**
+     * Show paste dialog for importing BITMAP text
+     */
+    static showPasteBitmapDialog() {
+        const text = prompt(
+            'Paste IntyBASIC BITMAP code:\n\n' +
+            'Example:\n' +
+            'player:\n' +
+            '    BITMAP "..XX.."\n' +
+            '    BITMAP ".XXXX."\n' +
+            '    BITMAP "XXXXXX"'
+        );
+
+        if (text) {
+            if (this.parseBitmapText(text)) {
+                // Success feedback could go here
+            }
+        }
+    }
+
+    /**
      * Copy all sprites output to clipboard
      */
     static copyAllToClipboard() {
@@ -709,7 +812,42 @@ export class SpriteEditor {
             this.sprites.forEach((sprite, index) => {
                 const item = document.createElement('div');
                 item.className = 'sprite-list-item' + (index === this.currentSpriteIndex ? ' selected' : '');
-                item.textContent = sprite.name;
+
+                // Create thumbnail
+                const thumb = document.createElement('canvas');
+                thumb.className = 'sprite-thumbnail';
+                thumb.width = 16;
+                thumb.height = sprite.height === 16 ? 32 : 16;
+                const ctx = thumb.getContext('2d');
+                const scale = 2;
+                for (let y = 0; y < sprite.height; y++) {
+                    for (let x = 0; x < 8; x++) {
+                        const isSet = sprite.pixels[y][x] === 1;
+                        const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
+                        ctx.fillStyle = this.PALETTE[colorIndex].hex;
+                        ctx.fillRect(x * scale, y * scale, scale, scale);
+                    }
+                }
+                item.appendChild(thumb);
+
+                // Sprite name
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'sprite-item-name';
+                nameSpan.textContent = sprite.name;
+                item.appendChild(nameSpan);
+
+                // Add to animation button
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-to-anim-btn';
+                addBtn.textContent = '+Anim';
+                addBtn.title = 'Add to animation sequence';
+                addBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.addToAnimation(index);
+                };
+                item.appendChild(addBtn);
+
+                // Select sprite on click
                 item.onclick = () => this.selectSprite(index);
                 list.appendChild(item);
             });
@@ -723,7 +861,7 @@ export class SpriteEditor {
         // Update count display
         const countEl = document.getElementById('sprite-count');
         if (countEl) {
-            countEl.textContent = `${this.sprites.length}/64 GRAM cards`;
+            countEl.textContent = `(${this.sprites.length})`;
         }
     }
 
@@ -878,6 +1016,252 @@ export class SpriteEditor {
             reader.readAsText(file);
         };
         input.click();
+    }
+
+    // ==========================================
+    // Animation Methods
+    // ==========================================
+
+    /**
+     * Add a sprite to the animation sequence
+     * @param {number} spriteIndex - Index of sprite to add
+     */
+    static addToAnimation(spriteIndex) {
+        if (spriteIndex >= 0 && spriteIndex < this.sprites.length) {
+            this.animationSequence.push(spriteIndex);
+            this.updateAnimationUI();
+        }
+    }
+
+    /**
+     * Remove a sprite from the animation sequence by position
+     * @param {number} position - Position in sequence to remove
+     */
+    static removeFromAnimation(position) {
+        if (position >= 0 && position < this.animationSequence.length) {
+            this.animationSequence.splice(position, 1);
+            this.updateAnimationUI();
+        }
+    }
+
+    /**
+     * Clear the entire animation sequence
+     */
+    static clearAnimation() {
+        this.stopAnimation();
+        this.animationSequence = [];
+        this.updateAnimationUI();
+    }
+
+    /**
+     * Add all sprites to animation in order
+     */
+    static addAllToAnimation() {
+        this.animationSequence = this.sprites.map((_, index) => index);
+        this.updateAnimationUI();
+    }
+
+    /**
+     * Start playing the animation
+     */
+    static playAnimation() {
+        if (this.animationSequence.length < 2) {
+            alert('Add at least 2 sprites to the animation sequence');
+            return;
+        }
+
+        this.isAnimating = true;
+        this.animationFrame = 0;
+        this.updatePlayButton();
+
+        const intervalMs = 1000 / this.animationFps;
+        this.animationInterval = setInterval(() => {
+            this.renderAnimationFrame();
+            this.animationFrame = (this.animationFrame + 1) % this.animationSequence.length;
+        }, intervalMs);
+    }
+
+    /**
+     * Pause the animation
+     */
+    static pauseAnimation() {
+        this.isAnimating = false;
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+        }
+        this.updatePlayButton();
+    }
+
+    /**
+     * Stop the animation and reset to first frame
+     */
+    static stopAnimation() {
+        this.pauseAnimation();
+        this.animationFrame = 0;
+        this.renderAnimationFrame();
+    }
+
+    /**
+     * Toggle play/pause
+     */
+    static toggleAnimation() {
+        if (this.isAnimating) {
+            this.pauseAnimation();
+        } else {
+            this.playAnimation();
+        }
+    }
+
+    /**
+     * Update animation FPS from slider
+     */
+    static updateAnimationFps() {
+        const slider = document.getElementById('animation-fps');
+        const display = document.getElementById('animation-fps-value');
+        if (slider) {
+            this.animationFps = parseInt(slider.value);
+            if (display) {
+                display.textContent = this.animationFps;
+            }
+
+            // If currently playing, restart with new FPS
+            if (this.isAnimating) {
+                this.pauseAnimation();
+                this.playAnimation();
+            }
+        }
+    }
+
+    /**
+     * Render the current animation frame
+     */
+    static renderAnimationFrame() {
+        const canvas = document.getElementById('animation-preview-canvas');
+        if (!canvas || this.animationSequence.length === 0) return;
+
+        const ctx = canvas.getContext('2d');
+        const spriteIndex = this.animationSequence[this.animationFrame];
+        const sprite = this.sprites[spriteIndex];
+
+        if (!sprite) return;
+
+        // Set canvas size based on sprite height (scale 4x for visibility)
+        const scale = 4;
+        canvas.width = 8 * scale;
+        canvas.height = sprite.height * scale;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw sprite pixels
+        for (let y = 0; y < sprite.height; y++) {
+            for (let x = 0; x < 8; x++) {
+                const isSet = sprite.pixels[y][x] === 1;
+                const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
+                const color = this.PALETTE[colorIndex];
+
+                ctx.fillStyle = color.hex;
+                ctx.fillRect(x * scale, y * scale, scale, scale);
+            }
+        }
+
+        // Update frame counter
+        const frameDisplay = document.getElementById('animation-frame-display');
+        if (frameDisplay) {
+            frameDisplay.textContent = `${this.animationFrame + 1}/${this.animationSequence.length}`;
+        }
+
+        // Highlight current sprite in sequence
+        this.highlightSequenceFrame();
+    }
+
+    /**
+     * Highlight the current frame in the sequence display
+     */
+    static highlightSequenceFrame() {
+        const items = document.querySelectorAll('.animation-sequence-item');
+        items.forEach((item, index) => {
+            item.classList.toggle('current-frame', index === this.animationFrame);
+        });
+    }
+
+    /**
+     * Update the play/pause button text
+     */
+    static updatePlayButton() {
+        const btn = document.getElementById('animation-play-btn');
+        if (btn) {
+            btn.textContent = this.isAnimating ? '⏸ Pause' : '▶ Play';
+        }
+    }
+
+    /**
+     * Update the animation UI (sequence display)
+     */
+    static updateAnimationUI() {
+        const container = document.getElementById('animation-sequence');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (this.animationSequence.length === 0) {
+            container.innerHTML = '<span class="animation-empty">Click sprites to add to sequence</span>';
+            return;
+        }
+
+        this.animationSequence.forEach((spriteIndex, position) => {
+            const sprite = this.sprites[spriteIndex];
+            if (!sprite) return;
+
+            const item = document.createElement('div');
+            item.className = 'animation-sequence-item';
+            item.title = `${sprite.name} (click to remove)`;
+
+            // Create mini thumbnail
+            const thumb = document.createElement('canvas');
+            thumb.width = 16;
+            thumb.height = sprite.height === 16 ? 32 : 16;
+            thumb.className = 'animation-thumb';
+
+            const ctx = thumb.getContext('2d');
+            const scale = 2;
+            for (let y = 0; y < sprite.height; y++) {
+                for (let x = 0; x < 8; x++) {
+                    const isSet = sprite.pixels[y][x] === 1;
+                    const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
+                    ctx.fillStyle = this.PALETTE[colorIndex].hex;
+                    ctx.fillRect(x * scale, y * scale, scale, scale);
+                }
+            }
+
+            item.appendChild(thumb);
+
+            // Click to remove
+            item.onclick = () => this.removeFromAnimation(position);
+
+            container.appendChild(item);
+        });
+
+        // Re-render preview if not playing
+        if (!this.isAnimating && this.animationSequence.length > 0) {
+            this.animationFrame = 0;
+            this.renderAnimationFrame();
+        }
+    }
+
+    /**
+     * Handle clicking on a sprite in the sprite list to add to animation
+     * Called via onclick in sprite list when in "add to animation" mode
+     */
+    static toggleSpriteInAnimation(spriteIndex) {
+        const existingPos = this.animationSequence.indexOf(spriteIndex);
+        if (existingPos === -1) {
+            this.addToAnimation(spriteIndex);
+        } else {
+            // If clicking same sprite, add another instance (for repeating frames)
+            this.addToAnimation(spriteIndex);
+        }
     }
 }
 
