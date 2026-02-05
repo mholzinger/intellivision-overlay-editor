@@ -21,6 +21,7 @@ import { UIManager } from './modules/uiManager.js';
 import { ConfigManager } from './modules/configManager.js';
 import { ImageProcessor } from './modules/imageProcessor.js';
 import { BoxArtEditor } from './modules/boxArtEditor.js';
+import { SpriteEditor } from './modules/spriteEditor.js';
 
 /**
  * Initialize the application
@@ -475,6 +476,12 @@ window.switchEditorTab = (tabName) => {
         BoxArtEditor.init();
         window._boxArtInitialized = true;
     }
+
+    // Initialize sprite editor on first switch to that tab
+    if (tabName === 'sprite' && !window._spriteEditorInitialized) {
+        SpriteEditor.init();
+        window._spriteEditorInitialized = true;
+    }
 };
 
 // Box Art Editor functions
@@ -531,6 +538,29 @@ window.exportBoxArtPNG = () => BoxArtEditor.exportPNG();
 window.resetBoxArt = () => BoxArtEditor.reset();
 window.exportBoxArtProject = () => BoxArtEditor.exportProject();
 window.importBoxArtProject = () => BoxArtEditor.importProject();
+
+// Sprite Editor functions
+window.changeSpriteSize = () => SpriteEditor.toggleGridSize();
+window.spriteClear = () => SpriteEditor.clearSprite();
+window.spriteFill = () => SpriteEditor.fillSprite();
+window.spriteInvert = () => SpriteEditor.invertSprite();
+window.spriteFlipH = () => SpriteEditor.flipHorizontal();
+window.spriteFlipV = () => SpriteEditor.flipVertical();
+window.spriteRotate = () => SpriteEditor.rotateClockwise();
+window.spriteShiftUp = () => SpriteEditor.shiftSprite('up');
+window.spriteShiftDown = () => SpriteEditor.shiftSprite('down');
+window.spriteShiftLeft = () => SpriteEditor.shiftSprite('left');
+window.spriteShiftRight = () => SpriteEditor.shiftSprite('right');
+window.addNewSprite = () => SpriteEditor.addSprite();
+window.duplicateCurrentSprite = () => SpriteEditor.duplicateSprite();
+window.deleteCurrentSprite = () => SpriteEditor.deleteSprite();
+window.updateSpriteName = () => SpriteEditor.updateSpriteName();
+window.copySpriteBitmap = () => SpriteEditor.copyOutputToClipboard();
+window.copyAllSprites = () => SpriteEditor.copyAllToClipboard();
+window.importSpriteImage = (e) => SpriteEditor.importImage(e);
+window.exportSpriteProject = () => SpriteEditor.exportProject();
+window.importSpriteProject = () => SpriteEditor.importProject();
+window.clearAllSprites = () => SpriteEditor.reset();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

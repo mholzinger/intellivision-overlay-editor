@@ -28,6 +28,9 @@
                 <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
                     📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
+                <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')">
+                    🎨 Sprite Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -77,6 +80,15 @@
                     </div>
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()">🔄 Reset</button>
+            </div>
+
+            <!-- Sprite Editor Action Buttons -->
+            <div id="sprite-toolbar" class="editor-toolbar">
+                <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()">📋 Copy Bitmap</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()">💾 Export Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()">📂 Import Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ New Sprite</button>
+                <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()">🗑️ Clear All</button>
             </div>
         </div>
 
@@ -2025,6 +2037,107 @@
             </div>
         </div>
         </div><!-- End boxart-editor-content -->
+
+        <!-- Sprite Editor Content -->
+        <div id="sprite-editor-content" class="editor-content">
+            <div class="sprite-editor-layout">
+                <!-- Left Panel: Canvas and Tools -->
+                <div class="sprite-canvas-panel">
+                    <div class="sprite-canvas-header">
+                        <h3>Pixel Canvas</h3>
+                        <button id="sprite-size-toggle" class="btn btn-secondary btn-sm" onclick="changeSpriteSize()">
+                            8x8 → 8x16
+                        </button>
+                    </div>
+
+                    <div class="sprite-canvas-container">
+                        <canvas id="sprite-grid-canvas" width="256" height="256"></canvas>
+                    </div>
+
+                    <!-- Color Palettes -->
+                    <div class="sprite-palette-section">
+                        <h4>Foreground Color (draw)</h4>
+                        <div id="sprite-fg-palette" class="sprite-palette">
+                            <!-- Palette colors will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="sprite-palette-section">
+                        <h4>Background Color (erase)</h4>
+                        <div id="sprite-bg-palette" class="sprite-palette">
+                            <!-- Palette colors will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Tools -->
+                    <div class="sprite-tools-section">
+                        <h4>Tools</h4>
+                        <div class="sprite-tools-grid">
+                            <button class="sprite-tool-btn" onclick="spriteClear()" title="Clear canvas">🗑️ Clear</button>
+                            <button class="sprite-tool-btn" onclick="spriteFill()" title="Fill with foreground">🪣 Fill</button>
+                            <button class="sprite-tool-btn" onclick="spriteInvert()" title="Swap FG and BG">🔄 Invert</button>
+                            <button class="sprite-tool-btn" onclick="spriteFlipH()" title="Flip horizontal">↔️ Flip H</button>
+                            <button class="sprite-tool-btn" onclick="spriteFlipV()" title="Flip vertical">↕️ Flip V</button>
+                            <button class="sprite-tool-btn" onclick="spriteRotate()" title="Rotate 90° CW">🔃 Rotate</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftUp()" title="Shift up">⬆️ Up</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftDown()" title="Shift down">⬇️ Down</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftLeft()" title="Shift left">⬅️ Left</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftRight()" title="Shift right">➡️ Right</button>
+                        </div>
+                    </div>
+
+                    <!-- Image Import -->
+                    <div class="sprite-import-section">
+                        <h4>Import Image</h4>
+                        <input type="file" id="sprite-import-input" accept="image/*" onchange="importSpriteImage(event)" style="display: none;">
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sprite-import-input').click()">
+                            📷 Import from Image
+                        </button>
+                        <p class="helper-text">Import an image and it will be converted to the Intellivision palette</p>
+                    </div>
+                </div>
+
+                <!-- Middle Panel: Sprite List -->
+                <div class="sprite-list-panel">
+                    <h3>Sprites <span id="sprite-count" style="font-weight: normal; color: var(--gray-500);">(1)</span></h3>
+                    <div id="sprite-list" class="sprite-list">
+                        <!-- Sprite thumbnails will be populated by JavaScript -->
+                    </div>
+                    <div class="sprite-list-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ Add</button>
+                        <button class="btn btn-secondary btn-sm" onclick="duplicateCurrentSprite()">📋 Dup</button>
+                        <button class="btn btn-secondary btn-sm" onclick="deleteCurrentSprite()">🗑️ Del</button>
+                    </div>
+
+                    <!-- Sprite Properties -->
+                    <div class="sprite-properties">
+                        <h4>Sprite Properties</h4>
+                        <div class="input-group">
+                            <label for="sprite-name-input">Name</label>
+                            <input type="text" id="sprite-name-input" placeholder="Sprite name" value="sprite_0" oninput="updateSpriteName()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Output -->
+                <div class="sprite-output-panel">
+                    <h3>IntyBASIC Output</h3>
+                    <div class="sprite-output-controls">
+                        <button id="sprite-copy-btn" class="btn btn-success btn-sm" onclick="copySpriteBitmap()">📋 Copy</button>
+                        <button id="sprite-copy-all-btn" class="btn btn-secondary btn-sm" onclick="copyAllSprites()">📋 Copy All</button>
+                    </div>
+                    <textarea id="sprite-output" class="sprite-output-textarea" readonly placeholder="BITMAP output will appear here..."></textarea>
+
+                    <div class="sprite-preview-section">
+                        <h4>Preview (Actual Size)</h4>
+                        <div class="sprite-actual-preview">
+                            <canvas id="sprite-preview-canvas" width="16" height="32"></canvas>
+                        </div>
+                        <p class="helper-text">8x8 or 8x16 pixels at 2x zoom</p>
+                    </div>
+                </div>
+            </div>
+        </div><!-- End sprite-editor-content -->
 
     </div>
 

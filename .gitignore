@@ -38,6 +38,7 @@ logs/
 # Local test files
 test_*.png
 test_*.svg
+test/*
 
 # OS
 Thumbs.db
