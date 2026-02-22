@@ -540,7 +540,7 @@ window.exportBoxArtProject = () => BoxArtEditor.exportProject();
 window.importBoxArtProject = () => BoxArtEditor.importProject();
 
 // Sprite Editor functions
-window.changeSpriteSize = () => SpriteEditor.toggleGridSize();
+window.setSpriteSize = (w, h) => SpriteEditor.setSpriteSize(w, h);
 window.spriteClear = () => SpriteEditor.clearSprite();
 window.spriteFill = () => SpriteEditor.fillSprite();
 window.spriteInvert = () => SpriteEditor.invertSprite();

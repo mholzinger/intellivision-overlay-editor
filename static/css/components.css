@@ -174,7 +174,7 @@
 
 .sprite-editor-layout {
     display: grid;
-    grid-template-columns: 340px 200px 1fr;
+    grid-template-columns: 2fr 180px 1fr;
     gap: 20px;
     padding: 20px;
     min-height: calc(100vh - 200px);
@@ -220,9 +220,17 @@
     background: #1a1a1a;
     border-radius: var(--radius-md);
     padding: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#sprite-grid-canvas {
+    display: block;
+    width: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+    border: 1px solid var(--gray-400);
 }
 
 #sprite-canvas {
@@ -572,6 +580,35 @@
 .btn-xs {
     padding: 2px 6px;
     font-size: 10px;
+}
+
+/* Sprite size selector button group */
+.sprite-size-btn-group {
+    display: flex;
+    gap: 2px;
+}
+
+.sprite-size-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sprite-size-btn:hover {
+    background: var(--gray-100);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.sprite-size-btn.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
 }
 
 .animation-controls {

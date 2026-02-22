@@ -2045,9 +2045,12 @@
                 <div class="sprite-canvas-panel">
                     <div class="sprite-canvas-header">
                         <h3>Pixel Canvas</h3>
-                        <button id="sprite-size-toggle" class="btn btn-secondary btn-sm" onclick="changeSpriteSize()">
-                            8x8 → 8x16
-                        </button>
+                        <div id="sprite-size-selector" class="sprite-size-btn-group">
+                            <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)">8×8</button>
+                            <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)">8×16</button>
+                            <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)">16×8</button>
+                            <button class="sprite-size-btn"        data-size="16x16" onclick="setSpriteSize(16,16)">16×16</button>
+                        </div>
                     </div>
 
                     <div class="sprite-canvas-container">
