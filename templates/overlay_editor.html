@@ -31,6 +31,9 @@
                 <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')">
                     🎨 Sprite Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
+                <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')">
+                    🕹️ DS Overlay <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -89,6 +92,13 @@
                 <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()">📂 Import Project</button>
                 <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ New Sprite</button>
                 <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()">🗑️ Clear All</button>
+            </div>
+
+            <!-- DS Overlay Editor Action Buttons -->
+            <div id="ds-toolbar" class="editor-toolbar">
+                <button class="btn btn-secondary btn-sm" onclick="loadDSTemplate()">📋 Load Template</button>
+                <button class="btn btn-success btn-sm" onclick="exportDSOvl()">⬇️ Export .OVL</button>
+                <button class="btn btn-success btn-sm" onclick="exportDSOvlWithImage()">🖼️ Export .OVL + Image</button>
             </div>
         </div>
 
@@ -2266,6 +2276,83 @@
                 </div>
             </div>
         </div><!-- End sprite-editor-content -->
+
+        <!-- ============================================================ -->
+        <!-- DS OVERLAY EDITOR                                             -->
+        <!-- ============================================================ -->
+        <div id="ds-editor-content" class="editor-content">
+            <div class="ds-editor-layout">
+
+                <!-- Left panel: controls -->
+                <div class="ds-controls-panel">
+
+                    <!-- Overlay name -->
+                    <div class="ds-section">
+                        <label class="form-label ds-section-title">Overlay Name</label>
+                        <input type="text" id="ds-overlay-name" class="form-control" value="My Overlay"
+                               placeholder="Game name (used for file name)…">
+                    </div>
+
+                    <!-- Background image -->
+                    <div class="ds-section">
+                        <label class="form-label ds-section-title">Background Image <span class="helper-text">(optional)</span></label>
+                        <p class="helper-text">Upload a 256×256 PNG (max 256 colours) to include tile/map/palette data when using <em>Export .OVL + Image</em>.</p>
+                        <label class="ds-upload-label">
+                            <input type="file" id="ds-bg-upload" accept="image/png,image/*" onchange="loadDSBackground(event)" style="display:none">
+                            <span class="btn btn-secondary btn-sm">📁 Choose PNG…</span>
+                            <span id="ds-bg-filename" class="ds-bg-filename">No file chosen</span>
+                        </label>
+                    </div>
+
+                    <!-- Status / errors -->
+                    <div id="ds-export-status" class="ds-export-status" style="display:none"></div>
+
+                    <!-- Hotspot list -->
+                    <div class="ds-section ds-hotspot-section">
+                        <label class="form-label ds-section-title">Touch Hotspots</label>
+                        <p class="helper-text">Click a row to select it, then drag on the canvas to draw its touch area. Coordinates are DS screen pixels (0–255).</p>
+                        <div id="ds-hotspot-list" class="ds-hotspot-list"></div>
+                    </div>
+
+                </div><!-- end ds-controls-panel -->
+
+                <!-- Right panel: canvas preview -->
+                <div class="ds-preview-panel">
+                    <div class="ds-preview-header">
+                        <h3 class="ds-preview-title">DS Touch Screen Preview</h3>
+                        <div id="ds-draw-hint" class="ds-draw-hint" style="display:none"></div>
+                    </div>
+                    <div class="ds-canvas-wrapper">
+                        <canvas id="ds-preview-canvas"
+                                width="512" height="384"
+                                title="Click a hotspot row on the left, then drag here to set its touch area"></canvas>
+                    </div>
+                    <!-- Legend -->
+                    <div class="ds-legend">
+                        <div class="ds-legend-item">
+                            <span class="ds-legend-dot" style="background:#3B82F6"></span>Keypad
+                        </div>
+                        <div class="ds-legend-item">
+                            <span class="ds-legend-dot" style="background:#F59E0B"></span>Action
+                        </div>
+                        <div class="ds-legend-item">
+                            <span class="ds-legend-dot" style="background:#10B981"></span>Meta
+                        </div>
+                        <div class="ds-legend-item">
+                            <span class="ds-legend-dot" style="background:#8B5CF6"></span>Advanced
+                        </div>
+                        <div class="ds-legend-item ds-legend-safeline">
+                            <span class="ds-legend-dash"></span>Safe area (192 px)
+                        </div>
+                    </div>
+                    <!-- Coordinate readout while drawing -->
+                    <p class="helper-text ds-canvas-hint">
+                        Canvas is 2× scale (512×384 = DS 256×192 at 2× zoom)
+                    </p>
+                </div><!-- end ds-preview-panel -->
+
+            </div><!-- end ds-editor-layout -->
+        </div><!-- End ds-editor-content -->
 
     </div>
 

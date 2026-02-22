@@ -694,3 +694,305 @@
         max-width: 100%;
     }
 }
+
+/* ======================================================================
+   DS OVERLAY EDITOR
+   ====================================================================== */
+
+.ds-editor-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    height: calc(100vh - 120px);
+    min-height: 500px;
+}
+
+/* ── Left panel ─────────────────────────────────────────────────────── */
+
+.ds-controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+    border-right: 1px solid var(--gray-200);
+}
+
+.ds-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.ds-section-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.ds-upload-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.ds-bg-filename {
+    font-size: 12px;
+    color: var(--gray-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.ds-export-status {
+    margin: 4px 16px;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: #856404;
+}
+
+/* ── Hotspot list ───────────────────────────────────────────────────── */
+
+.ds-hotspot-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+}
+
+.ds-hotspot-list {
+    overflow-y: auto;
+    flex: 1;
+    max-height: calc(100vh - 320px);
+}
+
+.ds-hotspot-group {
+    margin-bottom: 4px;
+}
+
+.ds-hotspot-group-header {
+    padding: 5px 10px 5px 12px;
+    border-left: 4px solid var(--gray-400);
+    background: var(--gray-50);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-600);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.ds-hotspot-row {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.ds-hotspot-row:hover {
+    background: var(--gray-50);
+}
+
+.ds-hotspot-row.selected {
+    background: #EFF6FF;
+    border-left: 3px solid var(--primary-color);
+}
+
+.ds-hotspot-row.disabled {
+    opacity: 0.55;
+}
+
+.ds-hotspot-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.ds-hotspot-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ds-hotspot-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.ds-hotspot-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--gray-500);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ds-hotspot-coords {
+    display: flex;
+    gap: 6px;
+    flex-direction: column;
+}
+
+.ds-hotspot-coords.hidden {
+    display: none;
+}
+
+.ds-coord-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ds-coord-label {
+    font-size: 10px;
+    color: var(--gray-500);
+    width: 18px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.ds-coord-input {
+    width: 52px;
+    padding: 2px 4px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    text-align: center;
+}
+
+.ds-coord-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.ds-coord-input:disabled {
+    background: var(--gray-100);
+    color: var(--gray-400);
+}
+
+/* ── Right panel: canvas ────────────────────────────────────────────── */
+
+.ds-preview-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ds-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ds-preview-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ds-draw-hint {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #DBEAFE;
+    border-radius: var(--radius-sm);
+    color: #1E40AF;
+    border: 1px solid #BFDBFE;
+}
+
+.ds-canvas-wrapper {
+    overflow: auto;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: #111;
+    display: inline-flex;
+    max-width: 100%;
+}
+
+#ds-preview-canvas {
+    display: block;
+    cursor: crosshair;
+    image-rendering: pixelated;
+}
+
+.ds-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ds-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--gray-600);
+}
+
+.ds-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+    opacity: 0.85;
+}
+
+.ds-legend-safeline {
+    color: rgba(220, 38, 38, 0.8);
+}
+
+.ds-legend-dash {
+    display: inline-block;
+    width: 16px;
+    height: 2px;
+    background: repeating-linear-gradient(
+        to right,
+        rgba(220,38,38,0.8) 0 5px,
+        transparent 5px 9px
+    );
+    vertical-align: middle;
+}
+
+.ds-canvas-hint {
+    margin: 0;
+    font-size: 11px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+    .ds-editor-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .ds-controls-panel {
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+        max-height: 400px;
+    }
+
+    .ds-hotspot-list {
+        max-height: 300px;
+    }
+}

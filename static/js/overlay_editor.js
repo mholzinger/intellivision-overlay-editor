@@ -22,6 +22,7 @@ import { ConfigManager } from './modules/configManager.js';
 import { ImageProcessor } from './modules/imageProcessor.js';
 import { BoxArtEditor } from './modules/boxArtEditor.js';
 import { SpriteEditor } from './modules/spriteEditor.js';
+import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
 
 /**
  * Initialize the application
@@ -482,6 +483,12 @@ window.switchEditorTab = (tabName) => {
         SpriteEditor.init();
         window._spriteEditorInitialized = true;
     }
+
+    // Initialize DS overlay editor on first switch to that tab
+    if (tabName === 'ds' && !window._dsEditorInitialized) {
+        DSOverlayEditor.init();
+        window._dsEditorInitialized = true;
+    }
 };
 
 // Box Art Editor functions
@@ -576,6 +583,14 @@ window.addSpriteToAnimation = (index) => SpriteEditor.addToAnimation(index);
 
 // BITMAP import
 window.pasteBitmapText = () => SpriteEditor.showPasteBitmapDialog();
+
+// DS Overlay Editor functions
+window.loadDSTemplate       = () => DSOverlayEditor.loadTemplate();
+window.loadDSBackground     = (e) => DSOverlayEditor.loadBackground(e);
+window.toggleDSHotspot      = (idx) => DSOverlayEditor.toggleHotspot(idx);
+window.updateDSHotspot      = (idx, field, val) => DSOverlayEditor.updateCoord(idx, field, val);
+window.exportDSOvl          = () => DSOverlayEditor.downloadOvl();
+window.exportDSOvlWithImage = () => DSOverlayEditor.exportWithImage();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
