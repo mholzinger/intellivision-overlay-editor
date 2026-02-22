@@ -92,6 +92,7 @@
                 <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()">📂 Import Project</button>
                 <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ New Sprite</button>
                 <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()">🗑️ Clear All</button>
+                <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" title="INTV graphics concepts for beginners">📖 INTV Primer</button>
             </div>
 
             <!-- DS Overlay Editor Action Buttons -->
@@ -2414,8 +2415,269 @@
 
     </div>
 
+    <!-- INTV Primer Modal -->
+    <div id="intv-primer-modal" class="intv-primer-overlay" style="display:none;" onclick="closeIntvPrimer(event)">
+        <div class="intv-primer-dialog" role="dialog" aria-modal="true" aria-labelledby="primer-title">
+
+            <div class="intv-primer-header">
+                <h2 id="primer-title">INTV Graphics Primer</h2>
+                <p class="primer-subtitle">Everything you need to know to draw your first sprite</p>
+                <button class="primer-close-btn" onclick="closeIntvPrimer()" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="intv-primer-body">
+
+                <!-- ① The Big Picture -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">① The Big Picture</h3>
+                    <p>The Intellivision uses a chip called the <strong>STIC</strong> (Standard Television Interface Circuit) to draw graphics. It can display two types of visuals at the same time:</p>
+                    <div class="primer-two-col">
+                        <div class="primer-card primer-card-blue">
+                            <div class="primer-card-icon">🖼️</div>
+                            <strong>Background Tiles</strong>
+                            <p>A fixed 20 × 12 grid of 8×8 pixel tiles that fills the screen. You place tiles by writing values into a region of memory called the <strong>BACKTAB</strong>.</p>
+                        </div>
+                        <div class="primer-card primer-card-amber">
+                            <div class="primer-card-icon">👾</div>
+                            <strong>MOB Sprites</strong>
+                            <p>Up to <strong>8 Moving Objects</strong> that float freely over the background at any pixel position. MOBs are perfect for players, enemies, and bullets.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ② GRAM — Your Art Canvas -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">② GRAM — Your Art Canvas</h3>
+                    <p><strong>GRAM</strong> (Graphics RAM) is a bank of <strong>64 custom 8×8 pixel cards</strong>, numbered 0 – 63. You draw your pixel art here and then reference these cards from tiles or MOBs. The 64-slot budget grid in the editor shows you exactly which slots you've used.</p>
+                    <div class="primer-note">
+                        💡 GROM (built-in ROM) holds 64 pre-drawn cards (the Intellivision font). GRAM lets you replace or add your own.
+                    </div>
+                </section>
+
+                <!-- ③ Drawing pixels — BITMAP -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">③ Drawing Pixels — BITMAP</h3>
+                    <p>In IntyBASIC, each row of pixels is one <code>BITMAP</code> line with 8 characters:</p>
+                    <ul class="primer-list">
+                        <li><code class="primer-code-x">X</code> — foreground pixel (shows the sprite's color)</li>
+                        <li><code class="primer-code-dot">.</code> — background pixel (transparent on MOBs; background color on tiles)</li>
+                    </ul>
+                    <div class="primer-code-block">
+<pre>player:
+    BITMAP "..XXXX.."   ' row 0 — top of head
+    BITMAP ".XXXXXX."   ' row 1
+    BITMAP "XX....XX"   ' row 2
+    BITMAP "XXXXXXXX"   ' row 3
+    BITMAP "XX....XX"   ' row 4
+    BITMAP ".XXXXXX."   ' row 5
+    BITMAP "..XXXX.."   ' row 6
+    BITMAP "........"   ' row 7 — empty</pre>
+                    </div>
+                    <p>The Sprite Editor generates this code for you automatically. You just draw with your mouse!</p>
+                </section>
+
+                <!-- ④ Loading into GRAM — DEFINE -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">④ Loading Art into GRAM — DEFINE</h3>
+                    <p>Before the STIC can display your sprite, you must copy it from your program's data into GRAM:</p>
+                    <div class="primer-code-block">
+<pre>DEFINE slot, numCards, label
+
+DEFINE 0, 1, player     ' copy player into slot 0  (one 8×8 card)
+DEFINE 5, 2, tall_guy   ' copy tall_guy into slots 5–6 (two cards = 8×16)
+DEFINE 10, 4, boss      ' copy boss into slots 10–13 (four cards = 16×16)</pre>
+                    </div>
+                    <p>The editor writes the correct <code>DEFINE</code> line for you in the output panel, using the <strong>GRAM Slot</strong> you assign in the properties panel.</p>
+                </section>
+
+                <!-- ⑤ The 3 Use Modes -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑤ The 3 Use Modes</h3>
+                    <div class="primer-mode-grid">
+
+                        <div class="primer-mode-card mode-mob">
+                            <h4>MOB Sprite</h4>
+                            <p>A hardware sprite that moves freely anywhere on screen. Use the <code>SPRITE</code> command to place it:</p>
+                            <div class="primer-code-block">
+<pre>SPRITE n, (x + $200), y, (slot * 8 + color)
+
+' Example: MOB 0 at (50,60), slot 2, White
+SPRITE 0, (50 + $200), 60, (2 * 8 + 7)</pre>
+                            </div>
+                            <ul class="primer-list">
+                                <li><strong>n</strong> — which MOB (0–7)</li>
+                                <li><strong>x + $200</strong> — X position; <code>$200</code> makes it visible</li>
+                                <li><strong>slot * 8 + color</strong> — which GRAM card and which of the 8 primary colors</li>
+                            </ul>
+                            <div class="primer-note">One color only. All <code>X</code> pixels show that color; <code>.</code> pixels are transparent.</div>
+                        </div>
+
+                        <div class="primer-mode-card mode-cs">
+                            <h4>Color Stack Tile</h4>
+                            <p>A background tile placed in the 20×12 grid. Uses a shared "color stack" of up to 4 background colors that advance as tiles are rendered left-to-right, top-to-bottom.</p>
+                            <div class="primer-code-block">
+<pre>BACKTAB(row, col) = fgColor + slot * 8 + $800
+
+' Slot 3, foreground = Green (5)
+BACKTAB(2, 4) = 5 + 3 * 8 + $800</pre>
+                            </div>
+                            <ul class="primer-list">
+                                <li><strong>fgColor</strong> — foreground color 0–7 for this tile</li>
+                                <li><strong>$800</strong> — GRAM flag (tells STIC to use GRAM, not GROM)</li>
+                                <li><strong>+ $2000</strong> — "Advance" bit: shifts to the next color stack entry</li>
+                            </ul>
+                            <div class="primer-note">Best for large colorful backgrounds. Background color comes from the stack, not per-tile.</div>
+                        </div>
+
+                        <div class="primer-mode-card mode-fgbg">
+                            <h4>FG/BG Tile</h4>
+                            <p>A background tile where each card can have its own foreground <em>and</em> background color, set via STIC color registers. More flexible than Color Stack but requires more setup.</p>
+                            <div class="primer-code-block">
+<pre>BACKTAB(row, col) = slot * 8 + $C00
+
+' Set per-row color registers before drawing
+' $C00 = GRAM flag ($800) + FG/BG mode flag ($400)</pre>
+                            </div>
+                            <ul class="primer-list">
+                                <li>Foreground: 0–7 (primary colors)</li>
+                                <li>Background: 0–15 (all 16 colors)</li>
+                                <li>Colors are set via STIC register writes, not BACKTAB bits</li>
+                            </ul>
+                            <div class="primer-note">Powerful for status bars, score displays, and anything needing exact per-tile coloring.</div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- ⑥ Wide & Tall Sprites -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑥ Wide &amp; Tall Sprites — Using Multiple Cards</h3>
+                    <div class="primer-sizes-grid">
+                        <div class="primer-size-item">
+                            <div class="primer-size-badge">8×8</div>
+                            <p><strong>1 GRAM slot</strong><br>One <code>DEFINE</code>, one label, 8 rows of BITMAP</p>
+                        </div>
+                        <div class="primer-size-item">
+                            <div class="primer-size-badge">8×16</div>
+                            <p><strong>2 GRAM slots</strong><br>One label, 16 rows of BITMAP.<br><code>DEFINE slot, 2, name</code></p>
+                        </div>
+                        <div class="primer-size-item">
+                            <div class="primer-size-badge">16×8</div>
+                            <p><strong>2 GRAM slots</strong><br>Two side-by-side MOBs.<br><code>name_0</code> left, <code>name_1</code> right</p>
+                        </div>
+                        <div class="primer-size-item">
+                            <div class="primer-size-badge">16×16</div>
+                            <p><strong>4 GRAM slots</strong><br>Four MOBs in a 2×2 grid.<br><code>name_0</code>…<code>name_3</code></p>
+                        </div>
+                    </div>
+                    <div class="primer-note">For 16-wide sprites you need multiple <code>SPRITE</code> commands, one per MOB, placed at x and x+8.</div>
+                </section>
+
+                <!-- ⑦ The 16 Colors -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑦ The 16 Intellivision Colors</h3>
+                    <p>MOBs and Color Stack tiles use colors <strong>0–7</strong> (primary). FG/BG tiles and backgrounds can also use <strong>8–15</strong> (pastel/extended).</p>
+                    <div class="primer-palette-row">
+                        <div class="primer-palette-swatch" style="background:#0C0005;" title="0 — Black"><span>0</span></div>
+                        <div class="primer-palette-swatch" style="background:#002DFF;" title="1 — Blue"><span>1</span></div>
+                        <div class="primer-palette-swatch" style="background:#FF3E00;" title="2 — Red"><span>2</span></div>
+                        <div class="primer-palette-swatch" style="background:#C9D464;" title="3 — Tan"><span>3</span></div>
+                        <div class="primer-palette-swatch" style="background:#00780F;" title="4 — Dark Green"><span>4</span></div>
+                        <div class="primer-palette-swatch" style="background:#00A720;" title="5 — Green"><span>5</span></div>
+                        <div class="primer-palette-swatch" style="background:#FAEA27;" title="6 — Yellow"><span>6</span></div>
+                        <div class="primer-palette-swatch" style="background:#FFFCFF; border: 1px solid #ccc;" title="7 — White"><span style="color:#333">7</span></div>
+                        <div class="primer-palette-swatch" style="background:#A7A8A8;" title="8 — Grey"><span>8</span></div>
+                        <div class="primer-palette-swatch" style="background:#5ACBFF;" title="9 — Cyan"><span>9</span></div>
+                        <div class="primer-palette-swatch" style="background:#FFA600;" title="10 — Orange"><span>10</span></div>
+                        <div class="primer-palette-swatch" style="background:#3C5800;" title="11 — Brown"><span>11</span></div>
+                        <div class="primer-palette-swatch" style="background:#FF3276;" title="12 — Pink"><span>12</span></div>
+                        <div class="primer-palette-swatch" style="background:#BD95FF;" title="13 — Light Blue"><span>13</span></div>
+                        <div class="primer-palette-swatch" style="background:#6CCD30;" title="14 — Yellow-Green"><span>14</span></div>
+                        <div class="primer-palette-swatch" style="background:#C81A7D;" title="15 — Purple"><span>15</span></div>
+                    </div>
+                    <div class="primer-palette-names">
+                        <span>Black</span><span>Blue</span><span>Red</span><span>Tan</span>
+                        <span>Dk.Green</span><span>Green</span><span>Yellow</span><span>White</span>
+                        <span>Grey</span><span>Cyan</span><span>Orange</span><span>Brown</span>
+                        <span>Pink</span><span>Lt.Blue</span><span>Yel-Green</span><span>Purple</span>
+                    </div>
+                </section>
+
+                <!-- ⑧ Hello World -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑧ Hello World — Your First Sprite</h3>
+                    <p>Here's the minimal IntyBASIC code to put a white box on screen as a MOB:</p>
+                    <div class="primer-code-block">
+<pre>' 1. Define the BITMAP data
+box:
+    BITMAP "XXXXXXXX"
+    BITMAP "X......X"
+    BITMAP "X......X"
+    BITMAP "X......X"
+    BITMAP "X......X"
+    BITMAP "X......X"
+    BITMAP "X......X"
+    BITMAP "XXXXXXXX"
+
+' 2. Load into GRAM slot 0
+DEFINE 0, 1, box
+
+' 3. Place MOB 0 at screen position (50, 50), White (color 7)
+SPRITE 0, (50 + $200), 50, (0 * 8 + 7)
+
+' 4. Start the game loop
+DO
+    WAIT        ' wait for video frame
+LOOP</pre>
+                    </div>
+                    <div class="primer-note primer-note-green">
+                        ✅ Draw your design in the editor above, copy the generated code from the Output panel, and paste it directly into your IntyBASIC source file.
+                    </div>
+                </section>
+
+                <!-- ⑨ Workflow -->
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑨ Recommended Workflow</h3>
+                    <ol class="primer-numbered-list">
+                        <li><strong>Choose a size</strong> — 8×8 for simple sprites, 8×16 for taller characters, 16×16 for large bosses.</li>
+                        <li><strong>Draw your pixel art</strong> — Left-click to draw foreground pixels; right-click to erase.</li>
+                        <li><strong>Assign a GRAM slot</strong> — Enter a slot number in the <em>Sprite Properties</em> panel. Check the GRAM budget grid to avoid conflicts.</li>
+                        <li><strong>Pick a Use Mode</strong> — <em>MOB</em> for moving objects, <em>Color Stack</em> for background tiles, <em>FG/BG</em> for tiles needing two distinct colors.</li>
+                        <li><strong>Set the color</strong> — Choose the MOB color or tile foreground color in the properties panel.</li>
+                        <li><strong>Copy the output</strong> — Click <em>Copy Bitmap</em> or use the Output panel. Paste into your <code>.bas</code> file.</li>
+                        <li><strong>Add more sprites</strong> — Use <em>Add</em> in the Sprites panel. Each gets its own GRAM slot automatically.</li>
+                        <li><strong>Save your work</strong> — <em>Export Project</em> saves a <code>.json</code> file you can reload later.</li>
+                    </ol>
+                </section>
+
+            </div><!-- /.intv-primer-body -->
+
+            <div class="intv-primer-footer">
+                <button class="btn btn-primary" onclick="closeIntvPrimer()">Got it — start drawing!</button>
+                <a href="https://nanochess.org/intybasic.html" target="_blank" rel="noopener" class="primer-external-link">
+                    IntyBASIC documentation ↗
+                </a>
+            </div>
+
+        </div><!-- /.intv-primer-dialog -->
+    </div><!-- /#intv-primer-modal -->
+
     <!-- JSZip for project export/import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/static/js/overlay_editor.js"></script>
+    <script>
+        function openIntvPrimer() {
+            document.getElementById('intv-primer-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function closeIntvPrimer(e) {
+            if (e && e.target !== document.getElementById('intv-primer-modal')) return;
+            document.getElementById('intv-primer-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeIntvPrimer();
+        });
+    </script>
 </body>
 </html>
