@@ -489,6 +489,165 @@
     margin: 0 0 8px 0;
 }
 
+/* Sprite Properties — GRAM slot row */
+.sprite-gram-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.sprite-gram-row label {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: var(--gray-700);
+}
+.sprite-gram-row input[type="number"] {
+    width: 52px;
+    padding: 3px 5px;
+    font-size: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+/* Sprite Properties — Use Mode selector */
+.sprite-mode-group {
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+.sprite-mode-group > label {
+    display: block;
+    font-size: 12px;
+    color: var(--gray-700);
+    margin-bottom: 4px;
+}
+.sprite-mode-btn-group {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+.sprite-mode-btn {
+    padding: 3px 7px;
+    font-size: 11px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    cursor: pointer;
+    color: var(--gray-700);
+    white-space: nowrap;
+}
+.sprite-mode-btn:hover {
+    background: var(--gray-100);
+}
+.sprite-mode-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Sprite Properties — mode-specific color sections */
+.sprite-color-section {
+    margin-top: 10px;
+}
+.sprite-color-section > label {
+    display: block;
+    font-size: 12px;
+    color: var(--gray-700);
+    margin-bottom: 4px;
+}
+.color-range {
+    font-weight: normal;
+    font-size: 11px;
+    color: var(--gray-500);
+}
+/* Small palette strip (8 or 16 swatches) */
+.sprite-palette.sm {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+}
+.sprite-palette.sm .palette-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 14px;
+    min-height: 14px;
+}
+/* CS advance checkbox label */
+.sprite-cs-advance-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--gray-700);
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+/* GRAM Budget */
+.gram-budget-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-200);
+}
+.gram-budget-section h4 {
+    font-size: 14px;
+    color: var(--gray-700);
+    margin: 0 0 6px 0;
+}
+.gram-budget-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    margin-bottom: 6px;
+}
+.gram-budget-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-family: monospace;
+    border-radius: 2px;
+    cursor: default;
+    transition: opacity 0.1s;
+}
+.gram-budget-cell.free {
+    background: var(--gray-100);
+    color: var(--gray-400);
+}
+.gram-budget-cell.used {
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+.gram-budget-cell.used:hover {
+    opacity: 0.8;
+}
+.gram-budget-cell.used.mode-mob  { background: #2563eb; }  /* blue */
+.gram-budget-cell.used.mode-cs   { background: #d97706; }  /* amber */
+.gram-budget-cell.used.mode-fgbg { background: #059669; }  /* green */
+.gram-budget-cell.current {
+    outline: 2px solid #f59e0b;
+    outline-offset: 0px;
+    z-index: 1;
+}
+/* GRAM budget legend */
+.gram-budget-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.gram-legend-item {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: white;
+}
+.gram-legend-item.mode-mob  { background: #2563eb; }
+.gram-legend-item.mode-cs   { background: #d97706; }
+.gram-legend-item.mode-fgbg { background: #059669; }
+.gram-legend-item.free      { background: var(--gray-300); color: var(--gray-700); }
+
 /* Output Panel */
 .sprite-output-panel {
     flex: 1 1 0;

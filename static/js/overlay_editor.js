@@ -584,6 +584,15 @@ window.addSpriteToAnimation = (index) => SpriteEditor.addToAnimation(index);
 // BITMAP import
 window.pasteBitmapText = () => SpriteEditor.showPasteBitmapDialog();
 
+// Sprite properties panel
+window.updateSpriteGramCard = (val)     => SpriteEditor.updateGramCard(val);
+window.updateSpriteMode     = (mode)    => SpriteEditor.updateSpriteMode(mode);
+window.updateMobColor       = (idx)     => SpriteEditor.updateMobColor(idx);
+window.updateCsColor        = (idx)     => SpriteEditor.updateCsColor(idx);
+window.updateCsAdvance      = (checked) => SpriteEditor.updateCsAdvance(checked);
+window.updateFgbgFg         = (idx)     => SpriteEditor.updateFgbgFg(idx);
+window.updateFgbgBg         = (idx)     => SpriteEditor.updateFgbgBg(idx);
+
 // DS Overlay Editor functions
 window.loadDSTemplate       = () => DSOverlayEditor.loadTemplate();
 window.loadDSBackground     = (e) => DSOverlayEditor.loadBackground(e);

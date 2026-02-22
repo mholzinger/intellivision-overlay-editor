@@ -2224,9 +2224,64 @@
                     <!-- Sprite Properties -->
                     <div class="sprite-properties">
                         <h4>Sprite Properties</h4>
+
+                        <!-- Name -->
                         <div class="input-group">
                             <label for="sprite-name-input">Name</label>
                             <input type="text" id="sprite-name-input" placeholder="Sprite name" value="sprite_0" oninput="updateSpriteName()">
+                        </div>
+
+                        <!-- GRAM Slot -->
+                        <div class="input-group sprite-gram-row">
+                            <label for="sprite-gram-card">GRAM Slot</label>
+                            <input type="number" id="sprite-gram-card" min="0" max="63" value="0"
+                                   onchange="updateSpriteGramCard(this.value)">
+                        </div>
+
+                        <!-- Use Mode -->
+                        <div class="sprite-mode-group">
+                            <label>Use Mode</label>
+                            <div class="sprite-mode-btn-group">
+                                <button class="sprite-mode-btn active" data-mode="mob"  onclick="updateSpriteMode('mob')">MOB</button>
+                                <button class="sprite-mode-btn"        data-mode="cs"   onclick="updateSpriteMode('cs')">Color Stack</button>
+                                <button class="sprite-mode-btn"        data-mode="fgbg" onclick="updateSpriteMode('fgbg')">FG/BG</button>
+                            </div>
+                        </div>
+
+                        <!-- MOB Color (0–7) -->
+                        <div id="sprite-mob-colors" class="sprite-color-section">
+                            <label>MOB Color <span class="color-range">(0–7)</span></label>
+                            <div id="sprite-mob-color-palette" class="sprite-palette sm"></div>
+                        </div>
+
+                        <!-- Color Stack Colors -->
+                        <div id="sprite-cs-colors" class="sprite-color-section" style="display:none;">
+                            <label>CS Foreground <span class="color-range">(0–7)</span></label>
+                            <div id="sprite-cs-color-palette" class="sprite-palette sm"></div>
+                            <label class="sprite-cs-advance-label">
+                                <input type="checkbox" id="sprite-cs-advance" onchange="updateCsAdvance(this.checked)">
+                                Advance color stack
+                            </label>
+                        </div>
+
+                        <!-- FG/BG Colors -->
+                        <div id="sprite-fgbg-colors" class="sprite-color-section" style="display:none;">
+                            <label>Foreground <span class="color-range">(0–7)</span></label>
+                            <div id="sprite-fgbg-fg-palette" class="sprite-palette sm"></div>
+                            <label>Background <span class="color-range">(0–15)</span></label>
+                            <div id="sprite-fgbg-bg-palette" class="sprite-palette sm"></div>
+                        </div>
+                    </div>
+
+                    <!-- GRAM Budget -->
+                    <div class="gram-budget-section">
+                        <h4>GRAM Budget <span class="color-range">(64 slots)</span></h4>
+                        <div id="gram-budget-grid" class="gram-budget-grid"></div>
+                        <div class="gram-budget-legend">
+                            <span class="gram-legend-item mode-mob">MOB</span>
+                            <span class="gram-legend-item mode-cs">CS</span>
+                            <span class="gram-legend-item mode-fgbg">FG/BG</span>
+                            <span class="gram-legend-item free">Free</span>
                         </div>
                     </div>
                 </div>

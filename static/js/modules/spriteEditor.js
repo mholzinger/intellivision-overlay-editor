@@ -58,6 +58,7 @@ export class SpriteEditor {
         this.updateSpriteList();
         this.updateOutput();
         this.updateSizeSelector();
+        this.updateSpriteProperties();
     }
 
     /**
@@ -101,6 +102,34 @@ export class SpriteEditor {
         });
     }
 
+    // ==========================================
+    // GRAM Card Management
+    // ==========================================
+
+    /**
+     * Returns how many GRAM slots (8×8 blocks) a sprite occupies.
+     * 8×8=1, 8×16=2, 16×8=2, 16×16=4
+     */
+    static _gramCardsNeeded(sprite) {
+        return (sprite.width / 8) * (sprite.height / 8);
+    }
+
+    /**
+     * Find the next free GRAM slot (0–63) based on all currently loaded sprites.
+     */
+    static _nextGramCard() {
+        const used = new Set();
+        for (const s of this.sprites) {
+            const gc = s.gramCard ?? 0;
+            const needed = this._gramCardsNeeded(s);
+            for (let i = 0; i < needed; i++) used.add(gc + i);
+        }
+        for (let i = 0; i < 64; i++) {
+            if (!used.has(i)) return i;
+        }
+        return 0;
+    }
+
     /**
      * Create an empty sprite data structure
      * @param {string} name
@@ -114,7 +143,15 @@ export class SpriteEditor {
             height,
             pixels: Array.from({ length: height }, () => new Array(width).fill(0)),
             fgColor: this.selectedFgColor,
-            bgColor: this.selectedBgColor
+            bgColor: this.selectedBgColor,
+            // GRAM / IntyBASIC properties
+            gramCard: this._nextGramCard(),
+            useMode: 'mob',   // 'mob' | 'cs' | 'fgbg'
+            mobColor: 7,      // MOB hardware color index (0–7)
+            csColor: 7,       // Color Stack foreground color (0–7)
+            csAdvance: false, // Advance color stack on this card
+            fgbgFg: 7,        // FG/BG mode foreground (0–7)
+            fgbgBg: 0         // FG/BG mode background (0–15)
         };
     }
 
@@ -510,31 +547,110 @@ export class SpriteEditor {
         const hCards = sprite.height / 8;  // 1 or 2
         const cards = [];
 
-        for (let hy = 0; hy < hCards; hy++) {
-            for (let hx = 0; hx < wCards; hx++) {
-                const cardIndex = hy * wCards + hx;
-                // No suffix for simple 8x8 or 8x16 (single-card) sprites
-                const label = (wCards === 1 && hCards <= 2 && sprite.width === 8)
-                    ? sprite.name
-                    : `${sprite.name}_${cardIndex}`;
-
-                const rowStart = hy * 8;
-                const colStart = hx * 8;
-                const rows = [];
-
-                for (let y = rowStart; y < rowStart + 8; y++) {
-                    const row = [];
-                    for (let x = colStart; x < colStart + 8; x++) {
-                        row.push(sprite.pixels[y]?.[x] ?? 0);
+        if (wCards === 1) {
+            // Single-column sprite (8×8 or 8×16): one label, all rows together.
+            // DEFINE uses numCards=height/8 to load the full run.
+            const rows = [];
+            for (let y = 0; y < sprite.height; y++) {
+                rows.push(Array.from({ length: 8 }, (_, x) => sprite.pixels[y]?.[x] ?? 0));
+            }
+            cards.push({ label: sprite.name, rows });
+        } else {
+            // Multi-column (16-wide): separate 8×8 blocks in row-major order.
+            // 16×8  → _0 (left),  _1 (right)
+            // 16×16 → _0 (TL), _1 (TR), _2 (BL), _3 (BR)
+            for (let hy = 0; hy < hCards; hy++) {
+                for (let hx = 0; hx < wCards; hx++) {
+                    const cardIndex = hy * wCards + hx;
+                    const label = `${sprite.name}_${cardIndex}`;
+                    const rows = [];
+                    for (let y = hy * 8; y < hy * 8 + 8; y++) {
+                        rows.push(Array.from({ length: 8 }, (_, x) => sprite.pixels[y]?.[hx * 8 + x] ?? 0));
                     }
-                    rows.push(row);
+                    cards.push({ label, rows });
                 }
-
-                cards.push({ label, rows });
             }
         }
 
         return cards;
+    }
+
+    // ==========================================
+    // IntyBASIC Code Generation Helpers
+    // ==========================================
+
+    /** Human-readable description of a sprite's active color settings */
+    static _colorDesc(sprite) {
+        const mode = sprite.useMode || 'mob';
+        if (mode === 'mob') {
+            const c = sprite.mobColor ?? 7;
+            return `${this.PALETTE[c].name} (${c})`;
+        } else if (mode === 'cs') {
+            const c = sprite.csColor ?? 7;
+            const adv = sprite.csAdvance ? ' +advance' : '';
+            return `FG: ${this.PALETTE[c].name} (${c})${adv}`;
+        } else {
+            const fg = sprite.fgbgFg ?? 7;
+            const bg = sprite.fgbgBg ?? 0;
+            return `FG: ${this.PALETTE[fg].name}, BG: ${this.PALETTE[bg].name}`;
+        }
+    }
+
+    /**
+     * Generate DEFINE statement(s) for a sprite.
+     * Single-column sprites use one DEFINE with numCards = height/8.
+     * Multi-column sprites use one DEFINE per 8×8 block.
+     */
+    static _generateDefine(sprite) {
+        const gc = sprite.gramCard ?? 0;
+        if (sprite.width === 8) {
+            const numCards = sprite.height / 8;
+            return `DEFINE ${gc}, ${numCards}, ${sprite.name}`;
+        } else {
+            const cards = this.splitIntoGramCards(sprite);
+            return cards.map((card, i) => `DEFINE ${gc + i}, 1, ${card.label}`).join('\n');
+        }
+    }
+
+    /**
+     * Generate mode-specific IntyBASIC usage snippet (as comments).
+     */
+    static _modeSnippet(sprite) {
+        const mode  = sprite.useMode || 'mob';
+        const gc    = sprite.gramCard ?? 0;
+        const wCards = sprite.width / 8;
+
+        if (mode === 'mob') {
+            const color = sprite.mobColor ?? 7;
+            const cname = this.PALETTE[color].name;
+            let s = `\n' --- MOB Sprite Usage (${cname}) ---\n`;
+            if (wCards === 1) {
+                s += `' SPRITE n, (xPos + $200), yPos, (${gc} * 8 + ${color})\n`;
+            } else {
+                for (let i = 0; i < wCards; i++) {
+                    const offset = i > 0 ? `${i * 8} + ` : '';
+                    s += `' SPRITE n+${i}, (xPos + ${offset}$200), yPos, (${gc + i} * 8 + ${color})  ' ${cname}\n`;
+                }
+            }
+            return s;
+        } else if (mode === 'cs') {
+            const color = sprite.csColor ?? 7;
+            const cname = this.PALETTE[color].name;
+            const adv   = sprite.csAdvance ? ' + $2000' : '';
+            const bval  = `${color} + ${gc} * 8 + $800${adv}`;
+            return `\n' --- Color Stack Tile Usage (FG: ${cname}) ---\n' BACKTAB(row, col) = ${bval}\n`;
+        } else { // fgbg
+            const fg    = sprite.fgbgFg ?? 7;
+            const bg    = sprite.fgbgBg ?? 0;
+            const fname = this.PALETTE[fg].name;
+            const bname = this.PALETTE[bg].name;
+            const bval  = `${gc} * 8 + $C00`;
+            return (
+                `\n' --- FG/BG Tile Usage (FG: ${fname}, BG: ${bname}) ---\n` +
+                `' BACKTAB(row, col) = ${bval}  ' GRAM flag + FG/BG mode\n` +
+                `' Set STIC color regs for FG/BG colors before display\n`
+            );
+        }
     }
 
     /**
@@ -544,8 +660,14 @@ export class SpriteEditor {
         const sprite = this.getCurrentSprite();
         if (!sprite) return '';
 
-        const cards = this.splitIntoGramCards(sprite);
-        let output = '';
+        const cards    = this.splitIntoGramCards(sprite);
+        const gc       = sprite.gramCard ?? 0;
+        const needed   = this._gramCardsNeeded(sprite);
+        const slotEnd  = gc + needed - 1;
+        const slotRange = needed === 1 ? `${gc}` : `${gc}–${slotEnd}`;
+        const modeName  = { mob: 'MOB Sprite', cs: 'Color Stack Tile', fgbg: 'FG/BG Tile' }[sprite.useMode || 'mob'];
+
+        let output = `' ${sprite.name}  |  GRAM ${slotRange}  |  ${modeName}  |  ${this._colorDesc(sprite)}\n`;
 
         for (const card of cards) {
             output += `${card.label}:\n`;
@@ -555,11 +677,14 @@ export class SpriteEditor {
             output += '\n';
         }
 
+        output += this._generateDefine(sprite) + '\n';
+        output += this._modeSnippet(sprite);
+
         return output.trimEnd() + '\n';
     }
 
     /**
-     * Generate IntyBASIC output for all sprites
+     * Generate IntyBASIC output for all sprites (full project dump)
      */
     static generateAllOutput() {
         let output = "' IntyBASIC Sprite Definitions\n";
@@ -567,7 +692,15 @@ export class SpriteEditor {
         output += "' https://intellivision-overlay-editor.fly.dev\n\n";
 
         for (const sprite of this.sprites) {
-            const cards = this.splitIntoGramCards(sprite);
+            const cards    = this.splitIntoGramCards(sprite);
+            const gc       = sprite.gramCard ?? 0;
+            const needed   = this._gramCardsNeeded(sprite);
+            const slotEnd  = gc + needed - 1;
+            const slotRange = needed === 1 ? `${gc}` : `${gc}–${slotEnd}`;
+            const modeName  = { mob: 'MOB Sprite', cs: 'Color Stack Tile', fgbg: 'FG/BG Tile' }[sprite.useMode || 'mob'];
+
+            output += `' ${sprite.name}  |  GRAM ${slotRange}  |  ${modeName}  |  ${this._colorDesc(sprite)}\n`;
+
             for (const card of cards) {
                 output += `${card.label}:\n`;
                 for (const row of card.rows) {
@@ -575,13 +708,13 @@ export class SpriteEditor {
                 }
                 output += '\n';
             }
+
+            output += this._generateDefine(sprite) + '\n';
+            output += this._modeSnippet(sprite);
+            output += '\n';
         }
 
-        output += "' Usage:\n";
-        output += "'   DEFINE 0, 1, sprite_name   ' Define GRAM card 0\n";
-        output += "'   SPRITE 0, x + VISIBLE, y, 0 * 8 + color   ' Display as MOB\n";
-
-        return output;
+        return output.trimEnd() + '\n';
     }
 
     static updateOutput() {
@@ -685,7 +818,14 @@ export class SpriteEditor {
             height: importHeight,
             pixels: rows,
             fgColor: this.selectedFgColor,
-            bgColor: this.selectedBgColor
+            bgColor: this.selectedBgColor,
+            gramCard: this._nextGramCard(),
+            useMode:  'mob',
+            mobColor: 7,
+            csColor:  7,
+            csAdvance: false,
+            fgbgFg:   7,
+            fgbgBg:   0
         };
 
         this.sprites.push(sprite);
@@ -699,6 +839,7 @@ export class SpriteEditor {
         this.renderPreview();
         this.updateOutput();
         this.updateSizeSelector();
+        this.updateSpriteProperties();
 
         return true;
     }
@@ -713,6 +854,185 @@ export class SpriteEditor {
             '    BITMAP "XXXXXX"'
         );
         if (text) this.parseBitmapText(text);
+    }
+
+    // ==========================================
+    // Sprite Properties UI
+    // ==========================================
+
+    /**
+     * Refresh the sprite properties panel to reflect the current sprite's settings.
+     * Called after selectSprite() and whenever properties change.
+     */
+    static updateSpriteProperties() {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+
+        // Defaults for sprites loaded from older save files that lack the new fields
+        if (sprite.gramCard   === undefined) sprite.gramCard   = 0;
+        if (sprite.useMode    === undefined) sprite.useMode    = 'mob';
+        if (sprite.mobColor   === undefined) sprite.mobColor   = 7;
+        if (sprite.csColor    === undefined) sprite.csColor    = 7;
+        if (sprite.csAdvance  === undefined) sprite.csAdvance  = false;
+        if (sprite.fgbgFg     === undefined) sprite.fgbgFg     = 7;
+        if (sprite.fgbgBg     === undefined) sprite.fgbgBg     = 0;
+
+        const gramInput = document.getElementById('sprite-gram-card');
+        if (gramInput) gramInput.value = sprite.gramCard;
+
+        const mode = sprite.useMode;
+
+        // Mode button highlight
+        document.querySelectorAll('.sprite-mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        // Show / hide mode-specific color sections
+        const mobSection  = document.getElementById('sprite-mob-colors');
+        const csSection   = document.getElementById('sprite-cs-colors');
+        const fgbgSection = document.getElementById('sprite-fgbg-colors');
+        if (mobSection)  mobSection.style.display  = mode === 'mob'  ? '' : 'none';
+        if (csSection)   csSection.style.display   = mode === 'cs'   ? '' : 'none';
+        if (fgbgSection) fgbgSection.style.display = mode === 'fgbg' ? '' : 'none';
+
+        // MOB color swatches (0–7 primary colors)
+        this._renderModePalette('sprite-mob-color-palette', sprite.mobColor, 0, 7,
+            (i) => this.updateMobColor(i));
+
+        // CS foreground swatches (0–7)
+        this._renderModePalette('sprite-cs-color-palette', sprite.csColor, 0, 7,
+            (i) => this.updateCsColor(i));
+        const csAdv = document.getElementById('sprite-cs-advance');
+        if (csAdv) csAdv.checked = sprite.csAdvance;
+
+        // FG/BG swatches
+        this._renderModePalette('sprite-fgbg-fg-palette', sprite.fgbgFg, 0, 7,
+            (i) => this.updateFgbgFg(i));
+        this._renderModePalette('sprite-fgbg-bg-palette', sprite.fgbgBg, 0, 15,
+            (i) => this.updateFgbgBg(i));
+
+        this.renderGramBudget();
+    }
+
+    /**
+     * Render a small inline palette strip into a container element.
+     * @param {string} containerId
+     * @param {number} selectedIndex
+     * @param {number} minIdx
+     * @param {number} maxIdx
+     * @param {Function} handler  Called with the color index when clicked
+     */
+    static _renderModePalette(containerId, selectedIndex, minIdx, maxIdx, handler) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = minIdx; i <= maxIdx; i++) {
+            const swatch = document.createElement('div');
+            swatch.className = 'palette-swatch sm' + (i === selectedIndex ? ' selected' : '');
+            swatch.style.backgroundColor = this.PALETTE[i].hex;
+            swatch.title = `${this.PALETTE[i].name} (${i})`;
+            swatch.onclick = () => handler(i);
+            container.appendChild(swatch);
+        }
+    }
+
+    static updateGramCard(val) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.gramCard = Math.max(0, Math.min(63, parseInt(val) || 0));
+        this.renderGramBudget();
+        this.updateOutput();
+    }
+
+    static updateSpriteMode(mode) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.useMode = mode;
+        this.updateSpriteProperties();
+        this.updateOutput();
+    }
+
+    static updateMobColor(idx) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.mobColor = idx;
+        this._renderModePalette('sprite-mob-color-palette', idx, 0, 7, (i) => this.updateMobColor(i));
+        this.updateOutput();
+    }
+
+    static updateCsColor(idx) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.csColor = idx;
+        this._renderModePalette('sprite-cs-color-palette', idx, 0, 7, (i) => this.updateCsColor(i));
+        this.updateOutput();
+    }
+
+    static updateCsAdvance(checked) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.csAdvance = checked;
+        this.updateOutput();
+    }
+
+    static updateFgbgFg(idx) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.fgbgFg = idx;
+        this._renderModePalette('sprite-fgbg-fg-palette', idx, 0, 7,  (i) => this.updateFgbgFg(i));
+        this.updateOutput();
+    }
+
+    static updateFgbgBg(idx) {
+        const sprite = this.getCurrentSprite();
+        if (!sprite) return;
+        sprite.fgbgBg = idx;
+        this._renderModePalette('sprite-fgbg-bg-palette', idx, 0, 15, (i) => this.updateFgbgBg(i));
+        this.updateOutput();
+    }
+
+    /**
+     * Render the 8×8 GRAM budget grid showing which slots are occupied.
+     */
+    static renderGramBudget() {
+        const grid = document.getElementById('gram-budget-grid');
+        if (!grid) return;
+
+        // Build a map of slot → sprite
+        const slotMap = new Map();
+        for (const sprite of this.sprites) {
+            const gc     = sprite.gramCard ?? 0;
+            const needed = this._gramCardsNeeded(sprite);
+            for (let i = 0; i < needed; i++) {
+                const slot = gc + i;
+                if (slot < 64) slotMap.set(slot, sprite);
+            }
+        }
+
+        const current = this.getCurrentSprite();
+        grid.innerHTML = '';
+
+        for (let i = 0; i < 64; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'gram-budget-cell';
+            cell.textContent = i;
+            cell.title = `GRAM slot ${i}`;
+
+            if (slotMap.has(i)) {
+                const owner = slotMap.get(i);
+                cell.classList.add('used', `mode-${owner.useMode || 'mob'}`);
+                cell.title = `GRAM ${i}: ${owner.name} (${owner.useMode || 'mob'})`;
+                if (owner === current) cell.classList.add('current');
+                cell.onclick = () => {
+                    const idx = this.sprites.indexOf(owner);
+                    if (idx >= 0) this.selectSprite(idx);
+                };
+            } else {
+                cell.classList.add('free');
+            }
+
+            grid.appendChild(cell);
+        }
     }
 
     // ==========================================
@@ -757,7 +1077,15 @@ export class SpriteEditor {
             height: sprite.height,
             pixels: sprite.pixels.map(row => [...row]),
             fgColor: sprite.fgColor,
-            bgColor: sprite.bgColor
+            bgColor: sprite.bgColor,
+            // Auto-assign next free GRAM slots for the duplicate
+            gramCard: this._nextGramCard(),
+            useMode:  sprite.useMode  ?? 'mob',
+            mobColor: sprite.mobColor ?? 7,
+            csColor:  sprite.csColor  ?? 7,
+            csAdvance: sprite.csAdvance ?? false,
+            fgbgFg:   sprite.fgbgFg   ?? 7,
+            fgbgBg:   sprite.fgbgBg   ?? 0
         };
         this.sprites.push(newSprite);
         this.currentSpriteIndex = this.sprites.length - 1;
@@ -765,6 +1093,7 @@ export class SpriteEditor {
         this.renderGrid();
         this.renderPreview();
         this.updateOutput();
+        this.updateSpriteProperties();
     }
 
     static selectSprite(index) {
@@ -781,6 +1110,7 @@ export class SpriteEditor {
             this.renderPreview();
             this.updateOutput();
             this.updateSizeSelector();
+            this.updateSpriteProperties();
         }
     }
 
