@@ -15,7 +15,7 @@ export class DraggableArtwork {
     static boxartInitialized = false;
     // Shared drag state
     static isDragging = false;
-    static dragTarget = null;      // 'main' | 'title' | 'boxart-main' | 'boxart-vignette' | null
+    static dragTarget = null;      // 'main' | 'title' | 'boxart-main' | 'boxart-vignette' | 'boxart-badge' | null
     static dragStartPos = { x: 0, y: 0 };
     static artworkStartPos = { x: 0, y: 0 };
     static activeSvgElement = null;
@@ -156,7 +156,7 @@ export class DraggableArtwork {
     /**
      * Check if an element is a draggable artwork element (box art editor)
      * @param {Element} element - The clicked element
-     * @returns {'boxart-main'|'boxart-vignette'|null} The artwork type or null
+     * @returns {'boxart-main'|'boxart-vignette'|'boxart-badge'|null} The artwork type or null
      */
     static getBoxArtDraggableType(element) {
         if (!element) return null;
@@ -171,14 +171,17 @@ export class DraggableArtwork {
             return 'boxart-vignette';
         }
 
-        // Walk up to check parent groups
+        // Walk up to check parent groups (deeper limit for nested badge SVG children)
         let current = element.parentElement;
         let depth = 0;
-        const maxDepth = 5;
+        const maxDepth = 10;
 
         while (current && depth < maxDepth) {
             if (current.id === 'vignette-artwork-group') {
                 return 'boxart-vignette';
+            }
+            if (current.id === 'voice-badge-group') {
+                return 'boxart-badge';
             }
             current = current.parentElement;
             depth++;
@@ -356,6 +359,10 @@ export class DraggableArtwork {
             const x = appState._boxArtVignetteArtworkX ?? 0;
             const y = appState._boxArtVignetteArtworkY ?? 0;
             DraggableArtwork.artworkStartPos = { x, y };
+        } else if (dragType === 'boxart-badge') {
+            const x = parseFloat(document.getElementById('boxart-voice-badge-x')?.value) || 115;
+            const y = parseFloat(document.getElementById('boxart-voice-badge-y')?.value) || 15;
+            DraggableArtwork.artworkStartPos = { x, y };
         }
 
         document.body.classList.add('artwork-dragging');
@@ -468,6 +475,23 @@ export class DraggableArtwork {
             if (dataURL) {
                 DraggableArtwork.updateBoxArtVignetteArtwork();
             }
+
+        } else if (dragTarget === 'boxart-badge') {
+            // Badge position is absolute SVG coords, clamped to slider ranges
+            newX = Math.max(0, Math.min(180, newX));
+            newY = Math.max(0, Math.min(220, newY));
+
+            const xSlider = document.getElementById('boxart-voice-badge-x');
+            const ySlider = document.getElementById('boxart-voice-badge-y');
+            if (xSlider) xSlider.value = newX;
+            if (ySlider) ySlider.value = newY;
+
+            const xValue = document.getElementById('boxart-voice-badge-x-value');
+            const yValue = document.getElementById('boxart-voice-badge-y-value');
+            if (xValue) xValue.textContent = Math.round(newX);
+            if (yValue) yValue.textContent = Math.round(newY);
+
+            DraggableArtwork.updateBoxArtBadge();
         }
     }
 
@@ -486,6 +510,14 @@ export class DraggableArtwork {
     static async updateBoxArtVignetteArtwork() {
         const { BoxArtEditor } = await import('./boxArtEditor.js');
         BoxArtEditor.insertVignetteArtwork(appState._boxArtVignetteArtworkData);
+    }
+
+    /**
+     * Update IntelliVoice badge position (calls BoxArtEditor dynamically)
+     */
+    static async updateBoxArtBadge() {
+        const { BoxArtEditor } = await import('./boxArtEditor.js');
+        BoxArtEditor.updateVoiceBadgePosition();
     }
 
     /**

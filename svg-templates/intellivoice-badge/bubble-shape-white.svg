@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 440" width="520" height="440">
+  <title>IntelliVoice Speech Bubble Shape - White</title>
+  <ellipse cx="260" cy="112" rx="155" ry="106" fill="#CC2233"/>
+  <ellipse cx="157" cy="198" rx="148" ry="106" fill="#CC2233"/>
+  <ellipse cx="363" cy="198" rx="148" ry="106" fill="#CC2233"/>
+  <polygon points="122,256 82,375 196,268" fill="#CC2233"/>
+  <ellipse cx="260" cy="112" rx="147" ry="98" fill="#FFFFFF"/>
+  <ellipse cx="157" cy="198" rx="140" ry="98" fill="#FFFFFF"/>
+  <ellipse cx="363" cy="198" rx="140" ry="98" fill="#FFFFFF"/>
+  <polygon points="130,250 95,362 192,262" fill="#FFFFFF"/>
+</svg>

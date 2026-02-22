@@ -533,6 +533,10 @@ window.scaleVignetteArtwork = (delta) => BoxArtEditor.scaleVignetteArtwork(delta
 window.rotateVignetteArtwork = (delta) => BoxArtEditor.rotateVignetteArtwork(delta);
 window.clearBoxArtVignetteArtwork = () => BoxArtEditor.clearVignetteArtwork();
 window.toggleBoxArtVoiceBadge = () => BoxArtEditor.toggleVoiceBadge();
+window.updateBoxArtVoiceBadgeStyle = () => BoxArtEditor.updateVoiceBadge();
+window.updateBoxArtVoiceBadgePosition = () => BoxArtEditor.updateVoiceBadgePosition();
+window.updateBoxArtVoiceBadgeColors = () => BoxArtEditor.updateVoiceBadgeColors();
+window.updateBoxArtVoiceBadgeText = () => BoxArtEditor.updateVoiceBadgeText();
 window.updateBoxArtPlayerCount = () => BoxArtEditor.updatePlayerCount();
 window.exportBoxArtPNG = () => BoxArtEditor.exportPNG();
 window.resetBoxArt = () => BoxArtEditor.reset();

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 440" width="520" height="440">
+  <title>IntelliVoice Speech Bubble Shape - Outline Only</title>
+  <defs>
+    <!-- Compound shape as a single path for clean outline -->
+    <clipPath id="bubbleOuter">
+      <ellipse cx="260" cy="112" rx="155" ry="106"/>
+      <ellipse cx="157" cy="198" rx="148" ry="106"/>
+      <ellipse cx="363" cy="198" rx="148" ry="106"/>
+      <polygon points="122,256 82,375 196,268"/>
+    </clipPath>
+  </defs>
+  <!-- Outline stroke -->
+  <ellipse cx="260" cy="112" rx="155" ry="106" fill="none" stroke="#CC2233" stroke-width="6"/>
+  <ellipse cx="157" cy="198" rx="148" ry="106" fill="none" stroke="#CC2233" stroke-width="6"/>
+  <ellipse cx="363" cy="198" rx="148" ry="106" fill="none" stroke="#CC2233" stroke-width="6"/>
+  <polygon points="122,256 82,375 196,268" fill="none" stroke="#CC2233" stroke-width="6"/>
+  <!-- White fill to hide internal overlapping strokes -->
+  <ellipse cx="260" cy="112" rx="150" ry="101" fill="white" stroke="none"/>
+  <ellipse cx="157" cy="198" rx="143" ry="101" fill="white" stroke="none"/>
+  <ellipse cx="363" cy="198" rx="143" ry="101" fill="white" stroke="none"/>
+  <polygon points="128,252 92,365 193,264" fill="white" stroke="none"/>
+</svg>

@@ -193,6 +193,28 @@ def get_shape(name):
 # Note: LAYOUT_TEMPLATES_DIR and BOXART_TEMPLATES_DIR are defined from Config above
 
 
+@app.route('/get_badge/<name>')
+def get_badge(name):
+    """Return SVG content for a specific IntelliVoice badge template"""
+    safe_name = Path(name).name
+    if not safe_name.endswith('.svg'):
+        safe_name += '.svg'
+
+    badge_dir = SHAPES_DIR / 'intellivoice-badge'
+    badge_path = (badge_dir / safe_name).resolve()
+
+    try:
+        if not str(badge_path).startswith(str(badge_dir.resolve())):
+            return jsonify({'error': 'Invalid badge path'}), 400
+        if not badge_path.exists() or not badge_path.is_file():
+            return jsonify({'error': 'Badge not found'}), 404
+
+        with open(badge_path, 'r') as f:
+            return jsonify({'svg': f.read(), 'name': Path(safe_name).stem})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/get_examples')
 def get_examples():
     """Return list of available example overlay projects"""

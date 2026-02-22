@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 440" width="520" height="440">
+  <title>Adds voices to Intellivision - Speech Bubble</title>
+
+  <!-- Red outline layer -->
+  <ellipse cx="260" cy="112" rx="155" ry="106" fill="#CC2233"/>
+  <ellipse cx="157" cy="198" rx="148" ry="106" fill="#CC2233"/>
+  <ellipse cx="363" cy="198" rx="148" ry="106" fill="#CC2233"/>
+  <polygon points="122,256 82,375 196,268" fill="#CC2233"/>
+
+  <!-- Teal fill layer (inset ~7px) -->
+  <ellipse cx="260" cy="112" rx="147" ry="98" fill="#0098C3"/>
+  <ellipse cx="157" cy="198" rx="140" ry="98" fill="#0098C3"/>
+  <ellipse cx="363" cy="198" rx="140" ry="98" fill="#0098C3"/>
+  <polygon points="130,250 95,362 192,262" fill="#0098C3"/>
+
+  <!-- Text content -->
+  <g fill="white">
+    <text x="260" y="88" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-style="italic">Adds</text>
+    <text x="260" y="138" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-style="italic">voices to</text>
+    <text x="252" y="210" text-anchor="middle" font-family="'Arial Narrow', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="48" font-weight="bold" letter-spacing="0.5">INTELLIVISION</text>
+    <text x="420" y="192" font-family="Arial, sans-serif" font-size="16">®</text>
+    <text x="260" y="255" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="29" font-style="italic">Intelligent Television</text>
+  </g>
+</svg>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" width="520" height="420">
+  <title>IT TALKS! Adds voices to Intellivision - Speech Bubble</title>
+
+  <!-- Same triple-lobe cloud shape, cream/tan fill, no heavy outline -->
+  <!-- Subtle shadow/outline -->
+  <ellipse cx="260" cy="108" rx="152" ry="104" fill="#C8B898" opacity="0.4"/>
+  <ellipse cx="157" cy="192" rx="145" ry="104" fill="#C8B898" opacity="0.4"/>
+  <ellipse cx="363" cy="192" rx="145" ry="104" fill="#C8B898" opacity="0.4"/>
+
+  <!-- Cream fill -->
+  <ellipse cx="260" cy="105" rx="150" ry="102" fill="#EEDCC0"/>
+  <ellipse cx="157" cy="190" rx="143" ry="102" fill="#EEDCC0"/>
+  <ellipse cx="363" cy="190" rx="143" ry="102" fill="#EEDCC0"/>
+  <!-- Tail pointing bottom-right -->
+  <polygon points="340,258 400,370 410,245" fill="#EEDCC0"/>
+
+  <!-- Text content -->
+  <g>
+    <!-- "IT" - large bold red -->
+    <text x="260" y="120" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="72" font-weight="900" fill="#D42E2E">IT</text>
+    <!-- "TALKS!" - large bold red -->
+    <text x="260" y="205" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="82" font-weight="900" fill="#D42E2E">TALKS!</text>
+    <!-- "Adds voices to Intellivision®" - smaller dark text -->
+    <text x="260" y="258" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="26" font-weight="500" fill="#3A2A1A">Adds voices to Intellivision</text>
+    <text x="418" y="245" font-family="Arial, sans-serif" font-size="12" fill="#3A2A1A">®</text>
+  </g>
+</svg>

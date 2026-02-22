@@ -10,6 +10,26 @@ import { DraggableArtwork } from './draggableArtwork.js';
 import { FontManager } from './fontManager.js';
 
 export class BoxArtEditor {
+    // Cache for fetched badge SVG text, keyed by badge filename stem
+    static _badgeCache = {};
+
+    // Badges that support custom text (no built-in text content)
+    static SHAPE_ONLY_BADGES = [
+        'bubble-shape-teal', 'bubble-shape-white', 'bubble-shape-cream',
+        'bubble-shape-cream-border', 'bubble-shape-outline'
+    ];
+
+    // Natural fill color for each badge style (used for custom fill override)
+    static BADGE_FILL_COLORS = {
+        'bubble-shape-teal':         '#0098c3',
+        'bubble-shape-white':        '#ffffff',
+        'bubble-shape-cream':        '#eedcc0',
+        'bubble-shape-cream-border': '#eedcc0',
+        'bubble-shape-outline':      '#ffffff', // inner white fill (named "white" in SVG)
+        'bubble-adds-voices-full':   '#0098c3',
+        'bubble-it-talks-full':      '#eedcc0',
+    };
+
     /**
      * Initialize the box art editor
      */
@@ -1420,18 +1440,239 @@ export class BoxArtEditor {
     }
 
     /**
-     * Toggle voice badge
+     * Toggle voice badge visibility and controls panel
      */
-    static toggleVoiceBadge() {
+    static async toggleVoiceBadge() {
         const enabled = document.getElementById('boxart-voice-badge')?.checked || false;
-        const svgDoc = appState.getBoxArtSvgDoc();
-        const badge = svgDoc?.querySelector('#voice-badge-area');
 
-        if (badge) {
-            badge.style.display = enabled ? '' : 'none';
+        const controls = document.getElementById('voice-badge-controls');
+        if (controls) controls.style.display = enabled ? '' : 'none';
+
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const badgeGroup = svgDoc?.querySelector('#voice-badge-group');
+        if (!badgeGroup) return;
+
+        if (!enabled) {
+            badgeGroup.style.display = 'none';
+            badgeGroup.innerHTML = '';
+            BoxArtEditor.refreshPreview();
+            return;
         }
 
+        await BoxArtEditor.updateVoiceBadge();
+    }
+
+    /**
+     * Fetch and render the selected IntelliVoice badge SVG into the badge group
+     */
+    static async updateVoiceBadge() {
+        const enabled = document.getElementById('boxart-voice-badge')?.checked || false;
+        if (!enabled) return;
+
+        const style = document.getElementById('boxart-voice-badge-style')?.value || 'bubble-shape-teal';
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const badgeGroup = svgDoc?.querySelector('#voice-badge-group');
+        if (!badgeGroup) return;
+
+        try {
+            let svgText;
+            if (BoxArtEditor._badgeCache[style]) {
+                svgText = BoxArtEditor._badgeCache[style];
+            } else {
+                const response = await fetch(`/get_badge/${encodeURIComponent(style)}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                svgText = data.svg;
+                BoxArtEditor._badgeCache[style] = svgText;
+            }
+
+            // Parse the badge SVG
+            const parser = new DOMParser();
+            const badgeSvg = parser.parseFromString(svgText, 'image/svg+xml');
+            const badgeSvgEl = badgeSvg.documentElement;
+
+            // Show/hide text controls based on whether this is a shape-only badge
+            const textControls = document.getElementById('voice-badge-text-controls');
+            if (textControls) {
+                textControls.style.display = BoxArtEditor.SHAPE_ONLY_BADGES.includes(style) ? '' : 'none';
+            }
+
+            // Scale: slider 20-150; actual SVG transform scale = sliderValue / 500
+            // At default 60: scale=0.12, badge width = 520*0.12 = 62 units in box art coords
+            const x = parseFloat(document.getElementById('boxart-voice-badge-x')?.value) || 115;
+            const y = parseFloat(document.getElementById('boxart-voice-badge-y')?.value) || 15;
+            const scaleSlider = parseFloat(document.getElementById('boxart-voice-badge-scale')?.value) || 60;
+            const scale = scaleSlider / 500;
+            const flipped = document.getElementById('boxart-voice-badge-flip')?.checked || false;
+            const flipSuffix = flipped ? ' translate(520, 0) scale(-1, 1)' : '';
+
+            // Populate the badge group
+            badgeGroup.innerHTML = '';
+            badgeGroup.style.display = '';
+
+            const inner = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'g');
+            inner.setAttribute('id', 'voice-badge-inner');
+            inner.setAttribute('transform', `translate(${x}, ${y}) scale(${scale.toFixed(6)})${flipSuffix}`);
+
+            // Import all element children from the badge SVG (skip comments, defs title etc.)
+            Array.from(badgeSvgEl.childNodes).forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    inner.appendChild(svgDoc.importNode(node, true));
+                }
+            });
+
+            badgeGroup.appendChild(inner);
+            BoxArtEditor.applyBadgeColors(badgeGroup);
+            BoxArtEditor.applyBadgeText(svgDoc, inner);
+            BoxArtEditor.refreshPreview();
+        } catch (err) {
+            console.error('Failed to load IntelliVoice badge:', err);
+            BoxArtEditor.showStatus('Failed to load badge', 'error');
+        }
+    }
+
+    /**
+     * Apply outline and fill color overrides to the already-rendered badge group.
+     * @param {Element} badgeGroup - The #voice-badge-group SVG element
+     */
+    static applyBadgeColors(badgeGroup) {
+        const style = document.getElementById('boxart-voice-badge-style')?.value || 'bubble-shape-teal';
+
+        // --- Outline color ---
+        const borderEnabled = document.getElementById('boxart-voice-badge-border')?.checked ?? true;
+        const borderColor = document.getElementById('boxart-voice-badge-border-color')?.value || '#CC2233';
+        const outlineTarget = borderEnabled ? borderColor : 'none';
+
+        badgeGroup.querySelectorAll('*').forEach(el => {
+            const fill = el.getAttribute('fill');
+            if (fill && fill.toLowerCase() === '#cc2233') {
+                el.setAttribute('fill', outlineTarget);
+            }
+            const stroke = el.getAttribute('stroke');
+            if (stroke && stroke.toLowerCase() === '#cc2233') {
+                el.setAttribute('stroke', outlineTarget);
+            }
+        });
+
+        // --- Custom bubble fill color ---
+        const fillCustom = document.getElementById('boxart-voice-badge-fill-custom')?.checked || false;
+        if (fillCustom) {
+            const fillColor = document.getElementById('boxart-voice-badge-fill-color')?.value || '#FFFFFF';
+            const naturalFill = BoxArtEditor.BADGE_FILL_COLORS[style];
+            if (naturalFill) {
+                badgeGroup.querySelectorAll('*').forEach(el => {
+                    const fill = el.getAttribute('fill');
+                    if (fill) {
+                        // Normalize named "white" to #ffffff for comparison
+                        const normalized = fill.toLowerCase() === 'white' ? '#ffffff' : fill.toLowerCase();
+                        if (normalized === naturalFill) {
+                            el.setAttribute('fill', fillColor);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Update badge outline/fill colors without re-fetching the SVG
+     */
+    static updateVoiceBadgeColors() {
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const badgeGroup = svgDoc?.querySelector('#voice-badge-group');
+        if (!badgeGroup) return;
+
+        BoxArtEditor.applyBadgeColors(badgeGroup);
         BoxArtEditor.refreshPreview();
+    }
+
+    /**
+     * Render custom text lines into the badge inner group.
+     * Only applies to shape-only badges; text badges have built-in text.
+     * @param {Document} svgDoc - The box art SVG document
+     * @param {Element} inner   - The #voice-badge-inner group element
+     */
+    static applyBadgeText(svgDoc, inner) {
+        const style = document.getElementById('boxart-voice-badge-style')?.value || '';
+        if (!BoxArtEditor.SHAPE_ONLY_BADGES.includes(style)) return;
+
+        const rawText = document.getElementById('boxart-voice-badge-text')?.value || '';
+        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+        if (!lines.length) return;
+
+        const fontSize = parseFloat(document.getElementById('boxart-voice-badge-text-size')?.value) || 44;
+        const textColor = document.getElementById('boxart-voice-badge-text-color')?.value || '#FFFFFF';
+        const bold   = document.getElementById('boxart-voice-badge-text-bold')?.checked  || false;
+        const italic = document.getElementById('boxart-voice-badge-text-italic')?.checked || false;
+
+        // Center the text block vertically in the bubble lobes area (badge coords ~50–270)
+        const lineHeight = fontSize * 1.3;
+        const totalHeight = (lines.length - 1) * lineHeight;
+        const startY = 155 - totalHeight / 2 + fontSize * 0.35;
+
+        lines.forEach((line, i) => {
+            const textEl = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textEl.setAttribute('x', '260');
+            textEl.setAttribute('y', String(Math.round(startY + i * lineHeight)));
+            textEl.setAttribute('text-anchor', 'middle');
+            textEl.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+            textEl.setAttribute('font-size', String(fontSize));
+            textEl.setAttribute('fill', textColor);
+            textEl.setAttribute('class', 'badge-custom-text');
+            if (bold)   textEl.setAttribute('font-weight', 'bold');
+            if (italic) textEl.setAttribute('font-style', 'italic');
+            textEl.textContent = line;
+            inner.appendChild(textEl);
+        });
+    }
+
+    /**
+     * Update custom badge text without re-fetching the SVG
+     */
+    static updateVoiceBadgeText() {
+        // Update size display
+        const size = document.getElementById('boxart-voice-badge-text-size')?.value;
+        const sizeDisplay = document.getElementById('boxart-voice-badge-text-size-value');
+        if (sizeDisplay && size) sizeDisplay.textContent = size;
+
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const inner = svgDoc?.querySelector('#voice-badge-inner');
+        if (!inner) return;
+
+        // Remove previous custom text, re-render
+        inner.querySelectorAll('.badge-custom-text').forEach(el => el.remove());
+        BoxArtEditor.applyBadgeText(svgDoc, inner);
+        BoxArtEditor.refreshPreview();
+    }
+
+    /**
+     * Update badge position/scale/flip without re-fetching the SVG
+     */
+    static updateVoiceBadgePosition() {
+        const x = parseFloat(document.getElementById('boxart-voice-badge-x')?.value) || 115;
+        const y = parseFloat(document.getElementById('boxart-voice-badge-y')?.value) || 15;
+        const scaleSlider = parseFloat(document.getElementById('boxart-voice-badge-scale')?.value) || 60;
+        const scale = scaleSlider / 500;
+        const flipped = document.getElementById('boxart-voice-badge-flip')?.checked || false;
+        const flipSuffix = flipped ? ' translate(520, 0) scale(-1, 1)' : '';
+
+        // Update display spans
+        const xVal = document.getElementById('boxart-voice-badge-x-value');
+        const yVal = document.getElementById('boxart-voice-badge-y-value');
+        const scaleVal = document.getElementById('boxart-voice-badge-scale-value');
+        if (xVal) xVal.textContent = x;
+        if (yVal) yVal.textContent = y;
+        if (scaleVal) scaleVal.textContent = scaleSlider;
+
+        // Update transform on the already-rendered inner group if present
+        const svgDoc = appState.getBoxArtSvgDoc();
+        const inner = svgDoc?.querySelector('#voice-badge-inner');
+        if (inner) {
+            inner.setAttribute('transform', `translate(${x}, ${y}) scale(${scale.toFixed(6)})${flipSuffix}`);
+            BoxArtEditor.refreshPreview();
+        } else {
+            BoxArtEditor.updateVoiceBadge();
+        }
     }
 
     /**
@@ -1516,6 +1757,22 @@ export class BoxArtEditor {
 
         // Badge controls
         BoxArtEditor.setCheckbox('boxart-voice-badge', false);
+        BoxArtEditor.setSelectValue('boxart-voice-badge-style', 'bubble-shape-teal');
+        BoxArtEditor.setInputValue('boxart-voice-badge-x', 115);
+        BoxArtEditor.setInputValue('boxart-voice-badge-y', 15);
+        BoxArtEditor.setInputValue('boxart-voice-badge-scale', 60);
+        BoxArtEditor.setCheckbox('boxart-voice-badge-flip', false);
+        BoxArtEditor.setCheckbox('boxart-voice-badge-border', true);
+        BoxArtEditor.setInputValue('boxart-voice-badge-border-color', '#CC2233');
+        BoxArtEditor.setCheckbox('boxart-voice-badge-fill-custom', false);
+        BoxArtEditor.setInputValue('boxart-voice-badge-fill-color', '#0098C3');
+        BoxArtEditor.setInputValue('boxart-voice-badge-text', '');
+        BoxArtEditor.setInputValue('boxart-voice-badge-text-size', 44);
+        BoxArtEditor.setInputValue('boxart-voice-badge-text-color', '#FFFFFF');
+        BoxArtEditor.setCheckbox('boxart-voice-badge-text-bold', false);
+        BoxArtEditor.setCheckbox('boxart-voice-badge-text-italic', false);
+        const voiceBadgeControls = document.getElementById('voice-badge-controls');
+        if (voiceBadgeControls) voiceBadgeControls.style.display = 'none';
         BoxArtEditor.setInputValue('boxart-player-count', '');
 
         // Re-initialize
@@ -1653,6 +1910,20 @@ export class BoxArtEditor {
             // Badges
             badges: {
                 voiceBadge: document.getElementById('boxart-voice-badge')?.checked || false,
+                voiceBadgeStyle: document.getElementById('boxart-voice-badge-style')?.value || 'bubble-shape-teal',
+                voiceBadgeX: parseFloat(document.getElementById('boxart-voice-badge-x')?.value) || 115,
+                voiceBadgeY: parseFloat(document.getElementById('boxart-voice-badge-y')?.value) || 15,
+                voiceBadgeScale: parseFloat(document.getElementById('boxart-voice-badge-scale')?.value) || 60,
+                voiceBadgeFlip: document.getElementById('boxart-voice-badge-flip')?.checked || false,
+                voiceBadgeBorder: document.getElementById('boxart-voice-badge-border')?.checked ?? true,
+                voiceBadgeBorderColor: document.getElementById('boxart-voice-badge-border-color')?.value || '#CC2233',
+                voiceBadgeFillCustom: document.getElementById('boxart-voice-badge-fill-custom')?.checked || false,
+                voiceBadgeFillColor: document.getElementById('boxart-voice-badge-fill-color')?.value || '#0098C3',
+                voiceBadgeText: document.getElementById('boxart-voice-badge-text')?.value || '',
+                voiceBadgeTextSize: parseFloat(document.getElementById('boxart-voice-badge-text-size')?.value) || 44,
+                voiceBadgeTextColor: document.getElementById('boxart-voice-badge-text-color')?.value || '#FFFFFF',
+                voiceBadgeTextBold: document.getElementById('boxart-voice-badge-text-bold')?.checked || false,
+                voiceBadgeTextItalic: document.getElementById('boxart-voice-badge-text-italic')?.checked || false,
                 playerCount: document.getElementById('boxart-player-count')?.value || ''
             },
 
@@ -1794,6 +2065,22 @@ export class BoxArtEditor {
         // Badge settings
         if (config.badges) {
             BoxArtEditor.setCheckbox('boxart-voice-badge', config.badges.voiceBadge);
+            BoxArtEditor.setSelectValue('boxart-voice-badge-style', config.badges.voiceBadgeStyle || 'bubble-shape-teal');
+            BoxArtEditor.setInputValue('boxart-voice-badge-x', config.badges.voiceBadgeX ?? 115);
+            BoxArtEditor.setInputValue('boxart-voice-badge-y', config.badges.voiceBadgeY ?? 15);
+            BoxArtEditor.setInputValue('boxart-voice-badge-scale', config.badges.voiceBadgeScale ?? 60);
+            BoxArtEditor.setCheckbox('boxart-voice-badge-flip', config.badges.voiceBadgeFlip || false);
+            BoxArtEditor.setCheckbox('boxart-voice-badge-border', config.badges.voiceBadgeBorder ?? true);
+            BoxArtEditor.setInputValue('boxart-voice-badge-border-color', config.badges.voiceBadgeBorderColor || '#CC2233');
+            BoxArtEditor.setCheckbox('boxart-voice-badge-fill-custom', config.badges.voiceBadgeFillCustom || false);
+            BoxArtEditor.setInputValue('boxart-voice-badge-fill-color', config.badges.voiceBadgeFillColor || '#0098C3');
+            BoxArtEditor.setInputValue('boxart-voice-badge-text', config.badges.voiceBadgeText || '');
+            BoxArtEditor.setInputValue('boxart-voice-badge-text-size', config.badges.voiceBadgeTextSize ?? 44);
+            BoxArtEditor.setInputValue('boxart-voice-badge-text-color', config.badges.voiceBadgeTextColor || '#FFFFFF');
+            BoxArtEditor.setCheckbox('boxart-voice-badge-text-bold', config.badges.voiceBadgeTextBold || false);
+            BoxArtEditor.setCheckbox('boxart-voice-badge-text-italic', config.badges.voiceBadgeTextItalic || false);
+            const controls = document.getElementById('voice-badge-controls');
+            if (controls) controls.style.display = config.badges.voiceBadge ? '' : 'none';
             BoxArtEditor.setInputValue('boxart-player-count', config.badges.playerCount);
         }
 
@@ -1898,7 +2185,7 @@ export class BoxArtEditor {
         BoxArtEditor.updateVignette();
 
         // Badge updates
-        BoxArtEditor.toggleVoiceBadge();
+        await BoxArtEditor.toggleVoiceBadge();
         BoxArtEditor.updatePlayerCount();
 
         // Update display values
@@ -2264,9 +2551,7 @@ export class BoxArtEditor {
                 const titleArea = exportCopy.querySelector('#title-area');
                 if (titleArea) titleArea.remove();
 
-                // Remove badge area placeholders
-                const voiceBadge = exportCopy.querySelector('#voice-badge-area');
-                if (voiceBadge) voiceBadge.remove();
+                // Remove player badge placeholder (voice badge group is real content, keep it)
                 const playerBadge = exportCopy.querySelector('#player-badge-area');
                 if (playerBadge) playerBadge.remove();
 

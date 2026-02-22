@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" width="520" height="420">
+  <title>IntelliVoice Speech Bubble Shape - Cream (IT TALKS style)</title>
+  <ellipse cx="260" cy="105" rx="150" ry="102" fill="#EEDCC0"/>
+  <ellipse cx="157" cy="190" rx="143" ry="102" fill="#EEDCC0"/>
+  <ellipse cx="363" cy="190" rx="143" ry="102" fill="#EEDCC0"/>
+  <polygon points="340,258 400,370 410,245" fill="#EEDCC0"/>
+</svg>

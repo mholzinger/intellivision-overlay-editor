@@ -365,7 +365,8 @@ body.artwork-dragging {
 /* Draggable artwork cursor - Box Art Editor */
 #boxart-svg-preview svg #boxart-main-artwork,
 #boxart-svg-preview svg #boxart-vignette-artwork,
-#boxart-svg-preview svg #vignette-artwork-group image {
+#boxart-svg-preview svg #vignette-artwork-group image,
+#boxart-svg-preview svg #voice-badge-group * {
     cursor: move;
 }
 
