@@ -244,11 +244,12 @@ export class ActionButtons {
         const topX = UIHelpers.getNumericValue('top-arrows-x', 'top-arrows-x-value', 1, 0);
         const topY = UIHelpers.getNumericValue('top-arrows-y', 'top-arrows-y-value', 1, 0);
 
-        // Apply to top-left and top-right arrows
+        // Apply to top-left and top-right arrows (mirror X offset so arrows move symmetrically)
         ['top-left-arrow', 'top-right-arrow'].forEach(arrowId => {
             const arrow = svgDoc.querySelector(`#${arrowId}`);
             if (arrow) {
-                SVGHelpers.applyScaleTransform(arrow, ARROW_CENTERS[arrowId], topScale, topX, topY, topVisible);
+                const mirroredX = arrowId === 'top-right-arrow' ? -topX : topX;
+                SVGHelpers.applyScaleTransform(arrow, ARROW_CENTERS[arrowId], topScale, mirroredX, topY, topVisible);
             }
         });
 
