@@ -173,20 +173,60 @@
    ================================================ */
 
 .sprite-editor-layout {
-    display: grid;
-    grid-template-columns: 2fr 180px 1fr;
-    gap: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0;
     padding: 20px;
+    padding-right: 20px;
     min-height: calc(100vh - 200px);
     background: var(--gray-50);
 }
 
 /* Canvas Panel */
 .sprite-canvas-panel {
+    flex: 0 0 auto;
+    width: 540px;
+    min-width: 220px;
     background: var(--white);
     border-radius: var(--radius-lg);
     padding: 16px;
     box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* Drag handle between canvas and list/output panels */
+.sprite-panel-divider {
+    flex: 0 0 7px;
+    cursor: col-resize;
+    background: var(--gray-200);
+    border-radius: 3px;
+    margin: 0 6px;
+    position: relative;
+    transition: background 0.15s;
+    align-self: stretch;
+}
+
+.sprite-panel-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 40px;
+    background: var(--gray-400);
+    border-radius: 2px;
+}
+
+.sprite-panel-divider:hover,
+.sprite-panel-divider.dragging {
+    background: var(--primary-color);
+}
+
+.sprite-panel-divider:hover::after,
+.sprite-panel-divider.dragging::after {
+    background: white;
 }
 
 .sprite-canvas-header {
@@ -354,6 +394,10 @@
 
 /* Sprite List Panel */
 .sprite-list-panel {
+    flex: 0 0 180px;
+    min-width: 140px;
+    margin-left: 0;
+    margin-right: 20px;
     background: var(--white);
     border-radius: var(--radius-lg);
     padding: 16px;
@@ -447,6 +491,8 @@
 
 /* Output Panel */
 .sprite-output-panel {
+    flex: 1 1 0;
+    min-width: 180px;
     background: var(--white);
     border-radius: var(--radius-lg);
     padding: 16px;
@@ -685,12 +731,23 @@
 /* Responsive adjustments */
 @media (max-width: 1200px) {
     .sprite-editor-layout {
-        grid-template-columns: 1fr;
+        flex-direction: column;
     }
 
-    .sprite-canvas-panel,
+    .sprite-canvas-panel {
+        width: 100% !important;
+        flex: 0 0 auto;
+    }
+
+    .sprite-panel-divider {
+        display: none;
+    }
+
     .sprite-list-panel,
     .sprite-output-panel {
+        flex: 0 0 auto;
+        min-width: 0;
+        margin-right: 0;
         max-width: 100%;
     }
 }

@@ -50,6 +50,7 @@ export class SpriteEditor {
         this.currentSpriteIndex = 0;
 
         this.setupEventListeners();
+        this._initPanelResizer();
 
         this.renderPalette();
         this.renderGrid();
@@ -57,6 +58,47 @@ export class SpriteEditor {
         this.updateSpriteList();
         this.updateOutput();
         this.updateSizeSelector();
+    }
+
+    /**
+     * Set up the drag-to-resize handle between the canvas panel and the
+     * list/output panels.
+     */
+    static _initPanelResizer() {
+        const divider   = document.querySelector('.sprite-panel-divider');
+        const canvasPanel = document.querySelector('.sprite-canvas-panel');
+        const layout    = document.querySelector('.sprite-editor-layout');
+        if (!divider || !canvasPanel || !layout) return;
+
+        let isDragging = false;
+        let startX     = 0;
+        let startWidth = 0;
+
+        divider.addEventListener('mousedown', e => {
+            isDragging  = true;
+            startX      = e.clientX;
+            startWidth  = canvasPanel.getBoundingClientRect().width;
+            divider.classList.add('dragging');
+            document.body.style.cursor     = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const delta    = e.clientX - startX;
+            const maxWidth = layout.clientWidth - 420; // keep list+output visible
+            const newWidth = Math.max(220, Math.min(startWidth + delta, maxWidth));
+            canvasPanel.style.width = newWidth + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            divider.classList.remove('dragging');
+            document.body.style.cursor     = '';
+            document.body.style.userSelect = '';
+        });
     }
 
     /**
