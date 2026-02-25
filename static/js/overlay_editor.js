@@ -23,6 +23,7 @@ import { ImageProcessor } from './modules/imageProcessor.js';
 import { BoxArtEditor } from './modules/boxArtEditor.js';
 import { SpriteEditor } from './modules/spriteEditor.js';
 import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
+import { VoiceEditor } from './modules/voiceEditor.js';
 
 /**
  * Initialize the application
@@ -489,6 +490,12 @@ window.switchEditorTab = (tabName) => {
         DSOverlayEditor.init();
         window._dsEditorInitialized = true;
     }
+
+    // Initialize IntelliVoice builder on first switch to that tab
+    if (tabName === 'voice' && !window._voiceEditorInitialized) {
+        VoiceEditor.init();
+        window._voiceEditorInitialized = true;
+    }
 };
 
 // Box Art Editor functions
@@ -600,6 +607,18 @@ window.toggleDSHotspot      = (idx) => DSOverlayEditor.toggleHotspot(idx);
 window.updateDSHotspot      = (idx, field, val) => DSOverlayEditor.updateCoord(idx, field, val);
 window.exportDSOvl          = () => DSOverlayEditor.downloadOvl();
 window.exportDSOvlWithImage = () => DSOverlayEditor.exportWithImage();
+
+// IntelliVoice Builder functions
+window.voicePlay        = () => VoiceEditor.playSequence();
+window.voiceStop        = () => VoiceEditor.stopPlayback();
+window.voiceCopy        = () => VoiceEditor.copyOutput();
+window.voiceAddWord     = () => VoiceEditor.submitWord();
+window.voiceWordKey     = (e) => VoiceEditor.handleWordInput(e);
+window.voiceRemoveAt    = (pos) => VoiceEditor.removeAllophone(pos);
+window.voiceClear       = () => VoiceEditor.clearSequence();
+window.voiceSetChannel  = (ch) => VoiceEditor.setChannel(ch);
+window.voiceDiagnose    = () => VoiceEditor.runDiagnostics();
+window.voiceDiagnoseAll = () => VoiceEditor.runDiagnostics([...Array(64).keys()]);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

@@ -1522,3 +1522,179 @@ code {
     .intv-primer-body { padding: 16px; }
     .intv-primer-header { padding: 16px; }
 }
+
+/* ============================================================
+   IntelliVoice Builder
+   ============================================================ */
+
+.voice-editor-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* ── Top row: word lookup + sequencer ── */
+.voice-top-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.voice-word-panel {
+    flex: 0 0 220px;
+}
+.voice-word-row {
+    display: flex;
+    gap: 6px;
+}
+.voice-hint {
+    font-size: 11px;
+    color: var(--gray-500, #6b7280);
+    margin: 4px 0 0;
+}
+.voice-hint-inline {
+    font-size: 11px;
+    font-weight: normal;
+    color: var(--gray-500, #6b7280);
+}
+
+.voice-sequencer-panel {
+    flex: 1;
+    min-width: 0;
+}
+.voice-sequencer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+.voice-sequencer-header .form-label {
+    margin: 0;
+}
+.voice-sequencer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 48px;
+    padding: 8px;
+    background: var(--gray-50, #f9fafb);
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    align-content: flex-start;
+}
+.voice-seq-empty {
+    color: var(--gray-400, #9ca3af);
+    font-size: 12px;
+    align-self: center;
+}
+
+/* ── Allophone chips in sequencer ── */
+.voice-chip {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: grab;
+    user-select: none;
+    border: 1px solid transparent;
+    transition: opacity 0.15s;
+}
+.voice-chip:active { cursor: grabbing; }
+.voice-chip.dragging { opacity: 0.4; }
+.voice-chip.drag-over { outline: 2px dashed #3b82f6; outline-offset: 2px; }
+
+.voice-chip-pause     { background: #e0e7ff; color: #3730a3; border-color: #a5b4fc; }
+.voice-chip-vowel     { background: #dcfce7; color: #14532d; border-color: #86efac; }
+.voice-chip-consonant { background: #fef9c3; color: #713f12; border-color: #fde047; }
+.voice-chip-special   { background: #fce7f3; color: #831843; border-color: #f9a8d4; }
+
+.voice-chip-code { letter-spacing: 0.5px; }
+.voice-chip-del {
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 14px;
+    color: inherit;
+    opacity: 0.6;
+}
+.voice-chip-del:hover { opacity: 1; }
+
+/* ── Channel selector ── */
+.voice-channel-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+}
+.voice-channel-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+.voice-status-msg {
+    font-size: 12px;
+    color: #0891b2;
+    font-style: italic;
+    margin-left: 8px;
+}
+
+/* ── Library ── */
+.voice-library-panel {}
+.voice-library {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.voice-lib-group {}
+.voice-lib-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-500, #6b7280);
+    margin-bottom: 4px;
+}
+.voice-lib-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.voice-lib-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: filter 0.1s;
+}
+.voice-lib-btn:hover { filter: brightness(0.9); }
+.voice-lib-btn:active { filter: brightness(0.8); }
+
+.voice-lib-btn-pause     { background: #e0e7ff; color: #3730a3; border-color: #a5b4fc; }
+.voice-lib-btn-vowel     { background: #dcfce7; color: #14532d; border-color: #86efac; }
+.voice-lib-btn-consonant { background: #fef9c3; color: #713f12; border-color: #fde047; }
+.voice-lib-btn-special   { background: #fce7f3; color: #831843; border-color: #f9a8d4; }
+
+/* ── Output ── */
+.voice-output-panel {}
+.voice-output {
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px 14px;
+    background: var(--gray-50, #f9fafb);
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    color: #1e3a5f;
+    word-break: break-all;
+}

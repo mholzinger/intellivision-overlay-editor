@@ -34,6 +34,9 @@
                 <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')">
                     🕹️ DS Overlay <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
+                <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')">
+                    🔊 IntelliVoice <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -100,6 +103,13 @@
                 <button class="btn btn-secondary btn-sm" onclick="loadDSTemplate()">📋 Load Template</button>
                 <button class="btn btn-success btn-sm" onclick="exportDSOvl()">⬇️ Export .OVL</button>
                 <button class="btn btn-success btn-sm" onclick="exportDSOvlWithImage()">🖼️ Export .OVL + Image</button>
+            </div>
+
+            <!-- IntelliVoice Builder Action Buttons -->
+            <div id="voice-toolbar" class="editor-toolbar">
+                <button class="btn btn-success btn-sm" id="voice-play-btn" onclick="voicePlay()">▶ Play</button>
+                <button class="btn btn-secondary btn-sm" id="voice-stop-btn" onclick="voiceStop()" disabled>■ Stop</button>
+                <button class="btn btn-secondary btn-sm" onclick="voiceCopy()">📋 Copy VOICE</button>
             </div>
         </div>
 
@@ -2412,6 +2422,72 @@
 
             </div><!-- end ds-editor-layout -->
         </div><!-- End ds-editor-content -->
+
+        <!-- ============================================================ -->
+        <!-- INTELLIVOICE BUILDER                                          -->
+        <!-- ============================================================ -->
+        <div id="voice-editor-content" class="editor-content">
+            <div class="voice-editor-layout">
+
+                <!-- ── Top row: word lookup + sequencer ── -->
+                <div class="voice-top-row">
+
+                    <!-- Word lookup -->
+                    <div class="voice-word-panel">
+                        <label class="form-label">Word lookup</label>
+                        <div class="voice-word-row">
+                            <input type="text" id="voice-word-input" class="form-control"
+                                   placeholder="e.g. hello" onkeydown="voiceWordKey(event)">
+                            <button class="btn btn-primary btn-sm" onclick="voiceAddWord()">Add Word</button>
+                        </div>
+                        <p class="voice-hint">Try: hello, hi, go, wave, attack, score, one, two, fire…</p>
+                    </div>
+
+                    <!-- Sequencer strip -->
+                    <div class="voice-sequencer-panel">
+                        <div class="voice-sequencer-header">
+                            <label class="form-label">Sequence</label>
+                            <button class="btn btn-secondary btn-sm" onclick="voiceClear()">Clear</button>
+                        </div>
+                        <div id="voice-sequencer" class="voice-sequencer">
+                            <span class="voice-seq-empty">Click allophones below to build a sequence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Status row ── -->
+                <div class="voice-channel-row">
+                    <span id="voice-status" class="voice-status-msg"></span>
+                </div>
+
+                <!-- ── Allophone library ── -->
+                <div class="voice-library-panel">
+                    <label class="form-label">Allophone Library
+                        <span class="voice-hint-inline">(click to add · double-click to preview)</span>
+                    </label>
+                    <div id="voice-library" class="voice-library"></div>
+                </div>
+
+                <!-- ── Output ── -->
+                <div class="voice-output-panel">
+                    <label class="form-label">IntyBASIC VOICE Data
+                        <span class="voice-hint-inline">(paste into your .bas data section)</span>
+                    </label>
+                    <div id="voice-output" class="voice-output">(sequence is empty — click allophones to build)</div>
+                </div>
+
+                <!-- ── Diagnostics ── -->
+                <div class="voice-output-panel">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                        <label class="form-label" style="margin:0;">SP0256 Execution Trace</label>
+                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnose()" title="Trace SP0256 microsequencer for each allophone in the sequence">Diagnose</button>
+                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnoseAll()" title="Trace all 64 allophones">Trace All</button>
+                    </div>
+                    <pre id="voice-diag" style="display:none;font-size:11px;background:#1a1a2e;color:#a0f0a0;padding:8px;border-radius:4px;max-height:300px;overflow-y:auto;white-space:pre;margin:0;"></pre>
+                </div>
+
+            </div><!-- end voice-editor-layout -->
+        </div><!-- End voice-editor-content -->
 
     </div>
 
