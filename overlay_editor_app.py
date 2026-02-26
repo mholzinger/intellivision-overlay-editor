@@ -860,6 +860,18 @@ def get_config():
     return jsonify(Config.to_dict()), 200
 
 
+# ── SPA tab routing ──────────────────────────────────────────────────────────
+# Serves the same page for direct tab URLs: /overlay /boxart /sprite /ds /voice
+# Must come after all real API routes so it doesn't shadow them.
+_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice'}
+
+@app.route('/<tab>')
+def tab_route(tab):
+    if tab in _TAB_SLUGS:
+        return render_template('overlay_editor.html')
+    return jsonify({'error': 'not found'}), 404
+
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     templates_dir = Path(__file__).parent / 'templates'

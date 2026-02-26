@@ -456,8 +456,13 @@ window.updateAllRowDescriptions = () => RowDescriptions.updateAllRowDescriptions
 window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 window.ImageProcessor = ImageProcessor;
 
-// Tab switching function
-window.switchEditorTab = (tabName) => {
+// Known tab slugs and their canonical URL paths.
+const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice']);
+
+// Tab switching — call with pushState=false when restoring from history.
+window.switchEditorTab = (tabName, pushState = true) => {
+    if (!_TAB_SLUGS.has(tabName)) tabName = 'overlay';
+
     // Update tab buttons
     document.querySelectorAll('.editor-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -496,7 +501,26 @@ window.switchEditorTab = (tabName) => {
         VoiceEditor.init();
         window._voiceEditorInitialized = true;
     }
+
+    // Sync the browser URL.
+    if (pushState) {
+        const url = tabName === 'overlay' ? '/' : `/${tabName}`;
+        history.pushState({ tab: tabName }, '', url);
+    }
 };
+
+// On page load: activate the tab matching the URL path, then set initial history state.
+{
+    const slug = window.location.pathname.replace(/^\//, '') || 'overlay';
+    const initial = _TAB_SLUGS.has(slug) ? slug : 'overlay';
+    switchEditorTab(initial, false);
+    history.replaceState({ tab: initial }, '', window.location.pathname || '/');
+}
+
+// Handle browser back / forward.
+window.addEventListener('popstate', (e) => {
+    switchEditorTab(e.state?.tab ?? 'overlay', false);
+});
 
 // Box Art Editor functions
 window.updateBoxArtBrand = () => BoxArtEditor.updateBrand();
