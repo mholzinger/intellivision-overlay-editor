@@ -1545,11 +1545,67 @@ code {
 }
 
 .voice-word-panel {
-    flex: 0 0 220px;
+    flex: 0 0 260px;
 }
 .voice-word-row {
     display: flex;
     gap: 6px;
+}
+
+/* ── Paste VOICE data ── */
+.voice-paste-textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+    margin-top: 4px;
+}
+.voice-paste-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* ── Custom Dictionary ── */
+.voice-dict-panel {
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--gray-50, #f9fafb);
+}
+.voice-dict-summary {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.voice-dict-summary::-webkit-details-marker { display: none; }
+.voice-dict-summary::before {
+    content: '▶';
+    font-size: 10px;
+    transition: transform 0.15s;
+}
+details[open] .voice-dict-summary::before {
+    transform: rotate(90deg);
+}
+.voice-dict-body {
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--gray-200, #e5e7eb);
+}
+.voice-dict-textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+.voice-dict-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
 }
 .voice-hint {
     font-size: 11px;

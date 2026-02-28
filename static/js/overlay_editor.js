@@ -633,16 +633,22 @@ window.exportDSOvl          = () => DSOverlayEditor.downloadOvl();
 window.exportDSOvlWithImage = () => DSOverlayEditor.exportWithImage();
 
 // IntelliVoice Builder functions
-window.voicePlay        = () => VoiceEditor.playSequence();
-window.voiceStop        = () => VoiceEditor.stopPlayback();
-window.voiceCopy        = () => VoiceEditor.copyOutput();
-window.voiceAddWord     = () => VoiceEditor.submitWord();
-window.voiceWordKey     = (e) => VoiceEditor.handleWordInput(e);
-window.voiceRemoveAt    = (pos) => VoiceEditor.removeAllophone(pos);
-window.voiceClear       = () => VoiceEditor.clearSequence();
-window.voiceSetChannel  = (ch) => VoiceEditor.setChannel(ch);
-window.voiceDiagnose    = () => VoiceEditor.runDiagnostics();
-window.voiceDiagnoseAll = () => VoiceEditor.runDiagnostics([...Array(64).keys()]);
+window.voicePlay            = () => VoiceEditor.playSequence();
+window.voiceStop            = () => VoiceEditor.stopPlayback();
+window.voiceCopy            = () => VoiceEditor.copyOutput();
+window.voiceAddWord         = () => VoiceEditor.submitWord();
+window.voiceWordKey         = (e) => VoiceEditor.handleWordInput(e);
+window.voiceRemoveAt        = (pos) => VoiceEditor.removeAllophone(pos);
+window.voiceClear           = () => VoiceEditor.clearSequence();
+window.voiceSetChannel      = (ch) => VoiceEditor.setChannel(ch);
+window.voiceDiagnose        = () => VoiceEditor.runDiagnostics();
+window.voiceDiagnoseAll     = () => VoiceEditor.runDiagnostics([...Array(64).keys()]);
+// Paste VOICE data
+window.voicePasteReplace    = () => VoiceEditor.pasteReplace();
+window.voicePasteAppend     = () => VoiceEditor.pasteAppend();
+// Custom dictionary
+window.voiceSaveUserDict    = () => VoiceEditor.saveUserDictFromTextarea();
+window.voiceClearUserDict   = () => VoiceEditor.clearUserDict();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

@@ -2429,18 +2429,27 @@
         <div id="voice-editor-content" class="editor-content">
             <div class="voice-editor-layout">
 
-                <!-- ── Top row: word lookup + sequencer ── -->
+                <!-- ── Top row: word lookup + paste + sequencer ── -->
                 <div class="voice-top-row">
 
-                    <!-- Word lookup -->
+                    <!-- Word lookup + paste -->
                     <div class="voice-word-panel">
                         <label class="form-label">Word lookup</label>
                         <div class="voice-word-row">
                             <input type="text" id="voice-word-input" class="form-control"
-                                   placeholder="e.g. hello" onkeydown="voiceWordKey(event)">
-                            <button class="btn btn-primary btn-sm" onclick="voiceAddWord()">Add Word</button>
+                                   placeholder="e.g. break a leg" onkeydown="voiceWordKey(event)">
+                            <button class="btn btn-primary btn-sm" onclick="voiceAddWord()">Add</button>
                         </div>
-                        <p class="voice-hint">Try: hello, hi, go, wave, attack, score, one, two, fire…</p>
+                        <p class="voice-hint">Phrases work: "break a leg", "game over", "player one" — ~700 words built-in</p>
+
+                        <!-- Paste VOICE data -->
+                        <label class="form-label" style="margin-top:10px;">Paste VOICE Data</label>
+                        <textarea id="voice-paste-input" class="form-control voice-paste-textarea"
+                                  placeholder="VOICE HH1,EH,LL,OW,0" rows="2"></textarea>
+                        <div class="voice-paste-btns">
+                            <button class="btn btn-primary btn-sm" onclick="voicePasteReplace()">Replace Sequence</button>
+                            <button class="btn btn-secondary btn-sm" onclick="voicePasteAppend()">Append</button>
+                        </div>
                     </div>
 
                     <!-- Sequencer strip -->
@@ -2454,6 +2463,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ── Custom Dictionary ── -->
+                <details class="voice-dict-panel">
+                    <summary class="voice-dict-summary">
+                        Custom Dictionary
+                        <span class="voice-hint-inline">(define your own word → allophone mappings, saved in browser)</span>
+                    </summary>
+                    <div class="voice-dict-body">
+                        <p class="voice-hint" style="margin:0 0 6px;">One entry per line: &nbsp;<code>word = HH1,EH,LL,OW</code> &nbsp;or&nbsp; <code>word = VOICE HH1,EH,LL,OW,0</code></p>
+                        <textarea id="voice-user-dict" class="form-control voice-dict-textarea"
+                                  placeholder="hello = HH1,EH,LL,OW&#10;world = WW,ER2,LL,DD1&#10;my_game = MM,AY,PA2,GG1,EY,MM" rows="6"
+                                  spellcheck="false"></textarea>
+                        <div class="voice-dict-btns">
+                            <button class="btn btn-primary btn-sm" onclick="voiceSaveUserDict()">Save Dictionary</button>
+                            <button class="btn btn-secondary btn-sm" onclick="voiceClearUserDict()">Clear All</button>
+                        </div>
+                    </div>
+                </details>
 
                 <!-- ── Status row ── -->
                 <div class="voice-channel-row">
