@@ -860,6 +860,94 @@ def get_config():
     return jsonify(Config.to_dict()), 200
 
 
+# ── IntelliVoice: CMU Pronouncing Dictionary word lookup ─────────────────────
+# Uses the `pronouncing` package (wraps CMU dict, ~134k words) to convert any
+# English word to SP0256-AL2 allophone codes for IntyBASIC VOICE statements.
+
+try:
+    import cmudict as _cmudict
+    _CMU_DICT = _cmudict.dict()   # { 'hello': [['HH','AH0','L','OW1'], ...], ... }
+    _CMU_AVAILABLE = True
+    logger.info('CMU Pronouncing Dictionary loaded (%d entries)', len(_CMU_DICT))
+except Exception as _e:
+    _CMU_DICT = {}
+    _CMU_AVAILABLE = False
+    logger.warning('cmudict package not available — /voice/lookup will be disabled: %s', _e)
+
+# ARPAbet phoneme → SP0256-AL2 allophone code.
+# Notes:
+#   - No SH in SP0256-AL2; use ZH (palatal fricative) as closest substitute
+#   - Stress digits (0/1/2) on ARPAbet vowels are stripped before lookup
+#   - ER (any stress) → ER1 (lighter) for unstressed (0), ER2 for stressed (1/2)
+_ARPABET_TO_SP0256 = {
+    'AA': 'AA',  'AE': 'AE',  'AH': 'AX',  'AO': 'AO',
+    'AW': 'AW',  'AY': 'AY',  'B':  'BB1', 'CH': 'CH',
+    'D':  'DD1', 'DH': 'DH2', 'EH': 'EH',  'ER': 'ER2',
+    'EY': 'EY',  'F':  'FF',  'G':  'GG1', 'HH': 'HH1',
+    'IH': 'IH',  'IY': 'IY',  'JH': 'JH',  'K':  'KK3',
+    'L':  'LL',  'M':  'MM',  'N':  'NN1', 'NG': 'NG',
+    'OW': 'OW',  'OY': 'OY',  'P':  'PP',  'R':  'RR1',
+    'S':  'SS',  'SH': 'ZH',  'T':  'TT2', 'TH': 'TH',
+    'UH': 'UH',  'UW': 'UW2', 'V':  'VV',  'W':  'WW',
+    'Y':  'YY2', 'Z':  'ZZ',  'ZH': 'ZH',
+}
+
+# IntyBASIC uses different names for three allophones.
+_IB_NAMES = {'AE': 'AE1', 'NG': 'NG1', 'OR': 'OR2'}
+
+def _arpabet_to_sp0256(phones_str):
+    """Convert a CMU phones string ('HH AH0 L OW1') to SP0256-AL2 code list."""
+    result = []
+    for token in phones_str.split():
+        # Strip stress digit if present (ARPAbet vowels end in 0/1/2)
+        stress = token[-1] if token[-1].isdigit() else None
+        base   = token.rstrip('012')
+        # ER: unstressed (0) → ER1, stressed (1/2) → ER2
+        if base == 'ER':
+            sp = 'ER1' if stress == '0' else 'ER2'
+        else:
+            sp = _ARPABET_TO_SP0256.get(base)
+        if sp:
+            result.append(_IB_NAMES.get(sp, sp))
+    return result
+
+
+@app.route('/voice/lookup')
+def voice_lookup():
+    """
+    Look up one or more words in the CMU Pronouncing Dictionary (~134k entries)
+    and return the corresponding SP0256-AL2 allophone sequences.
+
+    Query params:
+      word   — a single word  (e.g. ?word=hello)
+      phrase — space-separated words  (e.g. ?phrase=break+a+leg)
+
+    Returns JSON:
+      { "results": [ { "word": "hello", "allophones": ["HH1","AX","LL","OW"] }, ... ],
+        "unknown": ["foo"] }
+    """
+    if not _CMU_AVAILABLE:
+        return jsonify({'error': 'cmudict not available on this server'}), 503
+
+    raw = request.args.get('phrase') or request.args.get('word') or ''
+    words = raw.strip().lower().split()
+    if not words:
+        return jsonify({'error': 'provide ?word= or ?phrase='}), 400
+
+    results = []
+    unknown = []
+    for word in words:
+        phones_list = _CMU_DICT.get(word)
+        if phones_list:
+            # Use the first (most common) pronunciation.
+            allophones = _arpabet_to_sp0256(' '.join(phones_list[0]))
+            results.append({'word': word, 'allophones': allophones})
+        else:
+            unknown.append(word)
+
+    return jsonify({'results': results, 'unknown': unknown})
+
+
 # ── SPA tab routing ──────────────────────────────────────────────────────────
 # Serves the same page for direct tab URLs: /overlay /boxart /sprite /ds /voice
 # Must come after all real API routes so it doesn't shadow them.

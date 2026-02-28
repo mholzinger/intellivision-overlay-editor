@@ -514,7 +514,7 @@ export class VoiceEditor {
         if (e.key === 'Enter') VoiceEditor.submitWord();
     }
 
-    static submitWord() {
+    static async submitWord() {
         const input = document.getElementById('voice-word-input');
         if (!input) return;
         const phrase = input.value.trim();
@@ -528,14 +528,45 @@ export class VoiceEditor {
             return;
         }
 
-        // Multi-word: process each word independently.
+        // Multi-word: resolve each word locally first, collect unknowns.
         const words   = phrase.split(/\s+/).filter(Boolean);
-        const added   = [];
-        const unknown = [];
+        const plan    = [];   // [{word, seq|null}]
         for (const word of words) {
             const key = word.toLowerCase();
-            const seq = VoiceEditor.userDict[key] ?? ALL_WORDS[key];
-            if (seq) {
+            const seq = VoiceEditor.userDict[key] ?? ALL_WORDS[key] ?? null;
+            plan.push({ word, seq });
+        }
+
+        const localUnknown = plan.filter(p => !p.seq).map(p => p.word);
+
+        // Fall back to server (CMU dict) for any words not in local dict.
+        if (localUnknown.length) {
+            VoiceEditor._showStatus(`Looking up: ${localUnknown.join(', ')}…`);
+            try {
+                const resp = await fetch(
+                    `/voice/lookup?phrase=${encodeURIComponent(localUnknown.join(' '))}`
+                );
+                if (resp.ok) {
+                    const { results, unknown: stillUnknown } = await resp.json();
+                    // Merge server results back into the plan.
+                    for (const r of results) {
+                        const entry = plan.find(p => p.word === r.word);
+                        if (entry) entry.seq = r.allophones;
+                    }
+                    if (stillUnknown?.length) {
+                        VoiceEditor._showStatus(`Unknown: ${stillUnknown.join(', ')} — define in Custom Dictionary`);
+                    }
+                }
+            } catch (e) {
+                console.warn('VoiceEditor: server lookup failed:', e);
+            }
+        }
+
+        // Apply the full resolved plan in order.
+        const added   = [];
+        const unknown = [];
+        for (const { word, seq } of plan) {
+            if (seq?.length) {
                 for (const code of seq) VoiceEditor.addAllophone(code);
                 added.push(word);
             } else {
