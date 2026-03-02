@@ -816,6 +816,40 @@
     border-color: var(--primary-color);
 }
 
+/* ── Preview layout selector ── */
+.anim-layout-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.anim-layout-label {
+    font-size: 11px;
+    color: var(--gray-600);
+    white-space: nowrap;
+}
+.anim-layout-btns {
+    display: flex;
+    gap: 2px;
+}
+.anim-layout-btn {
+    padding: 2px 7px;
+    font-size: 11px;
+    font-family: monospace;
+    border: 1px solid var(--gray-300);
+    background: var(--gray-50);
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 1.6;
+    transition: background 0.1s;
+}
+.anim-layout-btn:hover { background: var(--gray-200); }
+.anim-layout-btn.active {
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+    border-color: var(--primary-color, #3b82f6);
+}
+
 .animation-controls {
     display: flex;
     align-items: center;

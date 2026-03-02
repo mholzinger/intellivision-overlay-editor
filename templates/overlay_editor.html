@@ -2327,6 +2327,21 @@
                             <button class="btn btn-secondary btn-xs" onclick="addAllToAnimation()" title="Add all sprites">+ All</button>
                             <button class="btn btn-secondary btn-xs" onclick="clearAnimationSequence()" title="Clear sequence">Clear</button>
                         </div>
+                        <!-- Preview layout: how many sprites compose one frame -->
+                        <div class="anim-layout-row">
+                            <span class="anim-layout-label">Layout:</span>
+                            <div class="anim-layout-btns">
+                                <button class="anim-layout-btn active" data-layout="1x1"
+                                        onclick="spriteSetPreviewLayout('1x1')"
+                                        title="Single sprite per frame">1×1</button>
+                                <button class="anim-layout-btn" data-layout="2x1"
+                                        onclick="spriteSetPreviewLayout('2x1')"
+                                        title="Two sprites side-by-side per frame — 8×8 pairs become 16-wide">2×1 H</button>
+                                <button class="anim-layout-btn" data-layout="1x2"
+                                        onclick="spriteSetPreviewLayout('1x2')"
+                                        title="Two sprites stacked per frame — 8×8 pairs become 16-tall">1×2 V</button>
+                            </div>
+                        </div>
                         <div class="animation-controls">
                             <button id="animation-play-btn" class="btn btn-success btn-sm" onclick="toggleAnimation()">▶ Play</button>
                             <button class="btn btn-secondary btn-sm" onclick="stopAnimation()">⏹ Stop</button>
@@ -2340,7 +2355,7 @@
                         <div class="animation-preview-container">
                             <canvas id="animation-preview-canvas" width="32" height="32"></canvas>
                         </div>
-                        <p class="helper-text">Click sprites in the list to add them to the animation sequence</p>
+                        <p class="helper-text">1×1: one sprite/frame · 2×1 H: pairs side-by-side (16-wide MOB) · 1×2 V: pairs stacked (16-tall MOB)</p>
                     </div>
                 </div>
             </div>

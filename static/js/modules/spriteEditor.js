@@ -41,6 +41,10 @@ export class SpriteEditor {
     static isAnimating = false;
     static animationFrame = 0;
     static animationInterval = null;
+    // '1x1' = single sprite per frame (default)
+    // '2x1' = two sprites side-by-side (horizontal composite)
+    // '1x2' = two sprites stacked (vertical composite)
+    static previewLayout = '1x1';
 
     /**
      * Initialize the sprite editor
@@ -1345,17 +1349,44 @@ export class SpriteEditor {
         this.updateAnimationUI();
     }
 
+    /** Total logical frames given the current layout (pairs consume 2 sequence slots). */
+    static getLayoutFrameCount() {
+        const n = this.animationSequence.length;
+        if (this.previewLayout === '2x1' || this.previewLayout === '1x2') {
+            return Math.max(1, Math.floor(n / 2));
+        }
+        return n;
+    }
+
+    /** Switch composite layout; restarts animation if playing. */
+    static setPreviewLayout(layout) {
+        this.previewLayout = layout;
+        this.animationFrame = 0;
+        document.querySelectorAll('.anim-layout-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.layout === layout);
+        });
+        if (this.isAnimating) {
+            this.pauseAnimation();
+            this.playAnimation();
+        } else {
+            this.renderAnimationFrame();
+        }
+    }
+
     static playAnimation() {
-        if (this.animationSequence.length < 2) {
-            alert('Add at least 2 sprites to the animation sequence');
+        if (this.getLayoutFrameCount() < 2) {
+            const needed = (this.previewLayout === '1x1') ? 2 : 4;
+            alert(`Add at least ${needed} sprites to the animation sequence for ${this.previewLayout} layout`);
             return;
         }
+        if (this.animationInterval) clearInterval(this.animationInterval);
         this.isAnimating = true;
         this.animationFrame = 0;
         this.updatePlayButton();
+        this.renderAnimationFrame();  // Show frame 0 immediately
         this.animationInterval = setInterval(() => {
+            this.animationFrame = (this.animationFrame + 1) % this.getLayoutFrameCount();
             this.renderAnimationFrame();
-            this.animationFrame = (this.animationFrame + 1) % this.animationSequence.length;
         }, 1000 / this.animationFps);
     }
 
@@ -1392,31 +1423,63 @@ export class SpriteEditor {
         }
     }
 
-    static renderAnimationFrame() {
-        const canvas = document.getElementById('animation-preview-canvas');
-        if (!canvas || this.animationSequence.length === 0) return;
-
-        const ctx = canvas.getContext('2d');
-        const sprite = this.sprites[this.animationSequence[this.animationFrame]];
-        if (!sprite) return;
-
-        const scale = 4;
-        canvas.width = sprite.width * scale;
-        canvas.height = sprite.height * scale;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    /** Draw a sprite's pixels onto ctx at (offsetX, offsetY) with pixel scale. */
+    static _drawSpriteToCanvas(ctx, sprite, offsetX, offsetY, scale) {
         for (let y = 0; y < sprite.height; y++) {
             for (let x = 0; x < sprite.width; x++) {
                 const isSet = sprite.pixels[y][x] === 1;
                 const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
                 ctx.fillStyle = this.PALETTE[colorIndex].hex;
-                ctx.fillRect(x * scale, y * scale, scale, scale);
+                ctx.fillRect(offsetX + x * scale, offsetY + y * scale, scale, scale);
             }
+        }
+    }
+
+    static renderAnimationFrame() {
+        const canvas = document.getElementById('animation-preview-canvas');
+        if (!canvas || this.animationSequence.length === 0) return;
+
+        const ctx = canvas.getContext('2d');
+        const scale = 4;
+        const seq   = this.animationSequence;
+
+        if (this.previewLayout === '2x1') {
+            // ── Two sprites side-by-side (horizontal composite) ──────────────
+            const spriteA = this.sprites[seq[this.animationFrame * 2]];
+            const spriteB = seq[this.animationFrame * 2 + 1] !== undefined
+                ? this.sprites[seq[this.animationFrame * 2 + 1]] : null;
+            if (!spriteA) return;
+            canvas.width  = (spriteA.width + (spriteB?.width  ?? spriteA.width))  * scale;
+            canvas.height =  Math.max(spriteA.height, spriteB?.height ?? 0)        * scale;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, scale);
+            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, spriteA.width * scale, 0, scale);
+
+        } else if (this.previewLayout === '1x2') {
+            // ── Two sprites stacked (vertical composite) ──────────────────────
+            const spriteA = this.sprites[seq[this.animationFrame * 2]];
+            const spriteB = seq[this.animationFrame * 2 + 1] !== undefined
+                ? this.sprites[seq[this.animationFrame * 2 + 1]] : null;
+            if (!spriteA) return;
+            canvas.width  =  Math.max(spriteA.width, spriteB?.width ?? 0)          * scale;
+            canvas.height = (spriteA.height + (spriteB?.height ?? spriteA.height)) * scale;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, scale);
+            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, 0, spriteA.height * scale, scale);
+
+        } else {
+            // ── 1×1: single sprite per frame (default) ───────────────────────
+            const sprite = this.sprites[seq[this.animationFrame]];
+            if (!sprite) return;
+            canvas.width  = sprite.width  * scale;
+            canvas.height = sprite.height * scale;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this._drawSpriteToCanvas(ctx, sprite, 0, 0, scale);
         }
 
         const frameDisplay = document.getElementById('animation-frame-display');
         if (frameDisplay) {
-            frameDisplay.textContent = `${this.animationFrame + 1}/${this.animationSequence.length}`;
+            frameDisplay.textContent = `${this.animationFrame + 1}/${this.getLayoutFrameCount()}`;
         }
 
         this.highlightSequenceFrame();
@@ -1424,7 +1487,9 @@ export class SpriteEditor {
 
     static highlightSequenceFrame() {
         document.querySelectorAll('.animation-sequence-item').forEach((item, index) => {
-            item.classList.toggle('current-frame', index === this.animationFrame);
+            // In composite modes each logical frame spans 2 sequence slots.
+            const framePos = (this.previewLayout === '1x1') ? index : Math.floor(index / 2);
+            item.classList.toggle('current-frame', framePos === this.animationFrame);
         });
     }
 
@@ -1440,7 +1505,7 @@ export class SpriteEditor {
         container.innerHTML = '';
 
         if (this.animationSequence.length === 0) {
-            container.innerHTML = '<span class="animation-empty">Click sprites to add to sequence</span>';
+            container.innerHTML = '<span class="animation-empty">Click +Anim on sprites to add frames</span>';
             return;
         }
 

@@ -605,12 +605,13 @@ window.importSpriteProject = () => SpriteEditor.importProject();
 window.clearAllSprites = () => SpriteEditor.reset();
 
 // Animation functions
-window.addAllToAnimation = () => SpriteEditor.addAllToAnimation();
-window.clearAnimationSequence = () => SpriteEditor.clearAnimation();
-window.toggleAnimation = () => SpriteEditor.toggleAnimation();
-window.stopAnimation = () => SpriteEditor.stopAnimation();
-window.updateAnimationFps = () => SpriteEditor.updateAnimationFps();
-window.addSpriteToAnimation = (index) => SpriteEditor.addToAnimation(index);
+window.addAllToAnimation       = () => SpriteEditor.addAllToAnimation();
+window.clearAnimationSequence  = () => SpriteEditor.clearAnimation();
+window.toggleAnimation         = () => SpriteEditor.toggleAnimation();
+window.stopAnimation           = () => SpriteEditor.stopAnimation();
+window.updateAnimationFps      = () => SpriteEditor.updateAnimationFps();
+window.addSpriteToAnimation    = (index) => SpriteEditor.addToAnimation(index);
+window.spriteSetPreviewLayout  = (layout) => SpriteEditor.setPreviewLayout(layout);
 
 // BITMAP import
 window.pasteBitmapText = () => SpriteEditor.showPasteBitmapDialog();
