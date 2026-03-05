@@ -772,8 +772,10 @@ export class SpriteEditor {
     // ==========================================
 
     /**
-     * Parse IntyBASIC BITMAP text and create a sprite.
-     * Supports X, #, and . notation. Auto-detects width (8 or 16) from pattern length.
+     * Parse IntyBASIC BITMAP text and create one or more sprites.
+     * Splits on label lines (word:) so pasting multiple labeled definitions
+     * creates multiple sprites. Unlabeled input with >8 rows of 8-wide bitmaps
+     * is auto-split every 8 rows. Supports X, #, and . notation.
      */
     static parseBitmapText(text) {
         if (!text || !text.trim()) {
@@ -781,61 +783,31 @@ export class SpriteEditor {
             return false;
         }
 
-        let spriteName = `sprite_${this.sprites.length}`;
-        const nameMatch = text.match(/^(\w+):/m);
-        if (nameMatch) spriteName = nameMatch[1];
-
-        const bitmapRegex = /BITMAP\s*"([.X#]{1,16})"/gi;
-        const rows = [];
-        let importWidth = 8;
-        let match;
-
-        while ((match = bitmapRegex.exec(text)) !== null) {
-            const pattern = match[1];
-            // Detect width from first row
-            if (rows.length === 0) {
-                importWidth = pattern.length <= 8 ? 8 : 16;
-            }
-            const row = [];
-            for (let i = 0; i < importWidth; i++) {
-                const char = pattern[i] || '.';
-                row.push(char === '#' || char.toUpperCase() === 'X' ? 1 : 0);
-            }
-            rows.push(row);
-        }
-
-        if (rows.length === 0) {
+        const segments = this._splitBitmapSegments(text);
+        if (segments.length === 0) {
             alert('No valid BITMAP lines found.\n\nExpected format:\n    BITMAP "..XXXX.."\n    BITMAP "########"');
             return false;
         }
 
-        if (rows.length > 16) rows.length = 16;
-
-        const importHeight = rows.length <= 8 ? 8 : 16;
-        while (rows.length < importHeight) {
-            rows.push(new Array(importWidth).fill(0));
+        const imported = [];
+        for (const seg of segments) {
+            const sprite = this._parseSingleBitmapSegment(seg.name, seg.rows);
+            if (sprite) imported.push(sprite);
         }
 
-        const sprite = {
-            name: spriteName,
-            width: importWidth,
-            height: importHeight,
-            pixels: rows,
-            fgColor: this.selectedFgColor,
-            bgColor: this.selectedBgColor,
-            gramCard: this._nextGramCard(),
-            useMode:  'mob',
-            mobColor: 7,
-            csColor:  7,
-            csAdvance: false,
-            fgbgFg:   7,
-            fgbgBg:   0
-        };
+        if (imported.length === 0) {
+            alert('No valid BITMAP lines found.\n\nExpected format:\n    BITMAP "..XXXX.."\n    BITMAP "########"');
+            return false;
+        }
 
-        this.sprites.push(sprite);
+        for (const sprite of imported) {
+            this.sprites.push(sprite);
+        }
         this.currentSpriteIndex = this.sprites.length - 1;
-        this.gridWidth = importWidth;
-        this.gridHeight = importHeight;
+
+        const last = imported[imported.length - 1];
+        this.gridWidth  = last.width;
+        this.gridHeight = last.height;
 
         this.updateSpriteList();
         this.renderPalette();
@@ -848,14 +820,104 @@ export class SpriteEditor {
         return true;
     }
 
+    /**
+     * Split BITMAP text into labeled segments. Each segment is { name, rows[] }.
+     * Label lines (e.g. "player_l:") start a new sprite group.
+     * Unlabeled input with >8 rows of 8-wide bitmaps is auto-split every 8 rows.
+     */
+    static _splitBitmapSegments(text) {
+        const bitmapLineRe = /BITMAP\s*"([.X#]{1,16})"/i;
+        // A label line: whole line is just "word:" (plus optional whitespace/comment)
+        const labelLineRe  = /^\s*(\w+)\s*:\s*(;.*)?$/;
+
+        const segments = [];
+        let currentName = null;
+        let currentRows = [];
+        let currentWidth = 8;
+
+        const flushSegment = () => {
+            if (currentRows.length > 0) {
+                // If rows > 8 and width is 8, auto-split every 8 rows
+                if (currentWidth === 8 && currentRows.length > 8) {
+                    for (let i = 0; i < currentRows.length; i += 8) {
+                        const chunk = currentRows.slice(i, i + 8);
+                        const autoName = currentName
+                            ? (i === 0 ? currentName : `${currentName}_${i / 8}`)
+                            : null;
+                        segments.push({ name: autoName, rows: chunk, width: currentWidth });
+                    }
+                } else {
+                    segments.push({ name: currentName, rows: currentRows, width: currentWidth });
+                }
+            }
+            currentName = null;
+            currentRows = [];
+            currentWidth = 8;
+        };
+
+        for (const line of text.split('\n')) {
+            const labelMatch = line.match(labelLineRe);
+            const bitmapMatch = line.match(bitmapLineRe);
+
+            if (labelMatch && !bitmapMatch) {
+                flushSegment();
+                currentName = labelMatch[1];
+            } else if (bitmapMatch) {
+                const pattern = bitmapMatch[1];
+                if (currentRows.length === 0) {
+                    currentWidth = pattern.length <= 8 ? 8 : 16;
+                }
+                const row = [];
+                for (let i = 0; i < currentWidth; i++) {
+                    const ch = pattern[i] || '.';
+                    row.push(ch === '#' || ch.toUpperCase() === 'X' ? 1 : 0);
+                }
+                currentRows.push(row);
+            }
+        }
+        flushSegment();
+
+        return segments.filter(s => s.rows.length > 0);
+    }
+
+    /** Build a sprite object from a rows array extracted by _splitBitmapSegments. */
+    static _parseSingleBitmapSegment(name, rows) {
+        if (!rows || rows.length === 0) return null;
+
+        const importWidth = rows[0].length;
+        let trimmed = rows.slice(0, 16);
+        const importHeight = trimmed.length <= 8 ? 8 : 16;
+        while (trimmed.length < importHeight) {
+            trimmed.push(new Array(importWidth).fill(0));
+        }
+
+        return {
+            name:      name || `sprite_${this.sprites.length}`,
+            width:     importWidth,
+            height:    importHeight,
+            pixels:    trimmed,
+            fgColor:   this.selectedFgColor,
+            bgColor:   this.selectedBgColor,
+            gramCard:  this._nextGramCard(),
+            useMode:   'mob',
+            mobColor:  7,
+            csColor:   7,
+            csAdvance: false,
+            fgbgFg:    7,
+            fgbgBg:    0
+        };
+    }
+
     static showPasteBitmapDialog() {
         const text = prompt(
-            'Paste IntyBASIC BITMAP code:\n\n' +
-            'Example:\n' +
-            'player:\n' +
-            '    BITMAP "..XX.."\n' +
-            '    BITMAP ".####."\n' +
-            '    BITMAP "XXXXXX"'
+            'Paste IntyBASIC BITMAP code.\n' +
+            'Multiple labeled definitions create multiple sprites:\n\n' +
+            'player_l:\n' +
+            '    BITMAP "..XX...."\n' +
+            '    BITMAP ".####..."\n' +
+            'player_r:\n' +
+            '    BITMAP "....XX.."\n' +
+            '    BITMAP "...####."'
         );
         if (text) this.parseBitmapText(text);
     }
