@@ -37,6 +37,9 @@
                 <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')">
                     🔊 IntelliVoice <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
+                <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')">
+                    ▶ Emulator <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -2530,6 +2533,23 @@
 
             </div><!-- end voice-editor-layout -->
         </div><!-- End voice-editor-content -->
+
+        <div id="emulator-editor-content" class="editor-content">
+            <div style="display:flex; flex-direction:column; height:100%;">
+                <iframe id="emulator-iframe"
+                        src="about:blank"
+                        style="flex:1; border:none; width:100%; min-height:600px;"
+                        allow="autoplay"
+                        title="Intellivision Emulator">
+                </iframe>
+                <div style="padding:6px 12px; font-size:10px; color:#666; background:#111; border-top:1px solid #1e1e1e; line-height:1.6;">
+                    Powered by <strong>jzIntv</strong> &mdash; Intellivision emulator by
+                    <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener"
+                       style="color:#888;">Joe Zbiciak</a>.
+                    Compiled to WebAssembly for this project.
+                </div>
+            </div>
+        </div><!-- End emulator-editor-content -->
 
     </div>
 

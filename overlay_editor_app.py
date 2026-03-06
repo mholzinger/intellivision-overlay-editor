@@ -4,7 +4,7 @@ Flask-based Intellivision Overlay Editor
 Interactive web application for creating custom controller overlays
 """
 
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect
 from pathlib import Path
 import base64
 from io import BytesIO
@@ -13,6 +13,9 @@ import cairosvg
 import os
 import subprocess
 import logging
+import mimetypes
+
+mimetypes.add_type('application/wasm', '.wasm')
 
 # Import configuration
 from config import Config
@@ -950,8 +953,51 @@ def voice_lookup():
 
 # ── SPA tab routing ──────────────────────────────────────────────────────────
 # Serves the same page for direct tab URLs: /overlay /boxart /sprite /ds /voice
+# ── Emulator (jzIntv WASM) ────────────────────────────────────────────────
+WASM_DIR = Path(__file__).parent / 'static' / 'wasm'
+
+@app.route('/emulator')
+def emulator_redirect():
+    """Redirect to /emulator/ so relative URLs (jzintv.js etc.) resolve correctly."""
+    return redirect('/emulator/')
+
+@app.route('/emulator/')
+def emulator():
+    """Serve the jzIntv WASM emulator shell page."""
+    return send_from_directory(WASM_DIR, 'jzintv.html')
+
+@app.route('/emulator/bios/status')
+def emulator_bios_status():
+    """Return which BIOS files are available server-side (configured via OVL_BIOS_*_PATH)."""
+    exec_path = Config.get_bios_exec_path()
+    grom_path = Config.get_bios_grom_path()
+    return jsonify({
+        'exec': bool(exec_path and exec_path.is_file()),
+        'grom': bool(grom_path and grom_path.is_file()),
+    })
+
+@app.route('/emulator/bios/<filename>')
+def emulator_bios_file(filename):
+    """Serve a server-configured BIOS file (exec.bin or grom.bin only)."""
+    if filename == 'exec.bin':
+        path = Config.get_bios_exec_path()
+    elif filename == 'grom.bin':
+        path = Config.get_bios_grom_path()
+    else:
+        return jsonify({'error': 'Unknown BIOS file'}), 404
+    if not path or not path.is_file():
+        return jsonify({'error': 'BIOS file not configured on server'}), 404
+    return send_from_directory(path.parent, path.name,
+                               mimetype='application/octet-stream')
+
+@app.route('/emulator/<path:filename>')
+def emulator_static(filename):
+    """Serve jzintv.js / jzintv.wasm / jzintv.data referenced by relative URL."""
+    return send_from_directory(WASM_DIR, filename)
+
+
 # Must come after all real API routes so it doesn't shadow them.
-_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice'}
+_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator'}
 
 @app.route('/<tab>')
 def tab_route(tab):

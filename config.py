@@ -81,6 +81,20 @@ class Config:
     def get_font_dir(cls) -> Path:
         return cls._resolve_path('OVL_FONT_DIR', 'sf_intellivised')
 
+    # BIOS file paths (optional — for Docker deployments with pre-provisioned BIOS)
+    # Set OVL_BIOS_EXEC_PATH and OVL_BIOS_GROM_PATH to absolute paths of exec.bin / grom.bin.
+    # When set, the emulator page serves them at /emulator/bios/exec.bin and /emulator/bios/grom.bin
+    # so users don't need to supply their own files.
+    @classmethod
+    def get_bios_exec_path(cls) -> Path | None:
+        val = os.environ.get('OVL_BIOS_EXEC_PATH')
+        return Path(val) if val else None
+
+    @classmethod
+    def get_bios_grom_path(cls) -> Path | None:
+        val = os.environ.get('OVL_BIOS_GROM_PATH')
+        return Path(val) if val else None
+
     # CORS settings
     CORS_ENABLED = _get_bool('OVL_CORS_ENABLED', True)
     CORS_ORIGINS = _get_list('OVL_CORS_ORIGINS', '*')

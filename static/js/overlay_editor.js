@@ -457,7 +457,7 @@ window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 window.ImageProcessor = ImageProcessor;
 
 // Known tab slugs and their canonical URL paths.
-const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice']);
+const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator']);
 
 // Tab switching — call with pushState=false when restoring from history.
 window.switchEditorTab = (tabName, pushState = true) => {
@@ -500,6 +500,13 @@ window.switchEditorTab = (tabName, pushState = true) => {
     if (tabName === 'voice' && !window._voiceEditorInitialized) {
         VoiceEditor.init();
         window._voiceEditorInitialized = true;
+    }
+
+    // Load emulator iframe on first switch to that tab
+    if (tabName === 'emulator' && !window._emulatorInitialized) {
+        const iframe = document.getElementById('emulator-iframe');
+        if (iframe) iframe.src = '/emulator/';
+        window._emulatorInitialized = true;
     }
 
     // Sync the browser URL.
