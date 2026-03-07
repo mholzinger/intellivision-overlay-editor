@@ -2543,11 +2543,78 @@
                         allowfullscreen
                         title="Intellivision Emulator">
                 </iframe>
-                <div style="padding:6px 12px; font-size:10px; color:#666; background:#111; border-top:1px solid #1e1e1e; line-height:1.6;">
-                    Powered by <strong>jzIntv</strong> &mdash; Intellivision emulator by
-                    <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener"
-                       style="color:#888;">Joe Zbiciak</a>.
-                    Compiled to WebAssembly for this project.
+                <!-- ── Emulator docs ──────────────────────────────────────────────── -->
+                <div style="background:#fafbfc; border-top:1px solid #e1e4e8; padding:24px 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; color:#24292e;">
+
+                    <div style="max-width:860px; margin:0 auto;">
+
+                        <!-- Header -->
+                        <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:20px; border-bottom:1px solid #e1e4e8; padding-bottom:12px;">
+                            <h3 style="margin:0; font-size:16px; font-weight:600; color:#24292e;">Emulator API</h3>
+                            <span style="font-size:11px; color:#6a737d; letter-spacing:1px; text-transform:uppercase;">Reference</span>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px;">
+
+                            <!-- Col 1: Loading a ROM -->
+                            <div>
+                                <h4 style="margin:0 0 8px; font-size:13px; font-weight:600; color:#24292e;">Loading a ROM via URL</h4>
+                                <p style="margin:0 0 8px; font-size:12px; color:#586069; line-height:1.6;">Pass a direct link to a <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">.rom</code>, <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">.bin</code>, or <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">.zip</code> file as a query parameter. The server proxies the fetch to bypass CORS.</p>
+                                <pre style="margin:0 0 6px; background:#1b1f23; color:#e1e4e8; padding:10px 12px; border-radius:6px; font-size:11px; overflow-x:auto; line-height:1.5;">/emulator?rom=https://raw.githubusercontent.com/
+  user/repo/main/game.rom</pre>
+                                <p style="margin:0; font-size:11px; color:#6a737d;">GitHub tip: use <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">raw.githubusercontent.com</code> — not the blob viewer URL.</p>
+
+                                <h4 style="margin:18px 0 8px; font-size:13px; font-weight:600; color:#24292e;">Upload &amp; Play</h4>
+                                <p style="margin:0 0 8px; font-size:12px; color:#586069; line-height:1.6;">POST a ROM or ZIP to get a 30-minute token, then navigate to the returned <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">play_url</code>.</p>
+                                <pre style="margin:0 0 6px; background:#1b1f23; color:#e1e4e8; padding:10px 12px; border-radius:6px; font-size:11px; overflow-x:auto; line-height:1.5;">curl -X POST /emulator/game/upload \
+  -F "file=@game.rom"
+
+# → {"play_url": "/emulator?rom_token=uuid",
+#     "expires_in": 1800}</pre>
+                                <p style="margin:0; font-size:11px; color:#6a737d;">Open the <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">play_url</code> in a browser, provide BIOS files, and press Play.</p>
+                            </div>
+
+                            <!-- Col 2: Controls + itch.io -->
+                            <div>
+                                <h4 style="margin:0 0 8px; font-size:13px; font-weight:600; color:#24292e;">Keyboard Controls</h4>
+                                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                    <tr style="border-bottom:1px solid #e1e4e8;">
+                                        <td style="padding:4px 0; color:#586069;">Arrow keys</td>
+                                        <td style="padding:4px 0; color:#24292e;">Disc controller</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid #e1e4e8;">
+                                        <td style="padding:4px 0; color:#586069;"><code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">1</code>–<code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">9</code>, <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">0</code></td>
+                                        <td style="padding:4px 0; color:#24292e;">Keypad</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid #e1e4e8;">
+                                        <td style="padding:4px 0; color:#586069;"><code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">=</code> / <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">-</code></td>
+                                        <td style="padding:4px 0; color:#24292e;">Enter / Clear</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid #e1e4e8;">
+                                        <td style="padding:4px 0; color:#586069;"><code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">L Shift</code></td>
+                                        <td style="padding:4px 0; color:#24292e;">Top action (fire)</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid #e1e4e8;">
+                                        <td style="padding:4px 0; color:#586069;"><code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">L Ctrl</code></td>
+                                        <td style="padding:4px 0; color:#24292e;">Bottom-left action</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:4px 0; color:#586069;"><code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;">L Alt</code></td>
+                                        <td style="padding:4px 0; color:#24292e;">Bottom-right action</td>
+                                    </tr>
+                                </table>
+
+                                <h4 style="margin:18px 0 8px; font-size:13px; font-weight:600; color:#24292e;">itch.io Auto-Load</h4>
+                                <p style="margin:0 0 8px; font-size:12px; color:#586069; line-height:1.6;">Set <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">ITCH_API_KEY</code> and <code style="background:#f1f3f4;padding:1px 4px;border-radius:3px;font-size:11px;">ITCH_GAME_ID</code> environment variables to automatically fetch the latest ZIP from itch.io on every Play press — no rebuild needed when you push a new release.</p>
+
+                                <p style="margin:16px 0 0; font-size:11px; color:#6a737d; border-top:1px solid #e1e4e8; padding-top:10px;">
+                                    Powered by <strong>jzIntv</strong> by <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener" style="color:#0366d6;">Joe Zbiciak</a>, compiled to WebAssembly.
+                                    BIOS files (exec.bin, grom.bin) are required and never stored on the server.
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
         </div><!-- End emulator-editor-content -->

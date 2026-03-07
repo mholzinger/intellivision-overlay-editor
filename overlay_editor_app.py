@@ -1122,6 +1122,70 @@ def emulator_game_latest():
         return jsonify({'error': str(e)}), 502
 
 
+# ── Temporary ROM token store ─────────────────────────────────────────────
+# In-memory only; cleared on server restart. Tokens expire after 30 minutes.
+import uuid, time as _time
+_rom_tokens: dict = {}  # token → {data, filename, stored_at}
+_ROM_TOKEN_TTL = 1800   # seconds
+
+def _evict_expired_tokens():
+    cutoff = _time.time() - _ROM_TOKEN_TTL
+    expired = [k for k, v in _rom_tokens.items() if v['stored_at'] < cutoff]
+    for k in expired:
+        del _rom_tokens[k]
+
+
+@app.route('/emulator/game/upload', methods=['POST'])
+def emulator_game_upload():
+    """
+    Accept a ROM or ZIP via multipart file upload or raw request body.
+    Returns a token and a ready-to-use play URL valid for 30 minutes.
+
+    Multipart:  POST with field name 'file'
+    Raw body:   POST with Content-Disposition: attachment; filename="game.rom"
+    """
+    _evict_expired_tokens()
+
+    filename = 'game.rom'
+    if 'file' in request.files:
+        f = request.files['file']
+        data = f.read()
+        filename = f.filename or filename
+    else:
+        data = request.get_data()
+        cd = request.headers.get('Content-Disposition', '')
+        for part in cd.split(';'):
+            part = part.strip()
+            if part.startswith('filename='):
+                filename = part[9:].strip('"\'') or filename
+
+    if not data:
+        return jsonify({'error': 'No file data received'}), 400
+
+    token = str(uuid.uuid4())
+    _rom_tokens[token] = {'data': data, 'filename': filename, 'stored_at': _time.time()}
+
+    play_url = f'/emulator?rom_token={token}'
+    return jsonify({'token': token, 'play_url': play_url, 'filename': filename,
+                    'expires_in': _ROM_TOKEN_TTL})
+
+
+@app.route('/emulator/game/token/<token>')
+def emulator_game_token(token):
+    """Retrieve a previously uploaded ROM by token."""
+    _evict_expired_tokens()
+    entry = _rom_tokens.get(token)
+    if not entry:
+        return jsonify({'error': 'Token not found or expired'}), 404
+    filename = entry['filename']
+    is_zip = filename.lower().endswith('.zip')
+    mimetype = 'application/zip' if is_zip else 'application/octet-stream'
+    return app.response_class(
+        entry['data'], status=200, mimetype=mimetype,
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+
 @app.route('/emulator/game/fetch')
 def emulator_game_fetch():
     """

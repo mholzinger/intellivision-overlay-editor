@@ -506,8 +506,13 @@ window.switchEditorTab = (tabName, pushState = true) => {
     if (tabName === 'emulator' && !window._emulatorInitialized) {
         const iframe = document.getElementById('emulator-iframe');
         if (iframe) {
-            const romParam = new URLSearchParams(location.search).get('rom');
-            iframe.src = '/emulator/shell/' + (romParam ? '?rom=' + encodeURIComponent(romParam) : '');
+            const params = new URLSearchParams(location.search);
+            const romParam = params.get('rom');
+            const tokenParam = params.get('rom_token');
+            let qs = '';
+            if (romParam) qs = '?rom=' + encodeURIComponent(romParam);
+            else if (tokenParam) qs = '?rom_token=' + encodeURIComponent(tokenParam);
+            iframe.src = '/emulator/shell/' + qs;
         }
         window._emulatorInitialized = true;
     }
