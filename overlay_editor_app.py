@@ -990,6 +990,65 @@ def emulator_bios_file(filename):
     return send_from_directory(path.parent, path.name,
                                mimetype='application/octet-stream')
 
+@app.route('/emulator/bios/fetch/available')
+def emulator_bios_fetch_available():
+    """Return whether IA credentials are configured (so UI can show/hide the Fetch button)."""
+    has_creds = bool(os.environ.get('OVL_IA_ACCESS_KEY') and os.environ.get('OVL_IA_SECRET_KEY'))
+    return jsonify({'available': has_creds})
+
+
+@app.route('/emulator/bios/fetch')
+def emulator_bios_fetch():
+    """
+    Proxy-fetch the OpenEmu BIOS Pack ZIP from Archive.org using the server's
+    IA credentials and stream it back to the browser same-origin.
+    Requires OVL_IA_ACCESS_KEY and OVL_IA_SECRET_KEY environment variables.
+    """
+    access_key = os.environ.get('OVL_IA_ACCESS_KEY')
+    secret_key = os.environ.get('OVL_IA_SECRET_KEY')
+    logged_in_user = os.environ.get('OVL_IA_LOGGED_IN_USER', '')
+    logged_in_sig = os.environ.get('OVL_IA_LOGGED_IN_SIG', '')
+    if not access_key or not secret_key:
+        return jsonify({'error': 'IA credentials not configured on server'}), 503
+
+    try:
+        import internetarchive as ia
+
+        config = {
+            's3': {'access': access_key, 'secret': secret_key},
+            'cookies': {'logged-in-user': logged_in_user, 'logged-in-sig': logged_in_sig},
+        }
+        session = ia.get_session(config)
+        item = session.get_item('OpenEmuBIOSPack')
+        zip_file = next(
+            (f for f in item.get_files() if f.name.lower().endswith('.zip')),
+            None
+        )
+        if not zip_file:
+            return jsonify({'error': 'ZIP not found in Archive.org item'}), 404
+
+        from urllib.parse import quote
+        url = f'https://archive.org/download/OpenEmuBIOSPack/{quote(zip_file.name)}'
+        resp = session.get(url, stream=True)
+        if resp.status_code != 200:
+            return jsonify({'error': f'Archive.org returned {resp.status_code}'}), 502
+
+        def generate():
+            for chunk in resp.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        return app.response_class(
+            generate(),
+            status=200,
+            mimetype='application/zip',
+            headers={'Content-Disposition': 'attachment; filename="OpenEmu BIOS Pack.zip"'}
+        )
+    except Exception as e:
+        print(f'[bios/fetch] error: {e}', file=sys.stderr)
+        return jsonify({'error': str(e)}), 502
+
+
 @app.route('/emulator/<path:filename>')
 def emulator_static(filename):
     """Serve jzintv.js / jzintv.wasm / jzintv.data referenced by relative URL."""

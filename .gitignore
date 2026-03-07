@@ -35,6 +35,9 @@ logs/
 # Fly.io
 .fly/
 
+# Local secrets — never commit
+.env
+
 # Local test files
 test_*.png
 test_*.svg
