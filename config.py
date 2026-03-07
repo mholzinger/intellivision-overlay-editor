@@ -81,6 +81,12 @@ class Config:
     def get_font_dir(cls) -> Path:
         return cls._resolve_path('OVL_FONT_DIR', 'sf_intellivised')
 
+    # itch.io game distribution (optional — fetches latest ZIP from itch.io API)
+    # Set ITCH_API_KEY to your itch.io API key (from itch.io account settings).
+    # Set ITCH_GAME_ID to the numeric game ID (visible in itch.io dashboard URLs).
+    ITCH_API_KEY = os.environ.get('ITCH_API_KEY', '')
+    ITCH_GAME_ID = os.environ.get('ITCH_GAME_ID', '')
+
     # BIOS file paths (optional — for Docker deployments with pre-provisioned BIOS)
     # Set OVL_BIOS_EXEC_PATH and OVL_BIOS_GROM_PATH to absolute paths of exec.bin / grom.bin.
     # When set, the emulator page serves them at /emulator/bios/exec.bin and /emulator/bios/grom.bin

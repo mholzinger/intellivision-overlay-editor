@@ -3,3 +3,4 @@ CairoSVG==2.7.1
 Pillow==10.1.0
 cmudict>=1.0.13
 internetarchive>=3.3.0
+requests>=2.31.0

@@ -1058,6 +1058,113 @@ def emulator_bios_fetch():
         return jsonify({'error': str(e)}), 502
 
 
+@app.route('/emulator/game/latest')
+def emulator_game_latest():
+    """
+    Fetch the latest game ZIP from itch.io and proxy it to the browser.
+    Requires ITCH_API_KEY and ITCH_GAME_ID environment variables.
+    """
+    api_key = Config.ITCH_API_KEY
+    game_id = Config.ITCH_GAME_ID
+    if not api_key or not game_id:
+        return jsonify({'error': 'ITCH_API_KEY or ITCH_GAME_ID not configured'}), 503
+
+    try:
+        import requests as http
+
+        # Get upload list for the game
+        r = http.get(
+            f'https://itch.io/api/1/{api_key}/game/{game_id}/uploads',
+            timeout=10
+        )
+        r.raise_for_status()
+        uploads = r.json().get('uploads', [])
+
+        # Pick the first ZIP upload
+        zip_upload = next(
+            (u for u in uploads if u.get('filename', '').lower().endswith('.zip')),
+            None
+        )
+        if not zip_upload:
+            return jsonify({'error': 'No ZIP upload found on itch.io'}), 404
+
+        # Get signed download URL
+        r2 = http.get(
+            f'https://itch.io/api/1/{api_key}/upload/{zip_upload["id"]}/download',
+            timeout=10
+        )
+        r2.raise_for_status()
+        url = r2.json().get('url')
+        if not url:
+            return jsonify({'error': 'itch.io returned no download URL'}), 502
+
+        # Stream ZIP back to browser
+        r3 = http.get(url, stream=True, timeout=60)
+        r3.raise_for_status()
+
+        def generate():
+            for chunk in r3.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        headers = {'Content-Disposition': f'attachment; filename="{zip_upload["filename"]}"'}
+        if 'Content-Length' in r3.headers:
+            headers['Content-Length'] = r3.headers['Content-Length']
+
+        return app.response_class(
+            generate(),
+            status=200,
+            mimetype='application/zip',
+            headers=headers
+        )
+    except Exception as e:
+        print(f'[game/latest] error: {e}', file=sys.stderr)
+        return jsonify({'error': str(e)}), 502
+
+
+@app.route('/emulator/game/fetch')
+def emulator_game_fetch():
+    """
+    Proxy-fetch a ROM or ZIP from an arbitrary URL and stream it to the browser.
+    Accepts a ?url= query parameter. Only http/https URLs are allowed.
+    """
+    url = request.args.get('url', '').strip()
+    if not url:
+        return jsonify({'error': 'No URL provided'}), 400
+    if not url.startswith(('http://', 'https://')):
+        return jsonify({'error': 'Only http/https URLs are supported'}), 400
+
+    try:
+        import requests as http
+        r = http.get(url, stream=True, timeout=30, allow_redirects=True)
+        r.raise_for_status()
+
+        filename = url.split('?')[0].rstrip('/').split('/')[-1] or 'game'
+        is_zip = filename.lower().endswith('.zip')
+        mimetype = 'application/zip' if is_zip else 'application/octet-stream'
+
+        def generate():
+            for chunk in r.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
+        if 'Content-Length' in r.headers:
+            headers['Content-Length'] = r.headers['Content-Length']
+
+        return app.response_class(generate(), status=200, mimetype=mimetype, headers=headers)
+    except Exception as e:
+        print(f'[game/fetch] error: {e}', file=sys.stderr)
+        return jsonify({'error': str(e)}), 502
+
+
+@app.route('/emulator/game/available')
+def emulator_game_available():
+    """Return whether itch.io credentials are configured (so UI can show fetch status)."""
+    available = bool(Config.ITCH_API_KEY and Config.ITCH_GAME_ID)
+    return jsonify({'available': available})
+
+
 @app.route('/emulator/shell/<path:filename>')
 def emulator_shell_static(filename):
     """Serve jzintv.js / jzintv.wasm / jzintv.data referenced by relative URL from shell."""
