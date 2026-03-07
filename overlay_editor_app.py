@@ -957,13 +957,18 @@ def voice_lookup():
 WASM_DIR = Path(__file__).parent / 'static' / 'wasm'
 
 @app.route('/emulator')
-def emulator_redirect():
-    """Redirect to /emulator/ so relative URLs (jzintv.js etc.) resolve correctly."""
-    return redirect('/emulator/')
-
-@app.route('/emulator/')
 def emulator():
-    """Serve the jzIntv WASM emulator shell page."""
+    """Serve the main editor with the emulator tab active (supports SPA tab routing)."""
+    return render_template('overlay_editor.html')
+
+@app.route('/emulator/shell')
+def emulator_shell_redirect():
+    """Redirect to /emulator/shell/ so relative WASM URLs resolve correctly."""
+    return redirect('/emulator/shell/')
+
+@app.route('/emulator/shell/')
+def emulator_shell():
+    """Serve the jzIntv WASM shell page (loaded inside the iframe)."""
     return send_from_directory(WASM_DIR, 'jzintv.html')
 
 @app.route('/emulator/bios/status')
@@ -1014,9 +1019,13 @@ def emulator_bios_fetch():
     try:
         import internetarchive as ia
 
+        # Strip Set-Cookie metadata (expires, path, domain) — keep value only
+        def _cv(s):
+            return s.split(';')[0].strip() if s else ''
+
         config = {
             's3': {'access': access_key, 'secret': secret_key},
-            'cookies': {'logged-in-user': logged_in_user, 'logged-in-sig': logged_in_sig},
+            'cookies': {'logged-in-user': _cv(logged_in_user), 'logged-in-sig': _cv(logged_in_sig)},
         }
         session = ia.get_session(config)
         item = session.get_item('OpenEmuBIOSPack')
@@ -1049,9 +1058,9 @@ def emulator_bios_fetch():
         return jsonify({'error': str(e)}), 502
 
 
-@app.route('/emulator/<path:filename>')
-def emulator_static(filename):
-    """Serve jzintv.js / jzintv.wasm / jzintv.data referenced by relative URL."""
+@app.route('/emulator/shell/<path:filename>')
+def emulator_shell_static(filename):
+    """Serve jzintv.js / jzintv.wasm / jzintv.data referenced by relative URL from shell."""
     return send_from_directory(WASM_DIR, filename)
 
 

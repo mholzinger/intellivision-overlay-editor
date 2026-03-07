@@ -505,7 +505,7 @@ window.switchEditorTab = (tabName, pushState = true) => {
     // Load emulator iframe on first switch to that tab
     if (tabName === 'emulator' && !window._emulatorInitialized) {
         const iframe = document.getElementById('emulator-iframe');
-        if (iframe) iframe.src = '/emulator/';
+        if (iframe) iframe.src = '/emulator/shell/';
         window._emulatorInitialized = true;
     }
 

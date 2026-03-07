@@ -17,11 +17,15 @@ read -r ACCESS SECRET USER SIG <<< $(python3 - <<'EOF'
 import configparser, sys
 c = configparser.RawConfigParser()
 c.read(f"{__import__('os').environ['HOME']}/.config/internetarchive/ia.ini")
+def cookie_val(s):
+    """Strip Set-Cookie metadata — keep only the value before the first semicolon."""
+    return s.split(';')[0].strip()
+
 print(
     c.get('s3',      'access'),
     c.get('s3',      'secret'),
-    c.get('cookies', 'logged-in-user'),
-    c.get('cookies', 'logged-in-sig'),
+    cookie_val(c.get('cookies', 'logged-in-user')),
+    cookie_val(c.get('cookies', 'logged-in-sig')),
     sep='\t'
 )
 EOF
