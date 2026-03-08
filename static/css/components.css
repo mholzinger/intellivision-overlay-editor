@@ -1788,3 +1788,30 @@ details[open] .voice-dict-summary::before {
     color: #1e3a5f;
     word-break: break-all;
 }
+
+/* ============================================================
+   Mobile phone overrides (≤ 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+    /* Voice editor — stack word panel above sequencer */
+    .voice-top-row {
+        flex-direction: column;
+    }
+    .voice-word-panel {
+        flex: none;
+        width: 100%;
+    }
+
+    /* Sprite editor — panels fill width */
+    .sprite-editor-layout {
+        flex-direction: column;
+    }
+    .sprite-canvas-panel {
+        width: 100% !important;
+    }
+
+    /* DS overlay — already stacks at 1100px, keep controls scrollable */
+    .ds-controls-panel {
+        max-height: 280px;
+    }
+}

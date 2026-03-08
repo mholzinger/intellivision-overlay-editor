@@ -387,7 +387,7 @@ body.artwork-dragging {
     cursor: move;
 }
 
-/* Responsive: stack panels vertically on narrow viewports */
+/* ── Responsive: tablet (≤ 900px) ───────────────────────────────────────── */
 @media (max-width: 900px) {
     .main-content {
         grid-template-columns: 1fr;
@@ -415,5 +415,110 @@ body.artwork-dragging {
 
     .controls-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ── Responsive: phone (≤ 600px) ────────────────────────────────────────── */
+@media (max-width: 600px) {
+    /* Full-bleed layout — no margin/padding around the card */
+    body {
+        padding: 0;
+        background: var(--white);
+    }
+
+    .container {
+        border-radius: 0;
+        box-shadow: none;
+        min-height: 100dvh;
+    }
+
+    /* Compact header — single line */
+    .header {
+        padding: 10px 14px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .header h1 {
+        font-size: 16px;
+        letter-spacing: 0.03em;
+    }
+
+    .header-subtitle { display: none; }
+    .header-link-text { display: none; }
+    .header-credits   { display: none; }
+
+    /* Tab bar — two-row stack: tabs swipeable on top, actions below */
+    .editor-tabs-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        gap: 0;
+    }
+
+    /* Tabs row — horizontally swipeable */
+    .editor-tabs {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-shrink: 0;
+        border-bottom: 1px solid var(--gray-200);
+        padding: 0 8px;
+    }
+    .editor-tabs::-webkit-scrollbar { display: none; }
+
+    .editor-tab {
+        padding: 10px 14px;
+        font-size: 12px;
+        white-space: nowrap;
+        gap: 4px;
+        border-bottom-width: 2px;
+    }
+
+    /* Hide BETA labels on mobile */
+    .editor-tab span[style*="orange"] { display: none; }
+
+    /* Toolbar action buttons — own swipeable row below tabs */
+    .editor-toolbar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-wrap: nowrap;
+        padding: 6px 10px;
+        gap: 6px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-100);
+    }
+    .editor-toolbar::-webkit-scrollbar { display: none; }
+
+    .editor-toolbar .btn {
+        font-size: 11px;
+        padding: 5px 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Preview panel — minimal padding, full bleed */
+    .preview-panel {
+        padding: 12px 10px;
+        border-right: none;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    /* Controls panel — tighter padding */
+    .controls-panel {
+        padding: 12px 10px;
+    }
+
+    /* Control sections — tighter padding */
+    .control-section {
+        padding: 12px;
+    }
+
+    /* Emulator iframe — full height on mobile */
+    #emulator-editor-content.active #emulator-iframe {
+        min-height: calc(100dvh - 110px);
     }
 }
