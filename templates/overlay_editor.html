@@ -2535,17 +2535,33 @@
         </div><!-- End voice-editor-content -->
 
         <div id="emulator-editor-content" class="editor-content">
-            <div style="display:flex; flex-direction:column; height:100%;">
+            <!-- Expand/restore button — floats top-right of the emulator panel -->
+            <button id="emu-expand-btn"
+                    onclick="toggleEmulatorExpand()"
+                    title="Expand to fill browser"
+                    style="position:absolute; top:8px; right:12px; z-index:200;
+                           background:rgba(44,62,80,0.08); border:1px solid rgba(44,62,80,0.18);
+                           border-radius:6px; padding:5px 10px; font-size:11px; font-weight:600;
+                           letter-spacing:0.5px; cursor:pointer; color:#2c3e50;
+                           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+                ⛶ Expand
+            </button>
+            <div id="emu-inner" style="display:flex; flex-direction:column; height:100%;">
                 <iframe id="emulator-iframe"
                         src="about:blank"
-                        style="flex:1; border:none; width:100%; min-height:600px;"
+                        style="flex:1; border:none; width:100%; min-height:calc(100vh - 120px);"
                         allow="autoplay; fullscreen"
                         allowfullscreen
                         title="Intellivision Emulator">
                 </iframe>
-                <!-- ── Emulator docs ──────────────────────────────────────────────── -->
-                <div style="background:#fafbfc; border-top:1px solid #e1e4e8; padding:24px 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; color:#24292e;">
-
+                <!-- ── Emulator docs (collapsed by default) ──────────────────────── -->
+                <div style="background:#fafbfc; border-top:1px solid #e1e4e8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; color:#24292e;">
+                    <!-- Toggle bar -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 32px; cursor:pointer; user-select:none;"
+                         onclick="(function(btn,body){var open=body.style.display!=='none';body.style.display=open?'none':'block';btn.textContent=open?'API Reference ▶':'API Reference ▼';})(this.querySelector('span'),document.getElementById('emu-docs-body'))">
+                        <span style="font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#6a737d;">API Reference ▶</span>
+                    </div>
+                    <div id="emu-docs-body" style="display:none; padding:0 32px 24px;">
                     <div style="max-width:860px; margin:0 auto;">
 
                         <!-- Header -->
@@ -2615,8 +2631,9 @@
 
                         </div>
                     </div>
+                    </div><!-- /emu-docs-body -->
                 </div>
-            </div>
+            </div><!-- /emu-inner -->
         </div><!-- End emulator-editor-content -->
 
     </div>
@@ -2871,7 +2888,37 @@ LOOP</pre>
     <!-- JSZip for project export/import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/static/js/overlay_editor.js"></script>
+    <style>
+        /* Emulator expand mode — fills the full viewport over everything */
+        #emulator-editor-content { position: relative; }
+        #emulator-editor-content.emu-expanded {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9000 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+        #emulator-editor-content.emu-expanded #emu-expand-btn {
+            top: 8px; right: 12px;
+        }
+    </style>
     <script>
+        function toggleEmulatorExpand() {
+            const panel = document.getElementById('emulator-editor-content');
+            const btn   = document.getElementById('emu-expand-btn');
+            const expanded = panel.classList.toggle('emu-expanded');
+            btn.textContent = expanded ? '⊠ Restore' : '⛶ Expand';
+            document.body.style.overflow = expanded ? 'hidden' : '';
+        }
+        // Auto-resize iframe to exactly fit the shell content height
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'jzintvResize') {
+                const iframe = document.getElementById('emulator-iframe');
+                if (iframe) iframe.style.height = Math.max(600, e.data.height + 32) + 'px';
+            }
+        });
         function openIntvPrimer() {
             document.getElementById('intv-primer-modal').style.display = 'flex';
             document.body.style.overflow = 'hidden';

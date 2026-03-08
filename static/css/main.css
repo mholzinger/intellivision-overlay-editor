@@ -27,6 +27,7 @@ body {
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
+    min-height: calc(100vh - 2 * var(--spacing-lg));
 }
 
 .header {
@@ -158,6 +159,22 @@ body {
 
 .editor-content.active {
     display: block;
+}
+
+/* Emulator tab — iframe must fill available viewport height */
+#emulator-editor-content.active {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+#emulator-editor-content.active #emu-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+#emulator-editor-content.active #emulator-iframe {
+    flex: 1;
+    min-height: calc(100vh - 120px);
 }
 
 /* Box Art Preview - fill available space */
