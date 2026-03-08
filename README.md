@@ -370,6 +370,19 @@ Custom fonts are:
 5. Send to backend for CairoSVG conversion to PNG
 6. Apply overlay mask for rounded corners (client-side)
 
+## Known Issues / Polish
+
+### Overlay Preview on Mobile
+The SVG overlay preview does not yet scale to fit the phone viewport width correctly on mobile browsers. The overlay card renders at a fixed internal size and can overflow the right edge of the screen.
+
+**Root cause:** The SVG template uses physical `mm` units (`width="55.6mm" height="90.4mm"`). On mobile, the combination of the container's overflow context, the JS-applied inline `style.height="100%"` from `SVGManager`, and WebKit's handling of flex-item scroll containers prevents the CSS `width: 100%; height: auto` scaling from taking full effect.
+
+**Workaround:** Use the desktop browser (≥ 900px viewport) for editing. The exported PNG is always correct regardless of preview scaling.
+
+**Planned fix:** Replace the SVG's `mm` attribute dimensions with a pure `viewBox` approach and handle all scaling via CSS, removing the JS inline style assignment in `SVGManager.loadTemplate()`.
+
+---
+
 ## Troubleshooting
 
 **Port in use:**
