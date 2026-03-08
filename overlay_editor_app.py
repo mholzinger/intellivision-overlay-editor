@@ -1064,21 +1064,19 @@ def emulator_game_latest():
     Fetch the latest game ZIP from itch.io and proxy it to the browser.
     Requires ITCH_API_KEY and ITCH_GAME_ID environment variables.
     """
+    import urllib.request, json as _json
+
     api_key = Config.ITCH_API_KEY
     game_id = Config.ITCH_GAME_ID
     if not api_key or not game_id:
         return jsonify({'error': 'ITCH_API_KEY or ITCH_GAME_ID not configured'}), 503
 
     try:
-        import requests as http
-
         # Get upload list for the game
-        r = http.get(
-            f'https://itch.io/api/1/{api_key}/game/{game_id}/uploads',
-            timeout=10
-        )
-        r.raise_for_status()
-        uploads = r.json().get('uploads', [])
+        with urllib.request.urlopen(
+            f'https://itch.io/api/1/{api_key}/game/{game_id}/uploads', timeout=10
+        ) as r:
+            uploads = _json.loads(r.read()).get('uploads', [])
 
         # Pick the first ZIP upload
         zip_upload = next(
@@ -1089,33 +1087,26 @@ def emulator_game_latest():
             return jsonify({'error': 'No ZIP upload found on itch.io'}), 404
 
         # Get signed download URL
-        r2 = http.get(
-            f'https://itch.io/api/1/{api_key}/upload/{zip_upload["id"]}/download',
-            timeout=10
-        )
-        r2.raise_for_status()
-        url = r2.json().get('url')
+        with urllib.request.urlopen(
+            f'https://itch.io/api/1/{api_key}/upload/{zip_upload["id"]}/download', timeout=10
+        ) as r2:
+            url = _json.loads(r2.read()).get('url')
         if not url:
             return jsonify({'error': 'itch.io returned no download URL'}), 502
 
-        # Stream ZIP back to browser
-        r3 = http.get(url, stream=True, timeout=60)
-        r3.raise_for_status()
+        # Download full ZIP into memory and return it
+        with urllib.request.urlopen(url, timeout=60) as r3:
+            data = r3.read()
 
-        def generate():
-            for chunk in r3.iter_content(chunk_size=65536):
-                if chunk:
-                    yield chunk
-
-        headers = {'Content-Disposition': f'attachment; filename="{zip_upload["filename"]}"'}
-        if 'Content-Length' in r3.headers:
-            headers['Content-Length'] = r3.headers['Content-Length']
-
+        filename = zip_upload['filename']
         return app.response_class(
-            generate(),
+            data,
             status=200,
             mimetype='application/zip',
-            headers=headers
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Length': str(len(data)),
+            }
         )
     except Exception as e:
         print(f'[game/latest] error: {e}', file=sys.stderr)
@@ -1161,6 +1152,10 @@ def emulator_game_upload():
 
     if not data:
         return jsonify({'error': 'No file data received'}), 400
+
+    MAX_ROM_SIZE = 5 * 1024 * 1024  # 5 MB
+    if len(data) > MAX_ROM_SIZE:
+        return jsonify({'error': f'File too large ({len(data) // 1024} KB). Maximum is 5 MB.'}), 413
 
     token = str(uuid.uuid4())
     _rom_tokens[token] = {'data': data, 'filename': filename, 'stored_at': _time.time()}
