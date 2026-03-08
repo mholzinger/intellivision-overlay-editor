@@ -418,53 +418,64 @@ body.artwork-dragging {
     }
 }
 
-/* ── Responsive: phone (≤ 600px) ────────────────────────────────────────── */
-@media (max-width: 600px) {
+/* ── Responsive: phone (≤ 768px) ────────────────────────────────────────── */
+@media (max-width: 768px) {
     /* Full-bleed layout — no margin/padding around the card */
     body {
         padding: 0;
         background: var(--white);
+        overflow-x: hidden; /* hard-stop horizontal page scroll */
     }
 
     .container {
         border-radius: 0;
         box-shadow: none;
+        overflow: visible; /* must NOT be 'hidden' — breaks child scroll containers on iOS */
         min-height: 100dvh;
+        max-width: 100vw;  /* never wider than the viewport */
     }
 
     /* Compact header — single line */
     .header {
         padding: 10px 14px;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow: hidden;
     }
 
     .header h1 {
         font-size: 16px;
         letter-spacing: 0.03em;
+        white-space: nowrap;
     }
 
     .header-subtitle { display: none; }
     .header-link-text { display: none; }
     .header-credits   { display: none; }
 
-    /* Tab bar — two-row stack: tabs swipeable on top, actions below */
+    /* Tab bar — two rows: tabs on top, actions below */
     .editor-tabs-toolbar {
         flex-direction: column;
         align-items: stretch;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
         padding: 0;
         gap: 0;
     }
 
-    /* Tabs row — horizontally swipeable */
+    /* Tabs row — the tab buttons container scrolls horizontally */
     .editor-tabs {
-        overflow-x: auto;
+        /* iOS Safari fix: flex item that is also a scroll container needs
+           width: 0 + min-width: 100% to correctly compute overflow */
+        width: 0;
+        min-width: 100%;
+        overflow-x: scroll;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        flex-shrink: 0;
+        flex-wrap: nowrap;
+        padding: 0 4px;
         border-bottom: 1px solid var(--gray-200);
-        padding: 0 8px;
     }
     .editor-tabs::-webkit-scrollbar { display: none; }
 
@@ -474,6 +485,7 @@ body.artwork-dragging {
         white-space: nowrap;
         gap: 4px;
         border-bottom-width: 2px;
+        flex-shrink: 0;
     }
 
     /* Hide BETA labels on mobile */
@@ -481,7 +493,10 @@ body.artwork-dragging {
 
     /* Toolbar action buttons — own swipeable row below tabs */
     .editor-toolbar {
-        overflow-x: auto;
+        /* Same iOS Safari fix as .editor-tabs: constrain width so overflow-x works */
+        width: 0;
+        min-width: 100%;
+        overflow-x: scroll;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -500,11 +515,45 @@ body.artwork-dragging {
         flex-shrink: 0;
     }
 
-    /* Preview panel — minimal padding, full bleed */
+    /* Preview panel — zero padding so SVG fills the full phone width */
     .preview-panel {
-        padding: 12px 10px;
+        padding: 0;
+        gap: 0;
         border-right: none;
         border-bottom: 1px solid var(--gray-200);
+    }
+
+    /* Preview container — remove overflow clip, let SVG determine height */
+    .preview-container {
+        overflow: visible;
+        align-items: flex-start;
+        display: block;
+    }
+
+    /* SVG wrapper — full width, no explicit height */
+    #svg-preview {
+        width: 100%;
+        display: block;
+    }
+
+    /* SVG element — width 100%, height auto so viewBox aspect ratio controls height.
+       !important overrides svgDoc.style.height='100%' set by SVGManager in JS. */
+    #svg-preview svg {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        display: block;
+    }
+
+    /* Give the options row and status message their own padding */
+    .preview-options {
+        padding: 8px 12px;
+        margin-top: 0;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    #status {
+        padding: 0 12px 8px;
     }
 
     /* Controls panel — tighter padding */

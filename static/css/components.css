@@ -1792,7 +1792,7 @@ details[open] .voice-dict-summary::before {
 /* ============================================================
    Mobile phone overrides (≤ 600px)
    ============================================================ */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     /* Voice editor — stack word panel above sequencer */
     .voice-top-row {
         flex-direction: column;
