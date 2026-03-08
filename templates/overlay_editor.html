@@ -2903,6 +2903,15 @@ LOOP</pre>
         #emulator-editor-content.emu-expanded #emu-expand-btn {
             top: 8px; right: 12px;
         }
+        /* iframe goes fullscreen when shell requests it (iOS fake-fullscreen) */
+        #emulator-iframe.emu-iframe-fs {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 9999 !important;
+            width: 100vw !important;
+            height: 100dvh !important;
+            border: none !important;
+        }
     </style>
     <script>
         function toggleEmulatorExpand() {
@@ -2912,11 +2921,25 @@ LOOP</pre>
             btn.textContent = expanded ? '⊠ Restore' : '⛶ Expand';
             document.body.style.overflow = expanded ? 'hidden' : '';
         }
-        // Auto-resize iframe to exactly fit the shell content height
+        // Auto-resize iframe + handle shell postMessages
         window.addEventListener('message', function(e) {
-            if (e.data && e.data.type === 'jzintvResize') {
-                const iframe = document.getElementById('emulator-iframe');
-                if (iframe) iframe.style.height = Math.max(600, e.data.height + 32) + 'px';
+            const iframe = document.getElementById('emulator-iframe');
+            if (!iframe || !e.data) return;
+            if (e.data.type === 'jzintvResize') {
+                iframe.style.height = Math.max(600, e.data.height + 32) + 'px';
+            } else if (e.data.type === 'jzintvStop') {
+                // Reload the iframe — equivalent to location.reload() but reliable on mobile
+                const src = iframe.src;
+                iframe.src = 'about:blank';
+                requestAnimationFrame(() => { iframe.src = src; });
+            } else if (e.data.type === 'jzintvFullscreen') {
+                if (e.data.active) {
+                    iframe.classList.add('emu-iframe-fs');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    iframe.classList.remove('emu-iframe-fs');
+                    document.body.style.overflow = '';
+                }
             }
         });
         function openIntvPrimer() {
