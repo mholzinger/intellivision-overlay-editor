@@ -166,6 +166,7 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow-y: auto;
 }
 #emulator-editor-content.active #emu-inner {
     flex: 1;
