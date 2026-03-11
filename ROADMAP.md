@@ -124,6 +124,30 @@ output while building allophones in the Voice Builder tab.
 - GRAM card conflict detection / auto-assign
 - Copy/paste between sprites
 
+### Emulator — Landscape Mobile Layout
+**Goal:** On phones in landscape orientation, arrange the emulator as `[disc] | [canvas] | [keypad]`
+so the game fills the center and controls flank it on either side.
+
+**Context:** An initial implementation was attempted using CSS `display: contents` to dissolve the
+`#touch-controls` wrapper and `order: -1` to reposition the disc. The disc/canvas/keypad
+positioning works but the canvas does not scale to fit the available height, leaving dead space
+and mis-sized controls. Needs a proper height-driven scaling pass.
+
+**Known issues to solve:**
+- Canvas does not auto-scale to viewport height in landscape — needs `max-height: 100dvh` or
+  an explicit height-driven resize
+- `#emulator-wrap` padding/background bleeds around the canvas in landscape
+- Controls may be too large or too small depending on device aspect ratio — `clamp` values need
+  tuning against real devices
+- Layout toggle (Full / Mini) also needs landscape-specific sizing for mini mode
+
+**Implementation notes:**
+- Current approach: `display: contents` on `#touch-controls`, `order: -1` on disc —
+  cascade was the original bug (landscape rule appeared before the `pointer:coarse` rule)
+- Canvas scaling: likely needs a ResizeObserver or `aspect-ratio` + `height: 100%` on `#canvas-area`
+- May need to hide `#emulator-controls` bar in landscape to reclaim vertical space, or
+  move it into the keypad column
+
 ### DS Overlay Tab
 - Visual hotspot overlap detection
 - Import from existing .ovl file
