@@ -219,6 +219,42 @@ Store: 'games'      (new store, keyPath: 'id')
 
 ---
 
+### Intellivision ROM File Validator (standalone tool)
+**Goal:** A small standalone utility (separate project or CLI) that inspects an Intellivision
+ROM file, detects its true format, and reports whether the file extension is correct.
+
+**Context:** Intellivision ROMs circulate with inconsistent extensions. `.int` should be the
+Intellicart self-describing format (has a header), while `.bin` is a raw ROM image requiring an
+external `.cfg` for memory mapping. Files are frequently mislabeled — e.g. a raw binary
+distributed as `.int`, or an Intellicart image renamed to `.bin`. This causes silent load
+failures or wrong memory map application.
+
+**Detection logic:**
+- **Intellicart (`.int`)** — begins with the 2-byte magic `0xA8 0x52` (or the Intellicart ROM
+  header signature). If this magic is present, the file is self-describing and `.int` is correct.
+- **Raw binary (`.bin`)** — no header; any content is valid. Correct extension is `.bin` and
+  a matching `.cfg` is required for jzIntv to load it.
+- **`.rom`** — jzIntv's own tagged format; has a distinct header. Easy to detect.
+
+**Outputs per file:**
+- Detected format (Intellicart / Raw binary / jzIntv ROM / Unknown)
+- Current extension: correct ✓ / mislabeled ✗
+- Suggested extension if mislabeled
+- For raw `.bin`: which map number from `GAME_MAP_DB` applies (if filename matches), or
+  "unknown — drop alongside a .cfg"
+
+**Delivery options (pick one):**
+- Python CLI script: `python rom_validator.py beauty.bin` → prints report
+- Browser drag-and-drop page: drop a file, get instant analysis (no server needed — pure JS)
+- Integrated into the emulator drop zone as a soft warning badge when a mislabeled file is detected
+
+**Notes:**
+- Intellicart header reference: jzIntv source `icart/icartrom.c` — look for `ICARTROM_MAGIC`
+- Should also flag `.bin` files NOT in `GAME_MAP_DB` (unknown ROM — user must supply `.cfg`)
+- Useful for curating ROM collections before loading into the emulator
+
+---
+
 ## Completed (recent)
 
 - jzIntv WASM emulator tab — BIOS setup, Sprint ZIP loading, box art / overlay panels, screenshot carousel
