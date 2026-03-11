@@ -148,6 +148,71 @@ and mis-sized controls. Needs a proper height-driven scaling pass.
 - May need to hide `#emulator-controls` bar in landscape to reclaim vertical space, or
   move it into the keypad column
 
+### Saved Game Library (IndexedDB)
+**Goal:** When the user loads a Sprint bundle ZIP, automatically persist the game to IndexedDB
+as a named entry. A saved game card appears in the emulator UI so the user can tap to resume
+— no re-uploading required, works offline.
+
+**What to store (per saved game):**
+```
+{
+  id:          string,        // slug derived from game name, e.g. "space-intruders"
+  name:        string,        // display name (from overlay.json title or filename)
+  rom:         ArrayBuffer,   // the cartridge ROM bytes (8–128 KB)
+  romExt:      string,        // "rom" | "bin" | "int"
+  cfg:         ArrayBuffer?,  // jzIntv .cfg file if present in the bundle
+  overlayJson: object?,       // parsed overlay.json from Sprint bundle
+  overlayPng:  ArrayBuffer?,  // controller overlay PNG (for the in-game panel)
+  boxartPng:   ArrayBuffer?,  // box art PNG
+  savedAt:     number,        // Date.now() timestamp
+}
+```
+Sprint bundles that include overlay art and box art are stored as full entries. Plain
+`.rom`/`.bin` drops are stored with just ROM + ext (no artwork). The extra Sprint bundle
+data (readme, source files, etc.) is discarded — only the above fields are kept.
+
+**Trigger:** Save happens automatically on successful ROM load. No explicit "save" button
+needed. If a game with the same `id` already exists, overwrite it silently.
+
+**UI surface — "My Games" row:**
+Above the ROM drop zone (or replacing it when at least one game is saved), show a
+horizontal scrollable row of saved game cards:
+
+```
+┌─────────────────────────────────────────────────┐
+│  My Games                                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │ [boxart] │  │ [boxart] │  │  +  Drop │       │
+│  │  Astro   │  │  Space   │  │  a game  │       │
+│  │  Smash   │  │Intruders │  │          │       │
+│  └──────────┘  └──────────┘  └──────────┘       │
+└─────────────────────────────────────────────────┘
+```
+
+- Each card shows box art (if available) or a generic cartridge icon
+- Tap to load — writes ROM to WASM FS and launches immediately (if BIOS already loaded)
+- Long-press / ··· menu: "Delete saved game"
+- When no games are saved, the row is hidden and only the drop zone shows
+- When games are saved, the drop zone shrinks to a compact "+ Add game" card at the end of the row
+
+**Plain ROM saves (no Sprint bundle):**
+- Use a generic cartridge icon placeholder
+- Name derived from filename (strip extension, replace `_`/`-` with spaces, title-case)
+
+**IndexedDB schema:**
+```
+DB: 'jzintv-roms'   (already exists for BIOS)
+Store: 'games'      (new store, keyPath: 'id')
+```
+
+**Implementation notes:**
+- Extract save logic into a `saveGame(entry)` helper called from `_loadRom()` after
+  successful load — both ZIP and direct ROM paths
+- `loadSavedGame(id)` retrieves from IDB, writes ROM to WASM FS, calls `onPlay()`
+- Card row rendered by a `renderGameLibrary()` function called on emulator tab init
+  and after each save
+- Box art displayed as `<img src="blob:...">` using `URL.createObjectURL(new Blob([boxartPng]))`
+
 ### DS Overlay Tab
 - Visual hotspot overlap detection
 - Import from existing .ovl file
