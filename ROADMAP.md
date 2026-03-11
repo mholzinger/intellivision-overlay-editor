@@ -219,6 +219,38 @@ Store: 'games'      (new store, keyPath: 'id')
 
 ---
 
+### Per-Game jzIntv Run Settings
+**Goal:** Remember each game's hardware configuration so the correct options are applied
+automatically every time that game is loaded from the library — no manual checkbox toggling.
+
+**Context:** The emulator currently has global options (JLP, PAL, ECS, extra flags) that
+persist across all games via `localStorage`. This is wrong for a library: BurgerTime should
+never enable ECS, while a JLP game needs JLP every time. Settings should travel with the game.
+
+**Settings to persist per game:**
+| Setting | Control | Notes |
+|---------|---------|-------|
+| ECS enabled | `opt-ecs` checkbox | Only for games that require the ECS expansion |
+| JLP enabled | `opt-jlp` checkbox | JLP flash/RAM enhancement cartridge |
+| PAL mode | `opt-pal` checkbox | PAL region ROMs run at wrong speed in NTSC mode |
+| Extra flags | `opt-extra-flags` text input | Free-form jzIntv CLI flags for edge cases |
+
+**Implementation sketch:**
+- Add a `settings` field to the saved game record in the IndexedDB `games` store:
+  ```javascript
+  { id, name, rom, romExt, cfg, ..., settings: { ecs: false, jlp: false, pal: false, extra: '' } }
+  ```
+- When `saveCurrentGame()` runs, snapshot current checkbox/input state into `settings`
+- When `loadSavedGame(game)` runs, apply `game.settings` to the UI controls before `onPlay()`
+- Add an **edit settings** affordance on each game card (gear icon or long-press) so the user
+  can change settings for a saved game without re-dropping the ROM
+- Global options remain as the default for freshly-dropped, unknown games
+
+**UX:** Show small hardware badges on each library card for any non-default settings active
+(e.g. a "JLP" or "ECS" pill) so the user can see at a glance what's enabled for each title.
+
+---
+
 ### Intellivision ROM File Validator (standalone tool)
 **Goal:** A small standalone utility (separate project or CLI) that inspects an Intellivision
 ROM file, detects its true format, and reports whether the file extension is correct.
