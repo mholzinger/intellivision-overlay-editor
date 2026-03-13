@@ -976,18 +976,22 @@ def emulator_bios_status():
     """Return which BIOS files are available server-side (configured via OVL_BIOS_*_PATH)."""
     exec_path = Config.get_bios_exec_path()
     grom_path = Config.get_bios_grom_path()
+    ecs_path  = Config.get_bios_ecs_path()
     return jsonify({
         'exec': bool(exec_path and exec_path.is_file()),
         'grom': bool(grom_path and grom_path.is_file()),
+        'ecs':  bool(ecs_path  and ecs_path.is_file()),
     })
 
 @app.route('/emulator/bios/<filename>')
 def emulator_bios_file(filename):
-    """Serve a server-configured BIOS file (exec.bin or grom.bin only)."""
+    """Serve a server-configured BIOS file (exec.bin, grom.bin, or ecs.bin)."""
     if filename == 'exec.bin':
         path = Config.get_bios_exec_path()
     elif filename == 'grom.bin':
         path = Config.get_bios_grom_path()
+    elif filename == 'ecs.bin':
+        path = Config.get_bios_ecs_path()
     else:
         return jsonify({'error': 'Unknown BIOS file'}), 404
     if not path or not path.is_file():

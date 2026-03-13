@@ -88,9 +88,8 @@ class Config:
     ITCH_GAME_ID = os.environ.get('ITCH_GAME_ID', '')
 
     # BIOS file paths (optional — for Docker deployments with pre-provisioned BIOS)
-    # Set OVL_BIOS_EXEC_PATH and OVL_BIOS_GROM_PATH to absolute paths of exec.bin / grom.bin.
-    # When set, the emulator page serves them at /emulator/bios/exec.bin and /emulator/bios/grom.bin
-    # so users don't need to supply their own files.
+    # Set OVL_BIOS_EXEC_PATH, OVL_BIOS_GROM_PATH, and OVL_BIOS_ECS_PATH to absolute paths.
+    # When set, the emulator page serves them automatically so users don't need to drop files.
     @classmethod
     def get_bios_exec_path(cls) -> Path | None:
         val = os.environ.get('OVL_BIOS_EXEC_PATH')
@@ -99,6 +98,11 @@ class Config:
     @classmethod
     def get_bios_grom_path(cls) -> Path | None:
         val = os.environ.get('OVL_BIOS_GROM_PATH')
+        return Path(val) if val else None
+
+    @classmethod
+    def get_bios_ecs_path(cls) -> Path | None:
+        val = os.environ.get('OVL_BIOS_ECS_PATH')
         return Path(val) if val else None
 
     # CORS settings
