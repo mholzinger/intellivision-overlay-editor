@@ -1199,7 +1199,11 @@ def emulator_game_fetch():
 
     try:
         import requests as http
-        r = http.get(url, stream=True, timeout=30, allow_redirects=True)
+        fetch_headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; IntellvisionOverlayEditor/1.0)',
+            'Accept': '*/*',
+        }
+        r = http.get(url, stream=True, timeout=30, allow_redirects=True, headers=fetch_headers)
         r.raise_for_status()
 
         filename = url.split('?')[0].rstrip('/').split('/')[-1] or 'game'
@@ -1217,7 +1221,7 @@ def emulator_game_fetch():
 
         return app.response_class(generate(), status=200, mimetype=mimetype, headers=headers)
     except Exception as e:
-        print(f'[game/fetch] error: {e}', file=sys.stderr)
+        app.logger.error(f'[game/fetch] error fetching {url!r}: {e}')
         return jsonify({'error': str(e)}), 502
 
 
