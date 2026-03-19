@@ -22,6 +22,7 @@ import { ConfigManager } from './modules/configManager.js';
 import { ImageProcessor } from './modules/imageProcessor.js';
 import { BoxArtEditor } from './modules/boxArtEditor.js';
 import { SpriteEditor } from './modules/spriteEditor.js';
+import { LayoutDesigner } from './modules/layoutDesigner.js';
 import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
 import { VoiceEditor } from './modules/voiceEditor.js';
 
@@ -639,6 +640,16 @@ window.updateCsColor        = (idx)     => SpriteEditor.updateCsColor(idx);
 window.updateCsAdvance      = (checked) => SpriteEditor.updateCsAdvance(checked);
 window.updateFgbgFg         = (idx)     => SpriteEditor.updateFgbgFg(idx);
 window.updateFgbgBg         = (idx)     => SpriteEditor.updateFgbgBg(idx);
+
+// Layout Designer functions
+window.toggleLayoutView    = () => LayoutDesigner.toggle();
+window.layoutSetZoom       = (z) => LayoutDesigner.setZoom(z);
+window.layoutClear         = () => LayoutDesigner.clearLayout();
+window.layoutFill          = () => LayoutDesigner.fillLayout();
+window.layoutExportBacktab = () => LayoutDesigner.exportBacktab();
+window.layoutExportPng     = () => LayoutDesigner.exportPng();
+window.layoutCopyExport    = () => LayoutDesigner.copyExport();
+window.layoutDownloadExport= () => LayoutDesigner.downloadExport();
 
 // DS Overlay Editor functions
 window.loadDSTemplate       = () => DSOverlayEditor.loadTemplate();

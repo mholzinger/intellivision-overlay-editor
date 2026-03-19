@@ -1324,22 +1324,26 @@ export class SpriteEditor {
     }
 
     static exportProject() {
-        const projectData = {
-            version: 2,
-            sprites: this.sprites,
-            currentSpriteIndex: this.currentSpriteIndex,
-            selectedFgColor: this.selectedFgColor,
-            selectedBgColor: this.selectedBgColor
-        };
-        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'sprite-project.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Import lazily to avoid circular dep at module load time
+        import('./layoutDesigner.js').then(({ LayoutDesigner }) => {
+            const projectData = {
+                version: 3,
+                sprites: this.sprites,
+                currentSpriteIndex: this.currentSpriteIndex,
+                selectedFgColor: this.selectedFgColor,
+                selectedBgColor: this.selectedBgColor,
+                layout: LayoutDesigner.serializeCells(),
+            };
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sprite-project.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
     }
 
     static importProject() {
@@ -1362,6 +1366,11 @@ export class SpriteEditor {
                         if (sprite) {
                             this.gridWidth = sprite.width;
                             this.gridHeight = sprite.height;
+                        }
+                        if (projectData.layout) {
+                            import('./layoutDesigner.js').then(({ LayoutDesigner }) => {
+                                LayoutDesigner.deserializeCells(projectData.layout);
+                            });
                         }
                         this.updateSpriteList();
                         this.renderPalette();
@@ -1595,6 +1604,30 @@ export class SpriteEditor {
 
     static toggleSpriteInAnimation(spriteIndex) {
         this.addToAnimation(spriteIndex);
+    }
+
+    // =========================================================================
+    // Layout Designer integration
+    // =========================================================================
+
+    /**
+     * Return 8×8 pixel data for the sprite assigned to a given GRAM slot.
+     * Used by LayoutDesigner to render tiles on the layout canvas.
+     * Returns null if no sprite is assigned to that slot.
+     */
+    static getGramTilePixels(gramSlot) {
+        const sprite = this.sprites.find(s => s.gramCard === gramSlot);
+        if (!sprite) return null;
+        // Always return the top-left 8×8 block
+        const pixels = Array.from({ length: 8 }, (_, y) =>
+            Array.from({ length: 8 }, (_, x) => sprite.pixels[y]?.[x] ?? 0)
+        );
+        return {
+            pixels,
+            fgColor:  sprite.fgColor,
+            bgColor:  sprite.bgColor,
+            name:     sprite.name,
+        };
     }
 }
 
