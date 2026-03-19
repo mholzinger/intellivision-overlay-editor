@@ -99,6 +99,7 @@
                 <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ New Sprite</button>
                 <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()">🗑️ Clear All</button>
                 <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" title="INTV graphics concepts for beginners">📖 INTV Primer</button>
+                <button id="layout-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Full-screen 20×12 backtab layout designer">🖥️ Layout View</button>
             </div>
 
             <!-- DS Overlay Editor Action Buttons -->
@@ -2416,6 +2417,58 @@
                 </div>
             </div>
         </div><!-- End sprite-editor-content -->
+
+        <!-- ============================================================ -->
+        <!-- LAYOUT DESIGNER (full-screen, shown over sprite-editor-content) -->
+        <!-- ============================================================ -->
+        <div id="layout-designer-panel" class="editor-content layout-designer-panel" style="display:none;">
+
+            <!-- Top toolbar -->
+            <div class="layout-toolbar">
+                <button class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Return to sprite editor">← Sprites</button>
+
+                <div class="layout-toolbar-group">
+                    <span class="layout-toolbar-label">Zoom</span>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="2" onclick="layoutSetZoom(2)">2×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs active" data-zoom="3" onclick="layoutSetZoom(3)">3×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="4" onclick="layoutSetZoom(4)">4×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="5" onclick="layoutSetZoom(5)">5×</button>
+                </div>
+
+                <div class="layout-toolbar-group">
+                    <span class="layout-toolbar-label">Paint Color</span>
+                    <div id="layout-color-picker" class="layout-color-row"></div>
+                </div>
+
+                <div class="layout-toolbar-group layout-toolbar-right">
+                    <button class="btn btn-secondary btn-sm" onclick="layoutFill()" title="Fill entire canvas with selected tile">🪣 Fill</button>
+                    <button class="btn btn-secondary btn-sm" onclick="layoutClear()" title="Clear all cells">🗑️ Clear</button>
+                    <button class="btn btn-secondary btn-sm" onclick="layoutExportPng()" title="Download PNG mockup">🖼️ PNG</button>
+                    <button class="btn btn-success btn-sm" onclick="layoutExportBacktab()" title="Export IntyBASIC BACKTAB data">📋 Export BACKTAB</button>
+                </div>
+            </div>
+
+            <!-- Status bar -->
+            <div id="layout-status-bar" class="layout-status-bar">GRAM 0 · FG: White (7)</div>
+
+            <!-- Body: tile picker + canvas -->
+            <div class="layout-designer-body">
+
+                <!-- Left: GRAM tile picker -->
+                <div class="layout-picker-panel">
+                    <div class="layout-picker-header">GRAM Tiles <span class="layout-picker-hint">(click to select)</span></div>
+                    <div id="layout-tile-picker" class="layout-tile-picker"></div>
+                    <div class="layout-picker-hint layout-picker-hint-bottom">
+                        Right-click on canvas to erase
+                    </div>
+                </div>
+
+                <!-- Main: layout canvas -->
+                <div class="layout-canvas-wrapper">
+                    <canvas id="layout-canvas" class="layout-canvas"></canvas>
+                </div>
+            </div>
+        </div><!-- End layout-designer-panel -->
 
         <!-- ============================================================ -->
         <!-- DS OVERLAY EDITOR                                             -->
