@@ -469,6 +469,9 @@ window.switchEditorTab = (tabName, pushState = true) => {
         tab.classList.toggle('active', tab.dataset.tab === tabName);
     });
 
+    // On touch devices, hide page chrome (header/tabs/API ref) when emulator is active
+    document.body.classList.toggle('emulator-tab-active', tabName === 'emulator');
+
     // Update content panels
     document.querySelectorAll('.editor-content').forEach(content => {
         content.classList.toggle('active', content.id === `${tabName}-editor-content`);

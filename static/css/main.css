@@ -572,3 +572,23 @@ body.artwork-dragging {
         min-height: calc(100dvh - 110px);
     }
 }
+
+/* On touch devices, when emulator tab is active hide page chrome so the
+   full viewport is available for the game + controls */
+@media (pointer: coarse) {
+    body.emulator-tab-active .header,
+    body.emulator-tab-active .editor-tabs-toolbar,
+    body.emulator-tab-active #emulator-toolbar {
+        display: none !important;
+    }
+
+    body.emulator-tab-active #emulator-editor-content.active {
+        padding: 0;
+        margin: 0;
+    }
+
+    body.emulator-tab-active #emulator-editor-content.active #emulator-iframe {
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+}
