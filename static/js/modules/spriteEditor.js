@@ -45,6 +45,10 @@ export class SpriteEditor {
     // '2x1' = two sprites side-by-side (horizontal composite)
     // '1x2' = two sprites stacked (vertical composite)
     static previewLayout = '1x1';
+    // Hardware stretch mode: '1x1' | '2x1' (double-W) | '1x2' (double-H) | '2x2' (both)
+    static stretchMode = '1x1';
+    // TV aspect correction: Intellivision pixels are ~1.6× wider than tall (160×192 → 4:3 screen)
+    static tvAspect = false;
 
     /**
      * Initialize the sprite editor
@@ -381,9 +385,12 @@ export class SpriteEditor {
         const sprite = this.getCurrentSprite();
         if (!sprite) return;
 
-        const scale = 4;
-        canvas.width = sprite.width * scale;
-        canvas.height = sprite.height * scale;
+        const base = 8;
+        const tv = this.tvAspect ? 1.6 : 1;
+        const sx = ((this.stretchMode === '2x1' || this.stretchMode === '2x2') ? base * 2 : base) * tv;
+        const sy =  (this.stretchMode === '1x2' || this.stretchMode === '2x2') ? base * 2 : base;
+        canvas.width  = Math.round(sprite.width  * sx);
+        canvas.height = sprite.height * sy;
         ctx.imageSmoothingEnabled = false;
 
         for (let y = 0; y < sprite.height; y++) {
@@ -391,9 +398,28 @@ export class SpriteEditor {
                 const isSet = sprite.pixels[y][x] === 1;
                 const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
                 ctx.fillStyle = this.PALETTE[colorIndex].hex;
-                ctx.fillRect(x * scale, y * scale, scale, scale);
+                ctx.fillRect(Math.round(x * sx), y * sy, Math.ceil(sx), sy);
             }
         }
+    }
+
+    /** Set hardware stretch preview mode and re-render. */
+    static setStretchMode(mode) {
+        this.stretchMode = mode;
+        document.querySelectorAll('.stretch-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.stretch === mode);
+        });
+        this.renderPreview();
+        this.renderAnimationFrame();
+    }
+
+    /** Toggle TV pixel aspect ratio correction (Intellivision: ~1.6:1 PAR) and re-render. */
+    static toggleTvAspect() {
+        this.tvAspect = !this.tvAspect;
+        const btn = document.getElementById('sprite-tv-btn');
+        if (btn) btn.classList.toggle('active', this.tvAspect);
+        this.renderPreview();
+        this.renderAnimationFrame();
     }
 
     // ==========================================
@@ -1494,14 +1520,17 @@ export class SpriteEditor {
         }
     }
 
-    /** Draw a sprite's pixels onto ctx at (offsetX, offsetY) with pixel scale. */
-    static _drawSpriteToCanvas(ctx, sprite, offsetX, offsetY, scale) {
+    /** Draw a sprite's pixels onto ctx at (offsetX, offsetY) with pixel scale.
+     *  scaleY defaults to scaleX for square pixels; pass separately for stretch. */
+    static _drawSpriteToCanvas(ctx, sprite, offsetX, offsetY, scaleX, scaleY = scaleX) {
         for (let y = 0; y < sprite.height; y++) {
             for (let x = 0; x < sprite.width; x++) {
                 const isSet = sprite.pixels[y][x] === 1;
                 const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
                 ctx.fillStyle = this.PALETTE[colorIndex].hex;
-                ctx.fillRect(offsetX + x * scale, offsetY + y * scale, scale, scale);
+                const px = Math.round(offsetX + x * scaleX);
+                const py = offsetY + y * scaleY;
+                ctx.fillRect(px, py, Math.ceil(scaleX), scaleY);
             }
         }
     }
@@ -1511,8 +1540,11 @@ export class SpriteEditor {
         if (!canvas || this.animationSequence.length === 0) return;
 
         const ctx = canvas.getContext('2d');
-        const scale = 4;
-        const seq   = this.animationSequence;
+        const base = 8;
+        const tv = this.tvAspect ? 1.6 : 1;
+        const sx = ((this.stretchMode === '2x1' || this.stretchMode === '2x2') ? base * 2 : base) * tv;
+        const sy =  (this.stretchMode === '1x2' || this.stretchMode === '2x2') ? base * 2 : base;
+        const seq = this.animationSequence;
 
         if (this.previewLayout === '2x1') {
             // ── Two sprites side-by-side (horizontal composite) ──────────────
@@ -1520,11 +1552,11 @@ export class SpriteEditor {
             const spriteB = seq[this.animationFrame * 2 + 1] !== undefined
                 ? this.sprites[seq[this.animationFrame * 2 + 1]] : null;
             if (!spriteA) return;
-            canvas.width  = (spriteA.width + (spriteB?.width  ?? spriteA.width))  * scale;
-            canvas.height =  Math.max(spriteA.height, spriteB?.height ?? 0)        * scale;
+            canvas.width  = Math.round((spriteA.width + (spriteB?.width  ?? spriteA.width))  * sx);
+            canvas.height = Math.max(spriteA.height, spriteB?.height ?? 0) * sy;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, scale);
-            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, spriteA.width * scale, 0, scale);
+            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, sx, sy);
+            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, Math.round(spriteA.width * sx), 0, sx, sy);
 
         } else if (this.previewLayout === '1x2') {
             // ── Two sprites stacked (vertical composite) ──────────────────────
@@ -1532,20 +1564,20 @@ export class SpriteEditor {
             const spriteB = seq[this.animationFrame * 2 + 1] !== undefined
                 ? this.sprites[seq[this.animationFrame * 2 + 1]] : null;
             if (!spriteA) return;
-            canvas.width  =  Math.max(spriteA.width, spriteB?.width ?? 0)          * scale;
-            canvas.height = (spriteA.height + (spriteB?.height ?? spriteA.height)) * scale;
+            canvas.width  = Math.round(Math.max(spriteA.width, spriteB?.width ?? 0) * sx);
+            canvas.height = (spriteA.height + (spriteB?.height ?? spriteA.height)) * sy;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, scale);
-            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, 0, spriteA.height * scale, scale);
+            this._drawSpriteToCanvas(ctx, spriteA, 0, 0, sx, sy);
+            if (spriteB) this._drawSpriteToCanvas(ctx, spriteB, 0, spriteA.height * sy, sx, sy);
 
         } else {
             // ── 1×1: single sprite per frame (default) ───────────────────────
             const sprite = this.sprites[seq[this.animationFrame]];
             if (!sprite) return;
-            canvas.width  = sprite.width  * scale;
-            canvas.height = sprite.height * scale;
+            canvas.width  = Math.round(sprite.width  * sx);
+            canvas.height = sprite.height * sy;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            this._drawSpriteToCanvas(ctx, sprite, 0, 0, scale);
+            this._drawSpriteToCanvas(ctx, sprite, 0, 0, sx, sy);
         }
 
         const frameDisplay = document.getElementById('animation-frame-display');

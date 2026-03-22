@@ -631,6 +631,8 @@ window.stopAnimation           = () => SpriteEditor.stopAnimation();
 window.updateAnimationFps      = () => SpriteEditor.updateAnimationFps();
 window.addSpriteToAnimation    = (index) => SpriteEditor.addToAnimation(index);
 window.spriteSetPreviewLayout  = (layout) => SpriteEditor.setPreviewLayout(layout);
+window.setSpriteStretch        = (mode)   => SpriteEditor.setStretchMode(mode);
+window.toggleSpriteTvAspect   = ()        => SpriteEditor.toggleTvAspect();
 
 // BITMAP import
 window.pasteBitmapText = () => SpriteEditor.showPasteBitmapDialog();

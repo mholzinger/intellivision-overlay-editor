@@ -2363,16 +2363,36 @@
                     </div>
                     <textarea id="sprite-output" class="sprite-output-textarea" readonly placeholder="BITMAP output will appear here..."></textarea>
 
-                    <div class="sprite-preview-section">
-                        <h4>Preview (Actual Size)</h4>
-                        <div class="sprite-actual-preview">
-                            <canvas id="sprite-preview-canvas" width="16" height="32"></canvas>
-                        </div>
-                        <p class="helper-text">8x8 or 8x16 pixels at 2x zoom</p>
-                    </div>
+                    <!-- Preview panes: actual size + animation, side by side -->
+                    <div class="sprite-preview-row">
 
+                        <div class="sprite-preview-pane">
+                            <h4>Preview</h4>
+                            <div class="sprite-actual-preview">
+                                <canvas id="sprite-preview-canvas" width="16" height="32"></canvas>
+                            </div>
+                            <div class="stretch-mode-row">
+                                <span class="stretch-label">Stretch:</span>
+                                <div class="stretch-btns">
+                                    <button class="stretch-btn active" data-stretch="1x1"
+                                            onclick="setSpriteStretch('1x1')" title="Normal — no hardware stretch">1×</button>
+                                    <button class="stretch-btn" data-stretch="2x1"
+                                            onclick="setSpriteStretch('2x1')" title="Double-X — pixels doubled horizontally (STIC XSIZE bit)">2× W</button>
+                                    <button class="stretch-btn" data-stretch="1x2"
+                                            onclick="setSpriteStretch('1x2')" title="Double-Y — pixels doubled vertically (STIC YSIZE bit)">2× H</button>
+                                    <button class="stretch-btn" data-stretch="2x2"
+                                            onclick="setSpriteStretch('2x2')" title="Double-X + Double-Y — both STIC size bits set">2× Both</button>
+                                </div>
+                                <button id="sprite-tv-btn" class="stretch-btn"
+                                        onclick="toggleSpriteTvAspect()"
+                                        title="TV aspect correction — Intellivision pixels are ~1.6× wider than tall on a 4:3 screen (160×192 → 4:3)">📺 TV</button>
+                            </div>
+                        </div>
+
+                        <div class="sprite-preview-pane">
+                            <h4>Animation</h4>
                     <!-- Animation Preview Section -->
-                    <div class="animation-section">
+                    <div class="animation-section" style="margin-top:0;padding-top:0;border-top:none;">
                         <h4>Animation Preview</h4>
                         <div class="animation-sequence-container">
                             <div class="animation-sequence-label">Sequence:</div>
@@ -2412,9 +2432,11 @@
                         <div class="animation-preview-container">
                             <canvas id="animation-preview-canvas" width="32" height="32"></canvas>
                         </div>
-                        <p class="helper-text">1×1: one sprite/frame · 2×1 H: pairs side-by-side (16-wide MOB) · 1×2 V: pairs stacked (16-tall MOB)</p>
-                    </div>
-                </div>
+                        <p class="helper-text">1×1 · 2×1 H · 1×2 V</p>
+                    </div><!-- end animation-section -->
+                        </div><!-- end animation pane -->
+                    </div><!-- end sprite-preview-row -->
+                </div><!-- end sprite-output-panel -->
             </div>
         </div><!-- End sprite-editor-content -->
 
