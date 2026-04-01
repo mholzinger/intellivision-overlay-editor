@@ -385,12 +385,9 @@ export class SpriteEditor {
         const sprite = this.getCurrentSprite();
         if (!sprite) return;
 
-        const base = 8;
-        const tv = this.tvAspect ? 1.6 : 1;
-        const sx = ((this.stretchMode === '2x1' || this.stretchMode === '2x2') ? base * 2 : base) * tv;
-        const sy =  (this.stretchMode === '1x2' || this.stretchMode === '2x2') ? base * 2 : base;
+        const { sx, sy } = this._getScale();
         canvas.width  = Math.round(sprite.width  * sx);
-        canvas.height = sprite.height * sy;
+        canvas.height = Math.round(sprite.height * sy);
         ctx.imageSmoothingEnabled = false;
 
         for (let y = 0; y < sprite.height; y++) {
@@ -398,9 +395,22 @@ export class SpriteEditor {
                 const isSet = sprite.pixels[y][x] === 1;
                 const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
                 ctx.fillStyle = this.PALETTE[colorIndex].hex;
-                ctx.fillRect(Math.round(x * sx), y * sy, Math.ceil(sx), sy);
+                ctx.fillRect(Math.round(x * sx), Math.round(y * sy), Math.ceil(sx), Math.ceil(sy));
             }
         }
+    }
+
+    /** Compute pixel scale factors for the current stretch + TV aspect settings. */
+    static _getScale(base = 8) {
+        const tv = this.tvAspect ? 1.6 : 1;
+        let mx = 1, my = 1;
+        switch (this.stretchMode) {
+            case '0.5x': mx = 0.5; my = 0.5; break;
+            case '2x1':  mx = 2;              break;
+            case '1x2':             my = 2;   break;
+            case '2x2':  mx = 2;   my = 2;   break;
+        }
+        return { sx: base * mx * tv, sy: base * my };
     }
 
     /** Set hardware stretch preview mode and re-render. */
@@ -1540,10 +1550,7 @@ export class SpriteEditor {
         if (!canvas || this.animationSequence.length === 0) return;
 
         const ctx = canvas.getContext('2d');
-        const base = 8;
-        const tv = this.tvAspect ? 1.6 : 1;
-        const sx = ((this.stretchMode === '2x1' || this.stretchMode === '2x2') ? base * 2 : base) * tv;
-        const sy =  (this.stretchMode === '1x2' || this.stretchMode === '2x2') ? base * 2 : base;
+        const { sx, sy } = this._getScale();
         const seq = this.animationSequence;
 
         if (this.previewLayout === '2x1') {
