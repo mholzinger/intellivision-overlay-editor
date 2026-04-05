@@ -405,7 +405,7 @@ export class SpriteEditor {
         const tv = this.tvAspect ? 1.6 : 1;
         let mx = 1, my = 1;
         switch (this.stretchMode) {
-            case '0.5x': mx = 0.5; my = 0.5; break;
+            case '0.5x':            my = 0.5; break;
             case '2x1':  mx = 2;              break;
             case '1x2':             my = 2;   break;
             case '2x2':  mx = 2;   my = 2;   break;
@@ -825,8 +825,11 @@ export class SpriteEditor {
             return false;
         }
 
+        // Try to detect and merge composite sprite groups (e.g. TL/TR/BL/BR → 16×16)
+        const merged = this._mergeCompositeSegments(segments);
+
         const imported = [];
-        for (const seg of segments) {
+        for (const seg of merged) {
             const sprite = this._parseSingleBitmapSegment(seg.name, seg.rows);
             if (sprite) imported.push(sprite);
         }
@@ -916,6 +919,105 @@ export class SpriteEditor {
         return segments.filter(s => s.rows.length > 0);
     }
 
+    /**
+     * Detect composite sprite groups by naming convention and merge their pixels.
+     * Patterns detected:
+     *   TL/TR/BL/BR  → 2×2 grid (e.g. MegaBossTL, MegaBossTR, MegaBossBL, MegaBossBR)
+     *   T/B or Top/Bottom  → 1×2 vertical stack
+     *   L/R or Left/Right  → 2×1 horizontal pair
+     * Returns a new segments array with composites merged and singles passed through.
+     */
+    static _mergeCompositeSegments(segments) {
+        if (segments.length < 2) return segments;
+
+        // Suffix patterns: [regex, arrangement, slot-order]
+        // Slot order: [topLeft, topRight, bottomLeft, bottomRight] for 2×2
+        //             [top, bottom] for 1×2, [left, right] for 2×1
+        const patterns = [
+            // 2×2: TL/TR/BL/BR variants
+            { re: /^(.+?)[-_]?(?:TL|TopLeft)$/i,   type: '2x2', pos: 'TL' },
+            { re: /^(.+?)[-_]?(?:TR|TopRight)$/i,   type: '2x2', pos: 'TR' },
+            { re: /^(.+?)[-_]?(?:BL|BottomLeft|BotLeft)$/i,  type: '2x2', pos: 'BL' },
+            { re: /^(.+?)[-_]?(?:BR|BottomRight|BotRight)$/i, type: '2x2', pos: 'BR' },
+            // 1×2 vertical: T/B
+            { re: /^(.+?)[-_]?(?:T|Top)$/i,    type: '1x2', pos: 'T' },
+            { re: /^(.+?)[-_]?(?:B|Bot|Bottom)$/i, type: '1x2', pos: 'B' },
+            // 2×1 horizontal: L/R
+            { re: /^(.+?)[-_]?(?:L|Left)$/i,   type: '2x1', pos: 'L' },
+            { re: /^(.+?)[-_]?(?:R|Right)$/i,  type: '2x1', pos: 'R' },
+        ];
+
+        // Tag each segment with detected prefix/type/position
+        const tagged = segments.map(seg => {
+            if (!seg.name) return { seg, prefix: null };
+            for (const pat of patterns) {
+                const m = seg.name.match(pat.re);
+                if (m) return { seg, prefix: m[1], type: pat.type, pos: pat.pos };
+            }
+            return { seg, prefix: null };
+        });
+
+        // Group by prefix+type
+        const groups = new Map();
+        const ungrouped = [];
+        for (const t of tagged) {
+            if (!t.prefix) { ungrouped.push(t.seg); continue; }
+            const key = `${t.prefix}|${t.type}`;
+            if (!groups.has(key)) groups.set(key, { prefix: t.prefix, type: t.type, slots: {} });
+            groups.get(key).slots[t.pos] = t.seg;
+        }
+
+        const result = [];
+
+        for (const [, group] of groups) {
+            const { prefix, type, slots } = group;
+
+            if (type === '2x2' && slots.TL && slots.TR && slots.BL && slots.BR) {
+                // Merge 4 quadrants into one sprite
+                const w = slots.TL.width + slots.TR.width;
+                const topH = Math.max(slots.TL.rows.length, slots.TR.rows.length);
+                const botH = Math.max(slots.BL.rows.length, slots.BR.rows.length);
+                const rows = [];
+                for (let y = 0; y < topH; y++) {
+                    const left  = slots.TL.rows[y] || new Array(slots.TL.width).fill(0);
+                    const right = slots.TR.rows[y] || new Array(slots.TR.width).fill(0);
+                    rows.push([...left, ...right]);
+                }
+                for (let y = 0; y < botH; y++) {
+                    const left  = slots.BL.rows[y] || new Array(slots.BL.width).fill(0);
+                    const right = slots.BR.rows[y] || new Array(slots.BR.width).fill(0);
+                    rows.push([...left, ...right]);
+                }
+                result.push({ name: prefix, rows, width: w });
+
+            } else if (type === '1x2' && slots.T && slots.B) {
+                // Vertical stack
+                const w = Math.max(slots.T.width, slots.B.width);
+                const rows = [...slots.T.rows, ...slots.B.rows];
+                result.push({ name: prefix, rows, width: w });
+
+            } else if (type === '2x1' && slots.L && slots.R) {
+                // Horizontal pair
+                const w = slots.L.width + slots.R.width;
+                const h = Math.max(slots.L.rows.length, slots.R.rows.length);
+                const rows = [];
+                for (let y = 0; y < h; y++) {
+                    const left  = slots.L.rows[y] || new Array(slots.L.width).fill(0);
+                    const right = slots.R.rows[y] || new Array(slots.R.width).fill(0);
+                    rows.push([...left, ...right]);
+                }
+                result.push({ name: prefix, rows, width: w });
+
+            } else {
+                // Incomplete group — import as individual sprites
+                for (const seg of Object.values(slots)) result.push(seg);
+            }
+        }
+
+        result.push(...ungrouped);
+        return result;
+    }
+
     /** Build a sprite object from a rows array extracted by _splitBitmapSegments. */
     static _parseSingleBitmapSegment(name, rows) {
         if (!rows || rows.length === 0) return null;
@@ -947,13 +1049,14 @@ export class SpriteEditor {
     static showPasteBitmapDialog() {
         const text = prompt(
             'Paste IntyBASIC BITMAP code.\n' +
-            'Multiple labeled definitions create multiple sprites:\n\n' +
-            'player_l:\n' +
-            '    BITMAP "..XX...."\n' +
-            '    BITMAP ".####..."\n' +
-            'player_r:\n' +
-            '    BITMAP "....XX.."\n' +
-            '    BITMAP "...####."'
+            'Multiple labeled definitions create multiple sprites.\n\n' +
+            'Composite sprites auto-merge by suffix:\n' +
+            '  TL/TR/BL/BR → 2×2    T/B → vertical    L/R → horizontal\n\n' +
+            'Example:\n' +
+            'BossTL:\n' +
+            '    BITMAP "..XXXX.."\n' +
+            'BossTR:\n' +
+            '    BITMAP "..XXXX.."'
         );
         if (text) this.parseBitmapText(text);
     }
