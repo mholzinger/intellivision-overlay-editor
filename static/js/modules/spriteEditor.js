@@ -820,9 +820,12 @@ export class SpriteEditor {
             return false;
         }
 
-        const segments = this._splitBitmapSegments(text);
+        // Try jzIntv "gt" (GRAM text) grid format first
+        const gtSegments = this._parseJzintvGramText(text);
+        const segments = gtSegments.length > 0 ? gtSegments : this._splitBitmapSegments(text);
+
         if (segments.length === 0) {
-            alert('No valid sprite data found.\n\nSupported formats:\n    BITMAP "..XXXX.."\n    DECLE $3C, $7E, $FF\n    WORD %00111100');
+            alert('No valid sprite data found.\n\nSupported formats:\n    BITMAP "..XXXX.."\n    DECLE $3C, $7E, $FF\n    WORD %00111100\n    jzIntv "gt" GRAM text dump');
             return false;
         }
 
@@ -858,6 +861,73 @@ export class SpriteEditor {
         this.updateSpriteProperties();
 
         return true;
+    }
+
+    /**
+     * Parse jzIntv debugger "gt" (GRAM text) grid format.
+     * Format: column header row, then 8 data rows like:
+     *   0      0 1      1 2      2 3      3
+     *   0:  ######## ######## .......# #.......
+     *   1:  ######.. ..###### .......# #.......
+     *   ...
+     * Each pair of 8-char blocks is one GRAM card (left=even, right=odd).
+     * Cards are laid out in columns across the line, 8 rows per card.
+     * Returns segments array, or empty array if text doesn't match this format.
+     */
+    static _parseJzintvGramText(text) {
+        const lines = text.split('\n');
+
+        // Look for data rows: "N:  " followed by blocks of #/. separated by spaces
+        const dataRowRe = /^\s*\d+:\s+((?:[.#]{8}\s*)+)$/;
+        const dataRows = [];
+
+        for (const line of lines) {
+            const m = line.match(dataRowRe);
+            if (m) {
+                // Extract all 8-char blocks from this row
+                const blocks = m[1].match(/[.#]{8}/g);
+                if (blocks) dataRows.push(blocks);
+            }
+        }
+
+        // Need exactly 8 data rows to be a valid gt dump
+        if (dataRows.length < 8) return [];
+        // All rows must have the same number of blocks
+        const numBlocks = dataRows[0].length;
+        if (!dataRows.every(r => r.length === numBlocks)) return [];
+
+        const segments = [];
+        // Process 8-row groups (multiple gt dumps can be concatenated)
+        for (let rowGroup = 0; rowGroup < dataRows.length; rowGroup += 8) {
+            const groupRows = dataRows.slice(rowGroup, rowGroup + 8);
+            if (groupRows.length < 8) break;
+
+            for (let col = 0; col < numBlocks; col++) {
+                const rows = [];
+                let allEmpty = true;
+                for (let y = 0; y < 8; y++) {
+                    const block = groupRows[y][col];
+                    const row = [];
+                    for (let x = 0; x < 8; x++) {
+                        const px = block[x] === '#' ? 1 : 0;
+                        if (px) allEmpty = false;
+                        row.push(px);
+                    }
+                    rows.push(row);
+                }
+                // Skip completely empty cards
+                if (!allEmpty) {
+                    const cardIndex = (rowGroup / 8) * numBlocks + col;
+                    segments.push({
+                        name: `gram_${cardIndex}`,
+                        rows,
+                        width: 8
+                    });
+                }
+            }
+        }
+
+        return segments;
     }
 
     /**
@@ -903,12 +973,14 @@ export class SpriteEditor {
 
         const flushSegment = () => {
             if (currentRows.length > 0) {
-                // If rows > 8 and width is 8, auto-split every 8 rows
-                if (currentWidth === 8 && currentRows.length > 8) {
-                    for (let i = 0; i < currentRows.length; i += 8) {
-                        const chunk = currentRows.slice(i, i + 8);
+                // Auto-split unlabeled blocks at 16-row boundaries (max sprite height).
+                // ≤16 rows stays as one segment — _parseSingleBitmapSegment handles
+                // both 8×8 and 8×16 sprites naturally.
+                if (currentWidth === 8 && currentRows.length > 16) {
+                    for (let i = 0; i < currentRows.length; i += 16) {
+                        const chunk = currentRows.slice(i, i + 16);
                         const autoName = currentName
-                            ? (i === 0 ? currentName : `${currentName}_${i / 8}`)
+                            ? (i === 0 ? currentName : `${currentName}_${i / 16}`)
                             : null;
                         segments.push({ name: autoName, rows: chunk, width: currentWidth });
                     }
@@ -1086,14 +1158,14 @@ export class SpriteEditor {
 
     static showPasteBitmapDialog() {
         const text = prompt(
-            'Paste IntyBASIC BITMAP or as1600 DECLE data.\n' +
-            'Multiple labeled definitions create multiple sprites.\n\n' +
-            'Supported formats:\n' +
+            'Paste sprite data in any supported format:\n\n' +
             '  BITMAP "..XXXX.."       (IntyBASIC)\n' +
             '  DECLE $3C, $7E, $FF    (as1600 hex)\n' +
             '  DECLE %00111100        (binary)\n' +
-            '  WORD 60, 126, 255      (decimal)\n\n' +
-            'Composite sprites auto-merge by suffix:\n' +
+            '  WORD 60, 126, 255      (decimal)\n' +
+            '  jzIntv "gt" GRAM dump  (grid of #/.)\n\n' +
+            'Labels create separate sprites.\n' +
+            'Composite suffixes auto-merge:\n' +
             '  TL/TR/BL/BR → 2×2    T/B → vertical    L/R → horizontal'
         );
         if (text) this.parseBitmapText(text);

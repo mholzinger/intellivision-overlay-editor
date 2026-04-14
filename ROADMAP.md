@@ -17,6 +17,8 @@
 - Export sprite sheet as PNG
 - GRAM card conflict detection / auto-assign
 - Copy/paste between sprites
+- **GIF GRAM snapshot import** — Import jzIntv `gs` (GRAM snapshot) GIF files, auto-slice into 8×8 GRAM cards, populate sprite list and Layout Designer tile picker
+- **MOB layer preview** — Composite preview showing 2-3 MOBs stacked at the same X,Y with independent foreground colors, simulating multi-sprite layering technique used for multi-colored characters
 
 ### Emulator — Landscape Mobile Layout
 **Goal:** On phones in landscape orientation, arrange the emulator as `[disc] | [canvas] | [keypad]`
