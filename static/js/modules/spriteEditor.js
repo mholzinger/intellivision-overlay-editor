@@ -808,20 +808,21 @@ export class SpriteEditor {
     // ==========================================
 
     /**
-     * Parse IntyBASIC BITMAP text and create one or more sprites.
+     * Parse IntyBASIC BITMAP or as1600 DECLE text and create one or more sprites.
      * Splits on label lines (word:) so pasting multiple labeled definitions
-     * creates multiple sprites. Unlabeled input with >8 rows of 8-wide bitmaps
-     * is auto-split every 8 rows. Supports X, #, and . notation.
+     * creates multiple sprites. Unlabeled input with >8 rows of 8-wide data
+     * is auto-split every 8 rows.
+     * Supports: BITMAP "..XX..", DECLE $FF, WORD %11001100, DATA 255
      */
     static parseBitmapText(text) {
         if (!text || !text.trim()) {
-            alert('Please paste BITMAP text first');
+            alert('Please paste BITMAP or DECLE data first');
             return false;
         }
 
         const segments = this._splitBitmapSegments(text);
         if (segments.length === 0) {
-            alert('No valid BITMAP lines found.\n\nExpected format:\n    BITMAP "..XXXX.."\n    BITMAP "########"');
+            alert('No valid sprite data found.\n\nSupported formats:\n    BITMAP "..XXXX.."\n    DECLE $3C, $7E, $FF\n    WORD %00111100');
             return false;
         }
 
@@ -835,7 +836,7 @@ export class SpriteEditor {
         }
 
         if (imported.length === 0) {
-            alert('No valid BITMAP lines found.\n\nExpected format:\n    BITMAP "..XXXX.."\n    BITMAP "########"');
+            alert('No valid sprite data found.\n\nSupported formats:\n    BITMAP "..XXXX.."\n    DECLE $3C, $7E, $FF\n    WORD %00111100');
             return false;
         }
 
@@ -864,8 +865,34 @@ export class SpriteEditor {
      * Label lines (e.g. "player_l:") start a new sprite group.
      * Unlabeled input with >8 rows of 8-wide bitmaps is auto-split every 8 rows.
      */
+    /**
+     * Parse a numeric value from assembler notation.
+     * Supports: $FF (hex), 0xFF (hex), %11001100 (binary), 255 (decimal).
+     */
+    static _parseAsmNumber(token) {
+        token = token.trim();
+        if (/^\$[0-9a-f]+$/i.test(token))  return parseInt(token.slice(1), 16);
+        if (/^0x[0-9a-f]+$/i.test(token))  return parseInt(token, 16);
+        if (/^%[01]+$/.test(token))         return parseInt(token.slice(1), 2);
+        if (/^\d+$/.test(token))            return parseInt(token, 10);
+        return NaN;
+    }
+
+    /**
+     * Convert a numeric value to an 8-pixel row array (MSB = leftmost pixel).
+     */
+    static _decleToRow(value, width = 8) {
+        const row = [];
+        for (let i = width - 1; i >= 0; i--) {
+            row.push((value >> i) & 1);
+        }
+        return row;
+    }
+
     static _splitBitmapSegments(text) {
         const bitmapLineRe = /BITMAP\s*"([.X#]{1,16})"/i;
+        // DECLE / .WORD / WORD line: keyword followed by comma-separated numeric values
+        const decleLineRe  = /^\s*(?:DECLE|\.?WORD|\.?BYTE|DATA)\s+(.+)/i;
         // A label line: whole line is just "word:" (plus optional whitespace/comment)
         const labelLineRe  = /^\s*(\w+)\s*:\s*(;.*)?$/;
 
@@ -897,8 +924,9 @@ export class SpriteEditor {
         for (const line of text.split('\n')) {
             const labelMatch = line.match(labelLineRe);
             const bitmapMatch = line.match(bitmapLineRe);
+            const decleMatch = !bitmapMatch ? line.match(decleLineRe) : null;
 
-            if (labelMatch && !bitmapMatch) {
+            if (labelMatch && !bitmapMatch && !decleMatch) {
                 flushSegment();
                 currentName = labelMatch[1];
             } else if (bitmapMatch) {
@@ -912,6 +940,16 @@ export class SpriteEditor {
                     row.push(ch === '#' || ch.toUpperCase() === 'X' ? 1 : 0);
                 }
                 currentRows.push(row);
+            } else if (decleMatch) {
+                // Strip trailing comment (;...) then split on commas
+                const valuesStr = decleMatch[1].replace(/;.*$/, '');
+                const tokens = valuesStr.split(',');
+                for (const tok of tokens) {
+                    const val = this._parseAsmNumber(tok);
+                    if (!isNaN(val)) {
+                        currentRows.push(this._decleToRow(val, currentWidth));
+                    }
+                }
             }
         }
         flushSegment();
@@ -1048,15 +1086,15 @@ export class SpriteEditor {
 
     static showPasteBitmapDialog() {
         const text = prompt(
-            'Paste IntyBASIC BITMAP code.\n' +
+            'Paste IntyBASIC BITMAP or as1600 DECLE data.\n' +
             'Multiple labeled definitions create multiple sprites.\n\n' +
+            'Supported formats:\n' +
+            '  BITMAP "..XXXX.."       (IntyBASIC)\n' +
+            '  DECLE $3C, $7E, $FF    (as1600 hex)\n' +
+            '  DECLE %00111100        (binary)\n' +
+            '  WORD 60, 126, 255      (decimal)\n\n' +
             'Composite sprites auto-merge by suffix:\n' +
-            '  TL/TR/BL/BR → 2×2    T/B → vertical    L/R → horizontal\n\n' +
-            'Example:\n' +
-            'BossTL:\n' +
-            '    BITMAP "..XXXX.."\n' +
-            'BossTR:\n' +
-            '    BITMAP "..XXXX.."'
+            '  TL/TR/BL/BR → 2×2    T/B → vertical    L/R → horizontal'
         );
         if (text) this.parseBitmapText(text);
     }
