@@ -2215,6 +2215,7 @@
                     <div class="sprite-canvas-header">
                         <h3>Pixel Canvas</h3>
                         <div id="sprite-size-selector" class="sprite-size-btn-group">
+                            <button class="sprite-size-btn"        data-size="4x8"   onclick="setSpriteSize(4,8)">4×8</button>
                             <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)">8×8</button>
                             <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)">8×16</button>
                             <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)">16×8</button>
@@ -2419,6 +2420,9 @@
                                 <button class="anim-layout-btn" data-layout="1x2"
                                         onclick="spriteSetPreviewLayout('1x2')"
                                         title="Two sprites stacked per frame — 8×8 pairs become 16-tall">1×2 V</button>
+                                <button class="anim-layout-btn" data-layout="4x1"
+                                        onclick="spriteSetPreviewLayout('4x1')"
+                                        title="Four half-width (4px) sprites per frame — split vertical backtab tiles">4×1 Split</button>
                             </div>
                         </div>
                         <div class="animation-controls">

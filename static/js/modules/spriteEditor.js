@@ -308,6 +308,28 @@ export class SpriteEditor {
     /**
      * Render the pixel grid canvas
      */
+    /** How many 4×8 sprites to show side-by-side in the split grid view. */
+    static SPLIT_COUNT = 4;
+    /** Gap in pixels between split grid panels. */
+    static SPLIT_GAP = 6;
+
+    /** Check if current sprite triggers the 4×8 split grid view. */
+    static _isSplitView() {
+        const sprite = this.getCurrentSprite();
+        return sprite && sprite.width === 4 && sprite.height === 8;
+    }
+
+    /** Get the array of sprites shown in split view (current + next 3). */
+    static _getSplitSprites() {
+        const idx = this.currentSpriteIndex;
+        const group = [];
+        for (let i = 0; i < this.SPLIT_COUNT; i++) {
+            const s = this.sprites[idx + i];
+            group.push(s && s.width === 4 && s.height === 8 ? s : null);
+        }
+        return group;
+    }
+
     static renderGrid() {
         const canvas = document.getElementById('sprite-grid-canvas');
         if (!canvas) return;
@@ -315,6 +337,11 @@ export class SpriteEditor {
         const ctx = canvas.getContext('2d');
         const sprite = this.getCurrentSprite();
         if (!sprite) return;
+
+        if (this._isSplitView()) {
+            this._renderSplitGrid(canvas, ctx);
+            return;
+        }
 
         // Fill the container width, using whole pixels per cell
         const container = canvas.parentElement;
@@ -359,18 +386,79 @@ export class SpriteEditor {
         ctx.strokeStyle = '#888';
         ctx.lineWidth = 2;
         if (sprite.height === 16) {
-            // Horizontal separator at row 8
             ctx.beginPath();
             ctx.moveTo(0, 8 * cellSize);
             ctx.lineTo(canvas.width, 8 * cellSize);
             ctx.stroke();
         }
         if (sprite.width === 16) {
-            // Vertical separator at column 8
             ctx.beginPath();
             ctx.moveTo(8 * cellSize, 0);
             ctx.lineTo(8 * cellSize, canvas.height);
             ctx.stroke();
+        }
+    }
+
+    /**
+     * Render 4 × (4×8) sprite grids side by side with gaps.
+     * The active sprite (currentSpriteIndex) gets a highlight border.
+     */
+    static _renderSplitGrid(canvas, ctx) {
+        const group = this._getSplitSprites();
+        const container = canvas.parentElement;
+        const available = (container?.clientWidth ?? 600) - 16;
+        const totalGaps = this.SPLIT_GAP * (this.SPLIT_COUNT - 1);
+        // Each panel is 4 cells wide; fit cellSize to fill available width
+        const cellSize = Math.floor((available - totalGaps) / (4 * this.SPLIT_COUNT));
+        const panelW = 4 * cellSize;
+        const panelH = 8 * cellSize;
+
+        canvas.width  = panelW * this.SPLIT_COUNT + totalGaps;
+        canvas.height = panelH;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let g = 0; g < this.SPLIT_COUNT; g++) {
+            const ox = g * (panelW + this.SPLIT_GAP);
+            const spr = group[g];
+
+            // Background fill
+            ctx.fillStyle = '#0C0005';
+            ctx.fillRect(ox, 0, panelW, panelH);
+
+            // Draw pixels
+            if (spr) {
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 4; x++) {
+                        const isSet = spr.pixels[y]?.[x] === 1;
+                        const colorIndex = isSet ? spr.fgColor : spr.bgColor;
+                        ctx.fillStyle = this.PALETTE[colorIndex].hex;
+                        ctx.fillRect(ox + x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
+            // Grid lines
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= 4; x++) {
+                ctx.beginPath();
+                ctx.moveTo(ox + x * cellSize + 0.5, 0);
+                ctx.lineTo(ox + x * cellSize + 0.5, panelH);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 8; y++) {
+                ctx.beginPath();
+                ctx.moveTo(ox + 0.5, y * cellSize + 0.5);
+                ctx.lineTo(ox + panelW + 0.5, y * cellSize + 0.5);
+                ctx.stroke();
+            }
+
+            // Active sprite highlight
+            if (this.currentSpriteIndex + g === this.currentSpriteIndex && g === 0) {
+                ctx.strokeStyle = '#4a90d9';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(ox + 1.5, 1.5, panelW - 3, panelH - 3);
+            }
         }
     }
 
@@ -386,6 +474,45 @@ export class SpriteEditor {
         if (!sprite) return;
 
         const { sx, sy } = this._getScale();
+
+        // For 4×8 sprites, show 4 consecutive sprites side by side
+        if (sprite.width === 4 && sprite.height === 8) {
+            const idx = this.currentSpriteIndex;
+            const group = [];
+            for (let i = 0; i < 4; i++) {
+                const s = this.sprites[idx + i];
+                if (s && s.width === 4 && s.height === 8) group.push(s);
+                else group.push(null);
+            }
+            canvas.width  = Math.round(4 * 4 * sx);
+            canvas.height = Math.round(8 * sy);
+            ctx.imageSmoothingEnabled = false;
+            for (let g = 0; g < 4; g++) {
+                const spr = group[g];
+                const ox = Math.round(g * 4 * sx);
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 4; x++) {
+                        const isSet = spr ? (spr.pixels[y]?.[x] === 1) : false;
+                        const colorIndex = isSet
+                            ? (spr?.fgColor ?? 7)
+                            : (spr?.bgColor ?? 0);
+                        ctx.fillStyle = this.PALETTE[colorIndex].hex;
+                        ctx.fillRect(ox + Math.round(x * sx), Math.round(y * sy), Math.ceil(sx), Math.ceil(sy));
+                    }
+                }
+                // Draw a thin separator between tiles
+                if (g > 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(ox, 0);
+                    ctx.lineTo(ox, canvas.height);
+                    ctx.stroke();
+                }
+            }
+            return;
+        }
+
         canvas.width  = Math.round(sprite.width  * sx);
         canvas.height = Math.round(sprite.height * sy);
         ctx.imageSmoothingEnabled = false;
@@ -457,10 +584,64 @@ export class SpriteEditor {
         if (!canvas || !sprite) return;
 
         const rect = canvas.getBoundingClientRect();
-        const cellSize = canvas.width / sprite.width;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const canvasX = (e.clientX - rect.left) * scaleX;
+        const canvasY = (e.clientY - rect.top) * scaleY;
 
-        const x = Math.floor((e.clientX - rect.left) / cellSize);
-        const y = Math.floor((e.clientY - rect.top) / cellSize);
+        if (this._isSplitView()) {
+            // Determine which of the 4 panels was clicked
+            const totalGaps = this.SPLIT_GAP * (this.SPLIT_COUNT - 1);
+            const panelW = (canvas.width - totalGaps) / this.SPLIT_COUNT;
+            const panelStride = panelW + this.SPLIT_GAP;
+            const panelIdx = Math.floor(canvasX / panelStride);
+            if (panelIdx < 0 || panelIdx >= this.SPLIT_COUNT) return;
+
+            const localX = canvasX - panelIdx * panelStride;
+            if (localX > panelW) return; // clicked in the gap
+
+            const cellSize = panelW / 4;
+            const px = Math.floor(localX / cellSize);
+            const py = Math.floor(canvasY / cellSize);
+            if (px < 0 || px >= 4 || py < 0 || py >= 8) return;
+
+            const targetIdx = this.currentSpriteIndex + panelIdx;
+            let targetSprite = this.sprites[targetIdx];
+
+            // Auto-create 4×8 sprites in empty panel slots
+            if (!targetSprite || targetSprite.width !== 4 || targetSprite.height !== 8) {
+                // Fill in any gaps between current sprite and the target
+                while (this.sprites.length <= targetIdx) {
+                    this.sprites.push({
+                        name:      `sprite_${this.sprites.length}`,
+                        width:     4,
+                        height:    8,
+                        pixels:    Array.from({ length: 8 }, () => new Array(4).fill(0)),
+                        fgColor:   this.selectedFgColor,
+                        bgColor:   this.selectedBgColor,
+                        gramCard:  this._nextGramCard(),
+                        useMode:   'mob',
+                        mobColor:  7,
+                        csColor:   7,
+                        csAdvance: false,
+                        fgbgFg:    7,
+                        fgbgBg:    0
+                    });
+                }
+                targetSprite = this.sprites[targetIdx];
+                this.updateSpriteList();
+            }
+
+            targetSprite.pixels[py][px] = this.drawMode;
+            this.renderGrid();
+            this.renderPreview();
+            this.updateOutput();
+            return;
+        }
+
+        const cellSize = canvas.width / sprite.width;
+        const x = Math.floor(canvasX / cellSize);
+        const y = Math.floor(canvasY / cellSize);
 
         if (x >= 0 && x < sprite.width && y >= 0 && y < sprite.height) {
             sprite.pixels[y][x] = this.drawMode;
@@ -1669,9 +1850,10 @@ export class SpriteEditor {
         this.updateAnimationUI();
     }
 
-    /** Total logical frames given the current layout (pairs consume 2 sequence slots). */
+    /** Total logical frames given the current layout (composites consume multiple sequence slots). */
     static getLayoutFrameCount() {
         const n = this.animationSequence.length;
+        if (this.previewLayout === '4x1') return Math.max(1, Math.floor(n / 4));
         if (this.previewLayout === '2x1' || this.previewLayout === '1x2') {
             return Math.max(1, Math.floor(n / 2));
         }
@@ -1695,7 +1877,7 @@ export class SpriteEditor {
 
     static playAnimation() {
         if (this.getLayoutFrameCount() < 2) {
-            const needed = (this.previewLayout === '1x1') ? 2 : 4;
+            const needed = { '1x1': 2, '2x1': 4, '1x2': 4, '4x1': 8 }[this.previewLayout] ?? 2;
             alert(`Add at least ${needed} sprites to the animation sequence for ${this.previewLayout} layout`);
             return;
         }
@@ -1744,10 +1926,11 @@ export class SpriteEditor {
     }
 
     /** Draw a sprite's pixels onto ctx at (offsetX, offsetY) with pixel scale.
-     *  scaleY defaults to scaleX for square pixels; pass separately for stretch. */
-    static _drawSpriteToCanvas(ctx, sprite, offsetX, offsetY, scaleX, scaleY = scaleX) {
+     *  scaleY defaults to scaleX for square pixels; pass separately for stretch.
+     *  clipWidth limits how many columns are drawn (for split backtab tiles). */
+    static _drawSpriteToCanvas(ctx, sprite, offsetX, offsetY, scaleX, scaleY = scaleX, clipWidth = sprite.width) {
         for (let y = 0; y < sprite.height; y++) {
-            for (let x = 0; x < sprite.width; x++) {
+            for (let x = 0; x < clipWidth; x++) {
                 const isSet = sprite.pixels[y][x] === 1;
                 const colorIndex = isSet ? sprite.fgColor : sprite.bgColor;
                 ctx.fillStyle = this.PALETTE[colorIndex].hex;
@@ -1766,7 +1949,27 @@ export class SpriteEditor {
         const { sx, sy } = this._getScale();
         const seq = this.animationSequence;
 
-        if (this.previewLayout === '2x1') {
+        if (this.previewLayout === '4x1') {
+            // ── Four half-width sprites side-by-side (split vertical backtab) ──
+            const halfW = 4;  // Each sprite shows left 4px only
+            const baseIdx = this.animationFrame * 4;
+            const sprites = [];
+            for (let i = 0; i < 4; i++) {
+                const seqIdx = seq[baseIdx + i];
+                sprites.push(seqIdx !== undefined ? this.sprites[seqIdx] : null);
+            }
+            if (!sprites[0]) return;
+            const h = Math.max(...sprites.map(s => s?.height ?? 0));
+            canvas.width  = Math.round(halfW * 4 * sx);
+            canvas.height = h * sy;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 4; i++) {
+                const spr = sprites[i];
+                if (!spr) continue;
+                this._drawSpriteToCanvas(ctx, spr, Math.round(i * halfW * sx), 0, sx, sy, halfW);
+            }
+
+        } else if (this.previewLayout === '2x1') {
             // ── Two sprites side-by-side (horizontal composite) ──────────────
             const spriteA = this.sprites[seq[this.animationFrame * 2]];
             const spriteB = seq[this.animationFrame * 2 + 1] !== undefined
@@ -1809,9 +2012,9 @@ export class SpriteEditor {
     }
 
     static highlightSequenceFrame() {
+        const slotsPerFrame = { '1x1': 1, '2x1': 2, '1x2': 2, '4x1': 4 }[this.previewLayout] ?? 1;
         document.querySelectorAll('.animation-sequence-item').forEach((item, index) => {
-            // In composite modes each logical frame spans 2 sequence slots.
-            const framePos = (this.previewLayout === '1x1') ? index : Math.floor(index / 2);
+            const framePos = Math.floor(index / slotsPerFrame);
             item.classList.toggle('current-frame', framePos === this.animationFrame);
         });
     }
@@ -1867,12 +2070,37 @@ export class SpriteEditor {
      * Used by LayoutDesigner to render tiles on the layout canvas.
      * Returns null if no sprite is assigned to that slot.
      */
+    /**
+     * Get the 8×8 pixel data for a specific GRAM slot.
+     * Handles multi-card sprites: an 8×16 sprite at gramCard 0 occupies
+     * slots 0 (top 8 rows) and 1 (bottom 8 rows). A 16×16 sprite at
+     * gramCard 0 occupies slots 0 (TL), 1 (TR), 2 (BL), 3 (BR).
+     */
     static getGramTilePixels(gramSlot) {
-        const sprite = this.sprites.find(s => s.gramCard === gramSlot);
+        // First try exact match
+        let sprite = this.sprites.find(s => s.gramCard === gramSlot);
+        let offsetX = 0, offsetY = 0;
+
+        if (!sprite) {
+            // Check if this slot falls within a multi-card sprite's range
+            for (const s of this.sprites) {
+                const gc = s.gramCard ?? 0;
+                const needed = this._gramCardsNeeded(s);
+                if (needed > 1 && gramSlot > gc && gramSlot < gc + needed) {
+                    sprite = s;
+                    const cardIndex = gramSlot - gc;
+                    const cardsWide = sprite.width / 8;
+                    offsetX = (cardIndex % cardsWide) * 8;
+                    offsetY = Math.floor(cardIndex / cardsWide) * 8;
+                    break;
+                }
+            }
+        }
+
         if (!sprite) return null;
-        // Always return the top-left 8×8 block
+
         const pixels = Array.from({ length: 8 }, (_, y) =>
-            Array.from({ length: 8 }, (_, x) => sprite.pixels[y]?.[x] ?? 0)
+            Array.from({ length: 8 }, (_, x) => sprite.pixels[offsetY + y]?.[offsetX + x] ?? 0)
         );
         return {
             pixels,
