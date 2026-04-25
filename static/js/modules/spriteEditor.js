@@ -126,8 +126,16 @@ export class SpriteEditor {
      * Find the next free GRAM slot (0–63) based on all currently loaded sprites.
      */
     static _nextGramCard() {
+        return this._nextGramCardAfter([]);
+    }
+
+    /**
+     * Find the next free GRAM slot, considering both this.sprites and
+     * an additional pending array (for mid-import allocation).
+     */
+    static _nextGramCardAfter(pending) {
         const used = new Set();
-        for (const s of this.sprites) {
+        for (const s of [...this.sprites, ...pending]) {
             const gc = s.gramCard ?? 0;
             const needed = this._gramCardsNeeded(s);
             for (let i = 0; i < needed; i++) used.add(gc + i);
@@ -1013,7 +1021,7 @@ export class SpriteEditor {
         // Try to detect and merge composite sprite groups (e.g. TL/TR/BL/BR → 16×16)
         const merged = this._mergeCompositeSegments(segments);
 
-        const imported = [];
+        let imported = [];
         for (const seg of merged) {
             const sprite = this._parseSingleBitmapSegment(seg.name, seg.rows);
             if (sprite) imported.push(sprite);
@@ -1022,6 +1030,34 @@ export class SpriteEditor {
         if (imported.length === 0) {
             alert('No valid sprite data found.\n\nSupported formats:\n    BITMAP "..XXXX.."\n    DECLE $3C, $7E, $FF\n    WORD %00111100');
             return false;
+        }
+
+        // In 4×8 split mode, auto-split 8-wide sprites into left/right halves
+        if (this._isSplitView()) {
+            const split = [];
+            for (const spr of imported) {
+                if (spr.width === 8) {
+                    // Left half
+                    split.push({
+                        ...spr,
+                        name:   spr.name + '_L',
+                        width:  4,
+                        pixels: spr.pixels.map(row => row.slice(0, 4)),
+                        gramCard: this._nextGramCardAfter(split),
+                    });
+                    // Right half
+                    split.push({
+                        ...spr,
+                        name:   spr.name + '_R',
+                        width:  4,
+                        pixels: spr.pixels.map(row => row.slice(4, 8)),
+                        gramCard: this._nextGramCardAfter(split),
+                    });
+                } else {
+                    split.push(spr);
+                }
+            }
+            imported = split;
         }
 
         for (const sprite of imported) {
