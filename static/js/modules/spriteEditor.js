@@ -776,12 +776,13 @@ export class SpriteEditor {
         const hCards = sprite.height / 8;  // 1 or 2
         const cards = [];
 
-        if (wCards === 1) {
-            // Single-column sprite (8×8 or 8×16): one label, all rows together.
+        if (wCards <= 1) {
+            // Single-column sprite (4×8, 8×8, or 8×16): one label, all rows together.
             // DEFINE uses numCards=height/8 to load the full run.
+            const rowWidth = sprite.width;
             const rows = [];
             for (let y = 0; y < sprite.height; y++) {
-                rows.push(Array.from({ length: 8 }, (_, x) => sprite.pixels[y]?.[x] ?? 0));
+                rows.push(Array.from({ length: rowWidth }, (_, x) => sprite.pixels[y]?.[x] ?? 0));
             }
             cards.push({ label: sprite.name, rows });
         } else {
@@ -832,8 +833,8 @@ export class SpriteEditor {
      */
     static _generateDefine(sprite) {
         const gc = sprite.gramCard ?? 0;
-        if (sprite.width === 8) {
-            const numCards = sprite.height / 8;
+        if (sprite.width <= 8) {
+            const numCards = Math.max(1, sprite.height / 8);
             return `DEFINE ${gc}, ${numCards}, ${sprite.name}`;
         } else {
             const cards = this.splitIntoGramCards(sprite);
