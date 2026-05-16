@@ -651,6 +651,8 @@ window.toggleLayoutView    = () => LayoutDesigner.toggle();
 window.layoutSetZoom       = (z) => LayoutDesigner.setZoom(z);
 window.layoutClear         = () => LayoutDesigner.clearLayout();
 window.layoutFill          = () => LayoutDesigner.fillLayout();
+window.layoutUndo          = () => LayoutDesigner.undo();
+window.layoutToggleEraser  = () => LayoutDesigner.toggleEraser();
 window.layoutExportBacktab = () => LayoutDesigner.exportBacktab();
 window.layoutExportPng     = () => LayoutDesigner.exportPng();
 window.layoutCopyExport    = () => LayoutDesigner.copyExport();

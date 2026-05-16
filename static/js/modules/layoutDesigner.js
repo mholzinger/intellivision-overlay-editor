@@ -24,6 +24,9 @@ export class LayoutDesigner {
     static isPainting      = false;
     static lastPainted     = -1;   // cell index painted last drag step
     static paintValue      = true; // true = draw, false = erase
+    static eraserMode      = false; // when true, left-click erases
+    static undoStack       = [];   // snapshots of cells[] for undo (max 50)
+    static UNDO_MAX        = 50;
 
     // ── Intellivision 16-color palette (same as SpriteEditor) ────────────────
     static PALETTE = [
@@ -71,6 +74,7 @@ export class LayoutDesigner {
         if (btn) btn.classList.add('active');
 
         this.init();
+        this._installKeyHandler();
     }
 
     static hide() {
@@ -81,6 +85,28 @@ export class LayoutDesigner {
 
         const btn = document.getElementById('layout-toggle-btn');
         if (btn) btn.classList.remove('active');
+
+        this._removeKeyHandler();
+    }
+
+    static _installKeyHandler() {
+        if (this._keyHandler) return;
+        this._keyHandler = (e) => {
+            // Don't hijack typing in inputs/textareas
+            const tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                this.undo();
+            }
+        };
+        document.addEventListener('keydown', this._keyHandler);
+    }
+
+    static _removeKeyHandler() {
+        if (!this._keyHandler) return;
+        document.removeEventListener('keydown', this._keyHandler);
+        this._keyHandler = null;
     }
 
     static toggle() {
@@ -360,18 +386,23 @@ export class LayoutDesigner {
         if (!bar) return;
         const fgName = this.PALETTE[this.selectedColor]?.name ?? '?';
         const bgName = this.PALETTE[this.selectedBgColor]?.name ?? '?';
-        let txt = `GRAM ${this.selectedSlot} · FG: ${fgName} (${this.selectedColor}) · BG: ${bgName} (${this.selectedBgColor})`;
+        const eraser = this.eraserMode ? ' · <span class="layout-status-mode">ERASER</span>' : '';
+        let html = `GRAM <span class="layout-status-gram">${this.selectedSlot}</span>`
+                 + ` · FG: ${fgName} (${this.selectedColor})`
+                 + ` · BG: ${bgName} (${this.selectedBgColor})${eraser}`;
         if (col !== null) {
             const idx  = this._cellIndex(col, row);
+            const offset = row * this.COLS + col;
             const cell = this.cells[idx];
-            txt += ` · [${col},${row}]`;
+            html += ` · [${col},${row}] (backtab + ${offset})`;
             if (!cell.isEmpty) {
-                txt += ` → GRAM ${cell.cardNum}, FG ${cell.fgColor}, BG ${cell.bgColor ?? 0}`;
+                html += ` → GRAM <span class="layout-status-gram">${cell.cardNum}</span>`
+                      + `, FG ${cell.fgColor}, BG ${cell.bgColor ?? 0}`;
             } else {
-                txt += ' (empty)';
+                html += ' (empty)';
             }
         }
-        bar.textContent = txt;
+        bar.innerHTML = html;
     }
 
     // =========================================================================
@@ -397,9 +428,42 @@ export class LayoutDesigner {
         e.preventDefault();
         const pos = this._colRowFromEvent(e);
         if (!pos) return;
+
+        // Right-click = pick up tile under cursor (copy GRAM + colors to picker)
+        if (e.button === 2) {
+            this._pickUpCell(pos.col, pos.row);
+            return;
+        }
+
+        // Left-click — snapshot for undo, then start drag-paint
+        this._pushUndo();
         this.isPainting = true;
-        this.paintValue = (e.button !== 2); // right-click = erase
+        this.paintValue = !this.eraserMode;
         this._paint(pos.col, pos.row);
+    }
+
+    /** Right-click handler: copy cell's GRAM/FG/BG to the active picker selection. */
+    static _pickUpCell(col, row) {
+        const idx = this._cellIndex(col, row);
+        const cell = this.cells[idx];
+        if (!cell || cell.isEmpty) return;
+        this.selectSlot(cell.cardNum);
+        this.selectColor(cell.fgColor);
+        this.selectBgColor(cell.bgColor ?? 0);
+    }
+
+    /** Push a deep copy of the current cells array to the undo stack. */
+    static _pushUndo() {
+        this.undoStack.push(this.cells.map(c => ({ ...c })));
+        if (this.undoStack.length > this.UNDO_MAX) this.undoStack.shift();
+    }
+
+    /** Restore the most recent snapshot from the undo stack. */
+    static undo() {
+        if (this.undoStack.length === 0) return;
+        this.cells = this.undoStack.pop();
+        this.render();
+        this._updateStatus();
     }
 
     static _onMouseMove(e) {
@@ -421,8 +485,9 @@ export class LayoutDesigner {
         const touch = e.touches[0];
         const pos   = this._colRowFromEvent(touch);
         if (!pos) return;
+        this._pushUndo();
         this.isPainting = true;
-        this.paintValue = true;
+        this.paintValue = !this.eraserMode;
         this._paint(pos.col, pos.row);
     }
 
@@ -485,8 +550,16 @@ export class LayoutDesigner {
 
     static clearLayout() {
         if (!confirm('Clear the entire layout?')) return;
+        this._pushUndo();
         this.cells = Array.from({ length: this.COLS * this.ROWS }, () => this._makeCell());
         this.render();
+    }
+
+    static toggleEraser() {
+        this.eraserMode = !this.eraserMode;
+        const btn = document.getElementById('layout-eraser-btn');
+        if (btn) btn.classList.toggle('active', this.eraserMode);
+        this._updateStatus();
     }
 
     // =========================================================================
@@ -494,6 +567,7 @@ export class LayoutDesigner {
     // =========================================================================
 
     static fillLayout() {
+        this._pushUndo();
         this.cells = this.cells.map(() => ({
             cardNum: this.selectedSlot,
             fgColor: this.selectedColor,
@@ -513,20 +587,24 @@ export class LayoutDesigner {
      * If all cells use BG=0 → emit Color Stack mode words ($800 base, GRAM select).
      * If any cell uses BG>0 → emit FG/BG mode words for all cells (mode is global per-frame).
      *
+     * Word layout: bits 15..0 = xxBP GBBa aaaa aFFF
+     *   bits 2–0  (FFF): FG color (0–7)
+     *   bits 8–3  (aaaaaa): GRAM card (0–63)
+     *   bit  9   (B): BG bit 1
+     *   bit 10   (B): BG bit 0
+     *   bit 11   (G): GRAM select (1)
+     *   bit 12   (P): BG bit 3
+     *   bit 13   (B): BG bit 2
+     *
      * Color Stack word:
-     *   bits 0–2:  FG color (0–7)
-     *   bits 3–8:  GRAM card (0–63)
-     *   bit  11:   GRAM select
      *   = (card * 8) + fg + $800
      *
-     * FG/BG mode word (STIC MODE 1):
-     *   bits 0–2:  FG color (0–7)
-     *   bits 3–8:  GRAM card (0–63)
-     *   bit  9:    BG bit 0
-     *   bit  11:   BG bit 1
-     *   bit  12:   BG bit 2
-     *   bit  13:   BG bit 3
-     *   = (card * 8) + fg + ((bg&1)<<9) + ((bg&2)<<10) + ((bg&4)<<10) + ((bg&8)<<10)
+     * FG/BG mode word (STIC MODE 1, GRAM):
+     *   = $800 + (card * 8) + fg
+     *       + ((bg & 0x1) << 10)   // BG bit 0 → word bit 10
+     *       + ((bg & 0x2) << 8)    // BG bit 1 → word bit 9
+     *       + ((bg & 0x4) << 11)   // BG bit 2 → word bit 13
+     *       + ((bg & 0x8) << 9)    // BG bit 3 → word bit 12
      *
      * Empty cells = $0000.
      */
@@ -540,12 +618,12 @@ export class LayoutDesigner {
             // Color Stack mode
             return (gc * 8) + fg + 0x0800;
         }
-        // FG/BG mode — scatter BG bits to hardware positions 9, 11, 12, 13
-        const bgBits = ((bg & 0x1) << 9)
-                     | ((bg & 0x2) << 10)
-                     | ((bg & 0x4) << 10)
-                     | ((bg & 0x8) << 10);
-        return (gc * 8) + fg + bgBits;
+        // FG/BG mode — GRAM bit + scattered BG bits per STIC encoding
+        const bgBits = ((bg & 0x1) << 10)
+                     | ((bg & 0x2) << 8)
+                     | ((bg & 0x4) << 11)
+                     | ((bg & 0x8) << 9);
+        return 0x0800 + (gc * 8) + fg + bgBits;
     }
 
     /** True if any non-empty cell has a non-default BG color set. */

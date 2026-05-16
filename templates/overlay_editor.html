@@ -2474,6 +2474,8 @@
                 </div>
 
                 <div class="layout-toolbar-group layout-toolbar-right">
+                    <button class="btn btn-secondary btn-sm" id="layout-undo-btn" onclick="layoutUndo()" title="Undo last change (up to 50 steps)">↶ Undo</button>
+                    <button class="btn btn-secondary btn-sm" id="layout-eraser-btn" onclick="layoutToggleEraser()" title="Toggle eraser mode (left-click to erase). Right-click always picks up.">🧹 Eraser</button>
                     <button class="btn btn-secondary btn-sm" onclick="layoutFill()" title="Fill entire canvas with selected tile">🪣 Fill</button>
                     <button class="btn btn-secondary btn-sm" onclick="layoutClear()" title="Clear all cells">🗑️ Clear</button>
                     <button class="btn btn-secondary btn-sm" onclick="layoutExportPng()" title="Download PNG mockup">🖼️ PNG</button>
