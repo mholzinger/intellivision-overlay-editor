@@ -16,13 +16,14 @@ export class LayoutDesigner {
     static CELL_PIXELS = 8;   // each tile is 8×8 hardware pixels
 
     // ── Editor state ─────────────────────────────────────────────────────────
-    static cells         = [];   // 240 entries; see _makeCell()
-    static selectedSlot  = 0;    // active GRAM slot in tile picker (0–63)
-    static selectedColor = 7;    // active foreground color (0–15)
-    static zoom          = 3;    // canvas scale: 1 canvas px = zoom hardware px
-    static isPainting    = false;
-    static lastPainted   = -1;   // cell index painted last drag step
-    static paintValue    = true; // true = draw, false = erase
+    static cells           = [];   // 240 entries; see _makeCell()
+    static selectedSlot    = 0;    // active GRAM slot in tile picker (0–63)
+    static selectedColor   = 7;    // active foreground color (0–7 in FG/BG mode)
+    static selectedBgColor = 0;    // active background color (0–15 in FG/BG mode)
+    static zoom            = 3;    // canvas scale: 1 canvas px = zoom hardware px
+    static isPainting      = false;
+    static lastPainted     = -1;   // cell index painted last drag step
+    static paintValue      = true; // true = draw, false = erase
 
     // ── Intellivision 16-color palette (same as SpriteEditor) ────────────────
     static PALETTE = [
@@ -93,8 +94,8 @@ export class LayoutDesigner {
     // Cell helpers
     // =========================================================================
 
-    static _makeCell(cardNum = 0, fgColor = 7) {
-        return { cardNum, fgColor, isEmpty: true };
+    static _makeCell(cardNum = 0, fgColor = 7, bgColor = 0) {
+        return { cardNum, fgColor, bgColor, isEmpty: true };
     }
 
     static _cellIndex(col, row) {
@@ -179,8 +180,8 @@ export class LayoutDesigner {
             return;
         }
 
-        const fgHex = this.PALETTE[cell.fgColor]?.hex   ?? '#ffffff';
-        const bgHex = this.PALETTE[tileData.bgColor]?.hex ?? '#0C0005';
+        const fgHex = this.PALETTE[cell.fgColor]?.hex ?? '#ffffff';
+        const bgHex = this.PALETTE[cell.bgColor ?? 0]?.hex ?? '#0C0005';
         const pxSize = this.zoom;
 
         // Fill background first
@@ -298,24 +299,49 @@ export class LayoutDesigner {
     // =========================================================================
 
     static _setupColorPicker() {
-        const container = document.getElementById('layout-color-picker');
-        if (!container) return;
-        container.innerHTML = '';
+        // FG picker — limited to colors 0–7 (hardware constraint in FG/BG mode)
+        const fgContainer = document.getElementById('layout-color-picker');
+        if (fgContainer) {
+            fgContainer.innerHTML = '';
+            this.PALETTE.slice(0, 8).forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'layout-color-swatch' + (color.index === this.selectedColor ? ' selected' : '');
+                swatch.style.background = color.hex;
+                swatch.title = `FG: ${color.name} (${color.index})`;
+                swatch.dataset.colorIdx = color.index;
+                swatch.addEventListener('click', () => this.selectColor(color.index));
+                fgContainer.appendChild(swatch);
+            });
+        }
 
-        this.PALETTE.forEach(color => {
-            const swatch = document.createElement('div');
-            swatch.className = 'layout-color-swatch' + (color.index === this.selectedColor ? ' selected' : '');
-            swatch.style.background = color.hex;
-            swatch.title = `${color.name} (${color.index})`;
-            swatch.dataset.colorIdx = color.index;
-            swatch.addEventListener('click', () => this.selectColor(color.index));
-            container.appendChild(swatch);
-        });
+        // BG picker — full 16-color palette
+        const bgContainer = document.getElementById('layout-bg-color-picker');
+        if (bgContainer) {
+            bgContainer.innerHTML = '';
+            this.PALETTE.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'layout-color-swatch layout-bg-swatch' +
+                    (color.index === this.selectedBgColor ? ' selected' : '');
+                swatch.style.background = color.hex;
+                swatch.title = `BG: ${color.name} (${color.index})`;
+                swatch.dataset.colorIdx = color.index;
+                swatch.addEventListener('click', () => this.selectBgColor(color.index));
+                bgContainer.appendChild(swatch);
+            });
+        }
     }
 
     static selectColor(idx) {
         this.selectedColor = idx;
-        document.querySelectorAll('.layout-color-swatch').forEach(el => {
+        document.querySelectorAll('#layout-color-picker .layout-color-swatch').forEach(el => {
+            el.classList.toggle('selected', parseInt(el.dataset.colorIdx) === idx);
+        });
+        this._updateStatus();
+    }
+
+    static selectBgColor(idx) {
+        this.selectedBgColor = idx;
+        document.querySelectorAll('#layout-bg-color-picker .layout-color-swatch').forEach(el => {
             el.classList.toggle('selected', parseInt(el.dataset.colorIdx) === idx);
         });
         this._updateStatus();
@@ -332,14 +358,15 @@ export class LayoutDesigner {
     static _updateStatus(col = null, row = null) {
         const bar = document.getElementById('layout-status-bar');
         if (!bar) return;
-        const colorName = this.PALETTE[this.selectedColor]?.name ?? '?';
-        let txt = `GRAM ${this.selectedSlot} · FG: ${colorName} (${this.selectedColor})`;
+        const fgName = this.PALETTE[this.selectedColor]?.name ?? '?';
+        const bgName = this.PALETTE[this.selectedBgColor]?.name ?? '?';
+        let txt = `GRAM ${this.selectedSlot} · FG: ${fgName} (${this.selectedColor}) · BG: ${bgName} (${this.selectedBgColor})`;
         if (col !== null) {
             const idx  = this._cellIndex(col, row);
             const cell = this.cells[idx];
             txt += ` · [${col},${row}]`;
             if (!cell.isEmpty) {
-                txt += ` → GRAM ${cell.cardNum}, color ${cell.fgColor}`;
+                txt += ` → GRAM ${cell.cardNum}, FG ${cell.fgColor}, BG ${cell.bgColor ?? 0}`;
             } else {
                 txt += ' (empty)';
             }
@@ -422,6 +449,7 @@ export class LayoutDesigner {
             this.cells[idx] = {
                 cardNum:  this.selectedSlot,
                 fgColor:  this.selectedColor,
+                bgColor:  this.selectedBgColor,
                 isEmpty:  false,
             };
         }
@@ -469,6 +497,7 @@ export class LayoutDesigner {
         this.cells = this.cells.map(() => ({
             cardNum: this.selectedSlot,
             fgColor: this.selectedColor,
+            bgColor: this.selectedBgColor,
             isEmpty: false,
         }));
         this.render();
@@ -481,24 +510,61 @@ export class LayoutDesigner {
     /**
      * Export the layout as IntyBASIC BACKTAB data.
      *
-     * Backtab word format (simplified, Color Stack mode):
-     *   bits 0–2:  foreground color  (0–7, hardware range)
-     *   bits 3–9:  card number
-     *   bit  11:   GRAM select (1 = GRAM card)
+     * If all cells use BG=0 → emit Color Stack mode words ($800 base, GRAM select).
+     * If any cell uses BG>0 → emit FG/BG mode words for all cells (mode is global per-frame).
      *
-     * = (cardNum * 8) + (fgColor & 7) + $800
-     * Empty cells = $0000 (GROM card 0, black — effectively blank).
+     * Color Stack word:
+     *   bits 0–2:  FG color (0–7)
+     *   bits 3–8:  GRAM card (0–63)
+     *   bit  11:   GRAM select
+     *   = (card * 8) + fg + $800
+     *
+     * FG/BG mode word (STIC MODE 1):
+     *   bits 0–2:  FG color (0–7)
+     *   bits 3–8:  GRAM card (0–63)
+     *   bit  9:    BG bit 0
+     *   bit  11:   BG bit 1
+     *   bit  12:   BG bit 2
+     *   bit  13:   BG bit 3
+     *   = (card * 8) + fg + ((bg&1)<<9) + ((bg&2)<<10) + ((bg&4)<<10) + ((bg&8)<<10)
+     *
+     * Empty cells = $0000.
      */
+    static _encodeBacktabWord(cell, fgbgMode) {
+        if (cell.isEmpty) return 0x0000;
+        const fg = cell.fgColor & 0x7;
+        const bg = (cell.bgColor ?? 0) & 0xF;
+        const gc = cell.cardNum;
+
+        if (!fgbgMode) {
+            // Color Stack mode
+            return (gc * 8) + fg + 0x0800;
+        }
+        // FG/BG mode — scatter BG bits to hardware positions 9, 11, 12, 13
+        const bgBits = ((bg & 0x1) << 9)
+                     | ((bg & 0x2) << 10)
+                     | ((bg & 0x4) << 10)
+                     | ((bg & 0x8) << 10);
+        return (gc * 8) + fg + bgBits;
+    }
+
+    /** True if any non-empty cell has a non-default BG color set. */
+    static _needsFgBgMode() {
+        return this.cells.some(c => !c.isEmpty && (c.bgColor ?? 0) !== 0);
+    }
+
     static exportBacktab() {
-        const words = this.cells.map(cell => {
-            if (cell.isEmpty) return 0x0000;
-            const word = (cell.cardNum * 8) + (cell.fgColor & 0x7) + 0x0800;
-            return word;
-        });
+        const fgbgMode = this._needsFgBgMode();
+        const words = this.cells.map(c => this._encodeBacktabWord(c, fgbgMode));
 
         let out = "' Screen Layout — 20 cols × 12 rows\n";
         out    += "' Generated by Intellivision Overlay Editor\n";
-        out    += "' https://intellivision-overlay-editor.fly.dev\n\n";
+        out    += "' https://intellivision-overlay-editor.fly.dev\n";
+        out    += `' Mode: ${fgbgMode ? 'FG/BG (MODE 1)' : 'Color Stack (MODE 0)'}\n`;
+        if (fgbgMode) {
+            out += "' BG bits scattered to STIC positions 9, 11, 12, 13 (no GRAM/GROM bit)\n";
+        }
+        out    += '\n';
         out    += 'DIM backtab(239)\n';
 
         for (let row = 0; row < this.ROWS; row++) {
@@ -597,6 +663,7 @@ export class LayoutDesigner {
         return this.cells.map(c => ({
             n: c.cardNum,
             f: c.fgColor,
+            b: c.bgColor ?? 0,
             e: c.isEmpty ? 1 : 0,
         }));
     }
@@ -606,6 +673,7 @@ export class LayoutDesigner {
         this.cells = data.map(c => ({
             cardNum:  c.n ?? 0,
             fgColor:  c.f ?? 7,
+            bgColor:  c.b ?? 0,
             isEmpty:  (c.e ?? 1) === 1,
         }));
         // Pad to 240 if needed

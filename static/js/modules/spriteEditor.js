@@ -1025,7 +1025,13 @@ export class SpriteEditor {
         let imported = [];
         for (const seg of merged) {
             const sprite = this._parseSingleBitmapSegment(seg.name, seg.rows);
-            if (sprite) imported.push(sprite);
+            if (sprite) {
+                // Reassign gramCard considering previously imported sprites in this batch.
+                // (_parseSingleBitmapSegment only sees this.sprites, so multi-sprite
+                // imports would otherwise all collide on the same free slot.)
+                sprite.gramCard = this._nextGramCardAfter(imported);
+                imported.push(sprite);
+            }
         }
 
         if (imported.length === 0) {
