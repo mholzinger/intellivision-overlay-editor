@@ -2177,3 +2177,11 @@ details[open] .voice-dict-summary::before {
     border-top: 1px solid var(--gray-700, #333);
     justify-content: flex-end;
 }
+
+/* ============================================================ */
+/* data-tooltip system — DOM-based via tooltip.js                */
+/* ============================================================ */
+/* Tooltip rendering is handled by static/js/utils/tooltip.js,
+   which creates a single shared .js-tooltip element on hover or
+   long-press. This works on form controls (input/select) where
+   CSS pseudo-elements aren't allowed. */

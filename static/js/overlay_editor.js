@@ -25,6 +25,7 @@ import { SpriteEditor } from './modules/spriteEditor.js';
 import { LayoutDesigner } from './modules/layoutDesigner.js';
 import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
 import { VoiceEditor } from './modules/voiceEditor.js';
+import { tooltipInit } from './utils/tooltip.js';
 
 /**
  * Initialize the application
@@ -35,6 +36,9 @@ function initializeApp() {
 
     // Initialize button shape templates
     ButtonShape.initialize();
+
+    // Wire up tooltip system (touch long-press + viewport edge flip)
+    tooltipInit();
 
     // Set up event handlers
     setupEventHandlers();

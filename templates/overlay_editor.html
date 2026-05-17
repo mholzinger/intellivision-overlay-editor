@@ -22,98 +22,98 @@
         <!-- Tab Navigation with Action Buttons -->
         <div class="editor-tabs-toolbar">
             <div class="editor-tabs">
-                <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')" title="Design custom Intellivision controller overlay cards. Title, buttons, action arrows, artwork — export framed PNGs or full Sprint bundles.">
+                <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')" data-tooltip="Design custom Intellivision controller overlay cards. Title, buttons, action arrows, artwork — export framed PNGs or full Sprint bundles.">
                     🎮 Overlay Editor
                 </button>
-                <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')" title="Design custom Intellivision box art with frame, vignette, IntelliVoice badge, and per-game artwork.">
+                <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')" data-tooltip="Design custom Intellivision box art with frame, vignette, IntelliVoice badge, and per-game artwork.">
                     📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')" title="Design 8×8 / 8×16 / 16×16 sprites for IntyBASIC + as1600. Import BITMAP/DECLE/jzIntv gt dumps, animate frames, paint backtab layouts.">
+                <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')" data-tooltip="Design 8×8 / 8×16 / 16×16 sprites for IntyBASIC + as1600. Import BITMAP/DECLE/jzIntv gt dumps, animate frames, paint backtab layouts.">
                     🎨 Sprite Editor
                 </button>
-                <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')" title="Design touchscreen hotspots for the NINTV-DS Intellivision emulator on Nintendo DS. Exports .ovl files with PNG → 8bpp tile/map/palette conversion.">
+                <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')" data-tooltip="Design touchscreen hotspots for the NINTV-DS Intellivision emulator on Nintendo DS. Exports .ovl files with PNG → 8bpp tile/map/palette conversion.">
                     🕹️ DS Overlay <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')" title="Build IntelliVoice phrases from 61 SP0256-AL2 allophones. Type words, hear pre-recorded WAVs, export IntyBASIC VOICE statements.">
+                <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')" data-tooltip="Build IntelliVoice phrases from 61 SP0256-AL2 allophones. Type words, hear pre-recorded WAVs, export IntyBASIC VOICE statements.">
                     🔊 IntelliVoice <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')" title="In-browser jzIntv WASM emulator. Drag a ROM, play with touch or keyboard controls. BIOS files load once and persist.">
+                <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')" data-tooltip="In-browser jzIntv WASM emulator. Drag a ROM, play with touch or keyboard controls. BIOS files load once and persist.">
                     ▶ Emulator
                 </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
             <div id="overlay-toolbar" class="editor-toolbar active">
-                <button class="btn btn-success btn-sm" onclick="exportPNG()" title="Render the current overlay design as a transparent PNG (the overlay card by itself, no controller frame)">📥 Download PNG</button>
+                <button class="btn btn-success btn-sm" onclick="exportPNG()" data-tooltip="Render the current overlay design as a transparent PNG (the overlay card by itself, no controller frame)">📥 Download PNG</button>
                 <div class="controller-frame-dropdown" style="position: relative; display: inline-block;">
-                    <button class="btn btn-success btn-sm" onclick="toggleControllerFrameDropdown()" title="Export the overlay framed by a controller image — or as a Sprint USB ZIP bundle">🎮 Sprint Export ▾</button>
+                    <button class="btn btn-success btn-sm" onclick="toggleControllerFrameDropdown()" data-tooltip="Export the overlay framed by a controller image — or as a Sprint USB ZIP bundle">🎮 Sprint Export ▾</button>
                     <div id="controller-frame-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; min-width: 200px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
                         <div style="padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 11px; color: #666;">Export for Sprint carousel:</div>
-                        <div onclick="exportFramedOverlay('sprint')" title="PNG with overlay inset into a Sprint USB controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🔵 Sprint Controller</div>
-                        <div onclick="exportFramedOverlay('intv')" title="PNG with overlay inset into the original Mattel Intellivision controller" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟤 INTV Controller</div>
-                        <div onclick="exportFramedOverlay('sears')" title="PNG with overlay inset into the Sears Super Video Arcade variant" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟡 Sears Controller</div>
-                        <div onclick="exportFramedOverlay('intv_ii')" title="PNG with overlay inset into the Intellivision II console controller" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">⬜ INTV II Controller</div>
+                        <div onclick="exportFramedOverlay('sprint')" data-tooltip="PNG with overlay inset into a Sprint USB controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🔵 Sprint Controller</div>
+                        <div onclick="exportFramedOverlay('intv')" data-tooltip="PNG with overlay inset into the original Mattel Intellivision controller" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟤 INTV Controller</div>
+                        <div onclick="exportFramedOverlay('sears')" data-tooltip="PNG with overlay inset into the Sears Super Video Arcade variant" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">🟡 Sears Controller</div>
+                        <div onclick="exportFramedOverlay('intv_ii')" data-tooltip="PNG with overlay inset into the Intellivision II console controller" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">⬜ INTV II Controller</div>
                         <div style="border-top: 1px solid #eee; margin-top: 4px;"></div>
                         <div style="padding: 8px 12px; font-size: 11px; color: #666;">Download ZIP bundle:</div>
-                        <div onclick="exportSprintBundle('sprint')" title="ZIP containing the framed PNG + raw overlay PNG + project file — ready to drop into a Sprint USB controller's carousel" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sprint Bundle</div>
-                        <div onclick="exportSprintBundle('intv')" title="ZIP bundle framed in the original INTV controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV Bundle</div>
-                        <div onclick="exportSprintBundle('sears')" title="ZIP bundle framed in the Sears controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sears Bundle</div>
-                        <div onclick="exportSprintBundle('intv_ii')" title="ZIP bundle framed in the INTV II controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV II Bundle</div>
+                        <div onclick="exportSprintBundle('sprint')" data-tooltip="ZIP containing the framed PNG + raw overlay PNG + project file — ready to drop into a Sprint USB controller's carousel" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sprint Bundle</div>
+                        <div onclick="exportSprintBundle('intv')" data-tooltip="ZIP bundle framed in the original INTV controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV Bundle</div>
+                        <div onclick="exportSprintBundle('sears')" data-tooltip="ZIP bundle framed in the Sears controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 Sears Bundle</div>
+                        <div onclick="exportSprintBundle('intv_ii')" data-tooltip="ZIP bundle framed in the INTV II controller image" style="padding: 10px 12px; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">📦 INTV II Bundle</div>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()" title="Save the entire overlay design (all text, colors, artwork) as a .zip project file">💾 Export</button>
-                <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()" title="Restore a previously-saved .zip overlay project">📂 Import</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportOverlayProject()" data-tooltip="Save the entire overlay design (all text, colors, artwork) as a .zip project file">💾 Export</button>
+                <button class="btn btn-secondary btn-sm" onclick="importOverlayProject()" data-tooltip="Restore a previously-saved .zip overlay project">📂 Import</button>
                 <div class="layout-template-dropdown" style="position: relative; display: inline-block;">
-                    <button class="btn btn-secondary btn-sm" onclick="toggleLayoutTemplateDropdown()" title="Browse pre-designed overlay templates to start from (Astrosmash, BurgerTime, Skiing, etc.)">📋 Templates ▾</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleLayoutTemplateDropdown()" data-tooltip="Browse pre-designed overlay templates to start from (Astrosmash, BurgerTime, Skiing, etc.)">📋 Templates ▾</button>
                     <div id="layout-template-dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 180px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
                         <div id="layout-template-list" style="max-height: 200px; overflow-y: auto;">
                             <div style="padding: 8px 12px; color: #666; font-size: 12px;">Loading...</div>
                         </div>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" title="Discard all changes and reset to a blank overlay (asks for confirmation)">🔄 Reset</button>
-                <button class="btn btn-secondary btn-sm" onclick="clearArtwork()" title="Remove the main overlay artwork (background image). Other settings preserved.">🗑️ Clear Art</button>
+                <button class="btn btn-secondary btn-sm" onclick="resetOverlay()" data-tooltip="Discard all changes and reset to a blank overlay (asks for confirmation)">🔄 Reset</button>
+                <button class="btn btn-secondary btn-sm" onclick="clearArtwork()" data-tooltip="Remove the main overlay artwork (background image). Other settings preserved.">🗑️ Clear Art</button>
             </div>
 
             <!-- Box Art Editor Action Buttons -->
             <div id="boxart-toolbar" class="editor-toolbar">
-                <button class="btn btn-success btn-sm" onclick="exportBoxArtPNG()" title="Render the current box art design to a PNG file (uses server-side CairoSVG for pixel-perfect output)">📥 Download PNG</button>
-                <button class="btn btn-secondary btn-sm" onclick="exportBoxArtProject()" title="Save the entire box art project (settings + artwork) as a ZIP file">💾 Export</button>
-                <button class="btn btn-secondary btn-sm" onclick="importBoxArtProject()" title="Restore a previously-saved .zip box art project">📂 Import</button>
+                <button class="btn btn-success btn-sm" onclick="exportBoxArtPNG()" data-tooltip="Render the current box art design to a PNG file (uses server-side CairoSVG for pixel-perfect output)">📥 Download PNG</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportBoxArtProject()" data-tooltip="Save the entire box art project (settings + artwork) as a ZIP file">💾 Export</button>
+                <button class="btn btn-secondary btn-sm" onclick="importBoxArtProject()" data-tooltip="Restore a previously-saved .zip box art project">📂 Import</button>
                 <div class="boxart-template-dropdown" style="position: relative; display: inline-block;">
-                    <button class="btn btn-secondary btn-sm" onclick="toggleBoxArtTemplateDropdown()" title="Load a pre-designed box art template to start from">📋 Templates ▾</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleBoxArtTemplateDropdown()" data-tooltip="Load a pre-designed box art template to start from">📋 Templates ▾</button>
                     <div id="boxart-template-dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; min-width: 180px; background: #ffffff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
                         <div id="boxart-template-list" style="max-height: 200px; overflow-y: auto;">
                             <div style="padding: 8px 12px; color: #666; font-size: 12px;">Loading...</div>
                         </div>
                     </div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()" title="Discard all changes and start over with the default box art template">🔄 Reset</button>
+                <button class="btn btn-secondary btn-sm" onclick="resetBoxArt()" data-tooltip="Discard all changes and start over with the default box art template">🔄 Reset</button>
             </div>
 
             <!-- Sprite Editor Action Buttons -->
             <div id="sprite-toolbar" class="editor-toolbar">
-                <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()" title="Copy the current sprite's IntyBASIC BITMAP output to clipboard">📋 Copy Bitmap</button>
-                <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()" title="Download a .sprproj JSON file containing all sprites + layout">💾 Export Project</button>
-                <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()" title="Restore a saved .sprproj file. Also supports pasting BITMAP / DECLE / jzIntv gt dumps via the dialog below.">📂 Import Project</button>
-                <button class="btn btn-secondary btn-sm" onclick="addNewSprite()" title="Create a new blank sprite using the current size selection">➕ New Sprite</button>
-                <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()" title="Delete all sprites and reset the editor (asks for confirmation)">🗑️ Clear All</button>
-                <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" title="INTV graphics concepts for beginners — GRAM, BACKTAB, MOBs, color modes">📖 INTV Primer</button>
-                <button id="layout-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Full-screen 20×12 backtab layout designer with FG/BG color picker">🖥️ Layout View</button>
+                <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()" data-tooltip="Copy the current sprite's IntyBASIC BITMAP output to clipboard">📋 Copy Bitmap</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()" data-tooltip="Download a .sprproj JSON file containing all sprites + layout">💾 Export Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()" data-tooltip="Restore a saved .sprproj file. Also supports pasting BITMAP / DECLE / jzIntv gt dumps via the dialog below.">📂 Import Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="addNewSprite()" data-tooltip="Create a new blank sprite using the current size selection">➕ New Sprite</button>
+                <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()" data-tooltip="Delete all sprites and reset the editor (asks for confirmation)">🗑️ Clear All</button>
+                <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" data-tooltip="INTV graphics concepts for beginners — GRAM, BACKTAB, MOBs, color modes">📖 INTV Primer</button>
+                <button id="layout-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" data-tooltip="Full-screen 20×12 backtab layout designer with FG/BG color picker">🖥️ Layout View</button>
             </div>
 
             <!-- DS Overlay Editor Action Buttons -->
             <div id="ds-toolbar" class="editor-toolbar">
-                <button class="btn btn-secondary btn-sm" onclick="loadDSTemplate()" title="Load a default hotspot layout (36 standard Intellivision touch zones positioned on the DS touchscreen)">📋 Load Template</button>
-                <button class="btn btn-success btn-sm" onclick="exportDSOvl()" title="Export hotspot definitions only as a .ovl text file (for NINTV-DS to load alongside an existing tile/map/palette set)">⬇️ Export .OVL</button>
-                <button class="btn btn-success btn-sm" onclick="exportDSOvlWithImage()" title="Export complete overlay package: .ovl hotspots + auto-generated .tile/.map/.pal from your background PNG (8bpp 256-color conversion)">🖼️ Export .OVL + Image</button>
+                <button class="btn btn-secondary btn-sm" onclick="loadDSTemplate()" data-tooltip="Load a default hotspot layout (36 standard Intellivision touch zones positioned on the DS touchscreen)">📋 Load Template</button>
+                <button class="btn btn-success btn-sm" onclick="exportDSOvl()" data-tooltip="Export hotspot definitions only as a .ovl text file (for NINTV-DS to load alongside an existing tile/map/palette set)">⬇️ Export .OVL</button>
+                <button class="btn btn-success btn-sm" onclick="exportDSOvlWithImage()" data-tooltip="Export complete overlay package: .ovl hotspots + auto-generated .tile/.map/.pal from your background PNG (8bpp 256-color conversion)">🖼️ Export .OVL + Image</button>
             </div>
 
             <!-- IntelliVoice Builder Action Buttons -->
             <div id="voice-toolbar" class="editor-toolbar">
-                <button class="btn btn-success btn-sm" id="voice-play-btn" onclick="voicePlay()" title="Play the current allophone sequence using pre-recorded SP0256-AL2 sound samples">▶ Play</button>
-                <button class="btn btn-secondary btn-sm" id="voice-stop-btn" onclick="voiceStop()" disabled title="Stop playback immediately">■ Stop</button>
-                <button class="btn btn-secondary btn-sm" onclick="voiceCopy()" title="Copy IntyBASIC VOICE statement (e.g. VOICE HH1,EH,LL,OW,0) to clipboard">📋 Copy VOICE</button>
+                <button class="btn btn-success btn-sm" id="voice-play-btn" onclick="voicePlay()" data-tooltip="Play the current allophone sequence using pre-recorded SP0256-AL2 sound samples">▶ Play</button>
+                <button class="btn btn-secondary btn-sm" id="voice-stop-btn" onclick="voiceStop()" disabled data-tooltip="Stop playback immediately">■ Stop</button>
+                <button class="btn btn-secondary btn-sm" onclick="voiceCopy()" data-tooltip="Copy IntyBASIC VOICE statement (e.g. VOICE HH1,EH,LL,OW,0) to clipboard">📋 Copy VOICE</button>
             </div>
 
             <!-- Emulator tab toolbar -->
@@ -193,8 +193,8 @@
                 <div class="control-section">
                     <h2>Game Title</h2>
                     <div class="input-group">
-                        <label for="title" title="Game title shown prominently in the top title bar of the overlay card">Overlay Title</label>
-                        <input type="text" id="title" placeholder="Enter game title" value="TITLE SPACE" oninput="updateTitle()" title="Main game title (max ~20 characters). Supports multiple lines — use the size slider below if your title is long.">
+                        <label for="title" data-tooltip="Game title shown prominently in the top title bar of the overlay card">Overlay Title</label>
+                        <input type="text" id="title" placeholder="Enter game title" value="TITLE SPACE" oninput="updateTitle()" data-tooltip="Main game title (max ~20 characters). Supports multiple lines — use the size slider below if your title is long.">
                         <div class="helper-text">Displayed in the title bar area (max ~20 characters)</div>
                     </div>
                     <div class="input-group">
@@ -232,7 +232,7 @@
                     </div>
                     <div class="input-group">
                         <label for="font-select">Font</label>
-                        <select id="font-select" onchange="updateTitleFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;" title="Choose the title font. Includes the original SF Intellivised font plus 50+ alternatives (Bebas Neue, Atkinson Hyperlegible, etc.)"></select>
+                        <select id="font-select" onchange="updateTitleFont()" style="width:100%; padding:10px; border:2px solid #ddd; border-radius:6px;" data-tooltip="Choose the title font. Includes the original SF Intellivised font plus 50+ alternatives (Bebas Neue, Atkinson Hyperlegible, etc.)"></select>
                         <div class="helper-text">Choose a TTF or OTF font from the local fonts folder</div>
                     </div>
                     <div class="input-group">
@@ -343,7 +343,7 @@
                             <div class="upload-icon">🖼️</div>
                             <div><strong>Click to upload title artwork</strong></div>
                             <div class="helper-text">Artwork will be clipped to the title space area</div>
-                            <input type="file" id="title-artwork-upload" accept="image/*" onchange="handleTitleArtworkUpload(event)" title="Upload PNG/JPG artwork to fill the title area (clipped to the title bar shape)">
+                            <input type="file" id="title-artwork-upload" accept="image/*" onchange="handleTitleArtworkUpload(event)" data-tooltip="Upload PNG/JPG artwork to fill the title area (clipped to the title bar shape)">
                         </label>
                     </div>
 
@@ -428,7 +428,7 @@
                             <div class="helper-text">Repeats the image across the title area</div>
                         </div>
                         <div class="input-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                            <button class="btn btn-danger" onclick="clearTitleArtwork()" style="width: 100%;" title="Remove the artwork from the title area (the title bar reverts to its background color)">Clear Title Artwork</button>
+                            <button class="btn btn-danger" onclick="clearTitleArtwork()" style="width: 100%;" data-tooltip="Remove the artwork from the title area (the title bar reverts to its background color)">Clear Title Artwork</button>
                         </div>
                     </div>
                 </div>
@@ -437,7 +437,7 @@
                     <h2>Copyright Text</h2>
                     <div class="input-group">
                         <label for="copyright-text">Copyright / Printing Info</label>
-                        <input type="text" id="copyright-input" placeholder="© Year Company Name" value="© Copyright Year &amp; Printing Info." oninput="updateCopyrightText()" title="Smaller secondary text below the title — typically used for copyright, year, or printing notes">
+                        <input type="text" id="copyright-input" placeholder="© Year Company Name" value="© Copyright Year &amp; Printing Info." oninput="updateCopyrightText()" data-tooltip="Smaller secondary text below the title — typically used for copyright, year, or printing notes">
                         <div class="helper-text">Displayed below the title bar area</div>
                     </div>
                     <div class="input-group">
@@ -519,8 +519,8 @@
                         <label for="bg-fill-color">Background Color</label>
                         <input type="color" id="bg-fill-color" value="#ffffff" oninput="updateBackgroundFill()" style="width: 100%; height: 50px; padding: 4px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;">
                         <div class="helper-text">
-                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;" title="Apply a solid background color fill behind everything (defaults to no fill — keypad shows through)">
-                                <input type="checkbox" id="bg-fill-enabled" onchange="toggleBackgroundFill()" title="Toggle solid color background fill on/off">
+                            <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px;" data-tooltip="Apply a solid background color fill behind everything (defaults to no fill — keypad shows through)">
+                                <input type="checkbox" id="bg-fill-enabled" onchange="toggleBackgroundFill()" data-tooltip="Toggle solid color background fill on/off">
                                 Enable background color fill
                             </label>
                         </div>
@@ -569,7 +569,7 @@
                             <div class="upload-icon">🖼️</div>
                             <div><strong>Click to upload overlay artwork</strong></div>
                             <div class="helper-text">Recommended: PNG or JPG, will be positioned across the entire overlay</div>
-                            <input type="file" id="artwork-upload" accept="image/*" onchange="handleArtworkUpload(event)" title="Upload main overlay artwork — covers the full card background (positioned/scaled/tiled via the controls that appear)">
+                            <input type="file" id="artwork-upload" accept="image/*" onchange="handleArtworkUpload(event)" data-tooltip="Upload main overlay artwork — covers the full card background (positioned/scaled/tiled via the controls that appear)">
                         </label>
                     </div>
 
@@ -654,7 +654,7 @@
                             <div class="helper-text">Repeats the image across the entire overlay area</div>
                         </div>
                         <div class="input-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                            <button class="btn btn-danger" onclick="clearArtwork()" style="width: 100%;" title="Remove the main overlay artwork (background image). Title artwork and other settings are preserved.">Clear Overlay Artwork</button>
+                            <button class="btn btn-danger" onclick="clearArtwork()" style="width: 100%;" data-tooltip="Remove the main overlay artwork (background image). Title artwork and other settings are preserved.">Clear Overlay Artwork</button>
                         </div>
                     </div>
                 </div>
@@ -828,7 +828,7 @@
 
                     <!-- Row 1 Description -->
                     <div class="row-description-input" style="margin-bottom: 8px;">
-                        <input type="text" id="row-desc-input-1" placeholder="Row 1 Description (optional)" oninput="updateRowDescription(1)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" title="Optional label drawn above this row of keypad buttons (e.g. 'Weapons' or 'Speed')">
+                        <input type="text" id="row-desc-input-1" placeholder="Row 1 Description (optional)" oninput="updateRowDescription(1)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" data-tooltip="Optional label drawn above this row of keypad buttons (e.g. 'Weapons' or 'Speed')">
                     </div>
                     <div class="button-grid">
                         <div>
@@ -847,7 +847,7 @@
 
                     <!-- Row 2 Description -->
                     <div class="row-description-input" style="margin: 12px 0 8px 0;">
-                        <input type="text" id="row-desc-input-2" placeholder="Row 2 Description (optional)" oninput="updateRowDescription(2)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" title="Optional label drawn above row 2 (buttons 4–6)">
+                        <input type="text" id="row-desc-input-2" placeholder="Row 2 Description (optional)" oninput="updateRowDescription(2)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" data-tooltip="Optional label drawn above row 2 (buttons 4–6)">
                     </div>
                     <div class="button-grid">
                         <div>
@@ -866,7 +866,7 @@
 
                     <!-- Row 3 Description -->
                     <div class="row-description-input" style="margin: 12px 0 8px 0;">
-                        <input type="text" id="row-desc-input-3" placeholder="Row 3 Description (optional)" oninput="updateRowDescription(3)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" title="Optional label drawn above row 3 (buttons 7–9)">
+                        <input type="text" id="row-desc-input-3" placeholder="Row 3 Description (optional)" oninput="updateRowDescription(3)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" data-tooltip="Optional label drawn above row 3 (buttons 7–9)">
                     </div>
                     <div class="button-grid">
                         <div>
@@ -885,7 +885,7 @@
 
                     <!-- Row 4 Description -->
                     <div class="row-description-input" style="margin: 12px 0 8px 0;">
-                        <input type="text" id="row-desc-input-4" placeholder="Row 4 Description (optional)" oninput="updateRowDescription(4)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" title="Optional label drawn above row 4 (Clear / 0 / Enter)">
+                        <input type="text" id="row-desc-input-4" placeholder="Row 4 Description (optional)" oninput="updateRowDescription(4)" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" data-tooltip="Optional label drawn above row 4 (Clear / 0 / Enter)">
                     </div>
                     <div class="button-grid">
                         <div>
@@ -914,7 +914,7 @@
                     <div style="margin-bottom: 20px; padding: 12px; background: #e8f4fc; border-radius: 8px; border: 1px solid #b8daef;">
                         <label for="button-editor-select" style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px;">Select Button</label>
                         <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                            <select id="button-editor-select" onchange="selectButtonForEditor()" style="flex: 0 0 180px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 13px;" title="Pick a button (1–9, 0, Clear, or Enter) — the controls below apply to just that button's background, shape, and artwork">
+                            <select id="button-editor-select" onchange="selectButtonForEditor()" style="flex: 0 0 180px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size: 13px;" data-tooltip="Pick a button (1–9, 0, Clear, or Enter) — the controls below apply to just that button's background, shape, and artwork">
                                 <option value="">-- Choose a Button --</option>
                                 <option value="1">Button 1</option>
                                 <option value="2">Button 2</option>
@@ -973,7 +973,7 @@
                                             <!-- Populated dynamically -->
                                         </select>
                                     </div>
-                                    <button class="btn btn-secondary" onclick="clearButtonShape()" style="padding: 8px 12px; font-size: 12px;" title="Remove the SVG shape overlay from the currently-selected button (the keypad button reverts to its default rectangle)">
+                                    <button class="btn btn-secondary" onclick="clearButtonShape()" style="padding: 8px 12px; font-size: 12px;" data-tooltip="Remove the SVG shape overlay from the currently-selected button (the keypad button reverts to its default rectangle)">
                                         Clear Shape
                                     </button>
                                 </div>
@@ -1065,9 +1065,9 @@
                                     <label class="file-upload" style="flex: 0 0 auto; padding: 8px 16px; margin: 0;">
                                         <span style="font-size: 16px;">🎨</span>
                                         <span style="font-size: 12px; margin-left: 6px;"><strong>Upload Artwork</strong></span>
-                                        <input type="file" id="button-artwork-upload" accept="image/*" onchange="handleButtonArtworkUpload(event)" title="Upload per-button artwork — clipped to the currently-selected button's shape">
+                                        <input type="file" id="button-artwork-upload" accept="image/*" onchange="handleButtonArtworkUpload(event)" data-tooltip="Upload per-button artwork — clipped to the currently-selected button's shape">
                                     </label>
-                                    <button class="btn btn-secondary" onclick="clearButtonArtwork()" style="padding: 8px 12px; font-size: 12px;" title="Remove the per-button artwork image from the currently-selected button">
+                                    <button class="btn btn-secondary" onclick="clearButtonArtwork()" style="padding: 8px 12px; font-size: 12px;" data-tooltip="Remove the per-button artwork image from the currently-selected button">
                                         Clear Artwork
                                     </button>
                                 </div>
@@ -1241,11 +1241,11 @@
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                     <!-- Fill Controls -->
                                     <div class="input-group">
-                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;" title="When checked, the side action arrows are filled with the color below. Uncheck for outline-only arrows.">
-                                            <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked title="Toggle fill vs outline-only action arrows">
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px;" data-tooltip="When checked, the side action arrows are filled with the color below. Uncheck for outline-only arrows.">
+                                            <input type="checkbox" id="action-arrow-fill-enabled" onchange="toggleActionArrowFill()" checked data-tooltip="Toggle fill vs outline-only action arrows">
                                             Fill
                                         </label>
-                                        <input type="color" id="action-arrow-color" value="#000000" oninput="updateActionArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" title="Fill color for the side action arrows">
+                                        <input type="color" id="action-arrow-color" value="#000000" oninput="updateActionArrowColor()" style="width: 100%; height: 30px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;" data-tooltip="Fill color for the side action arrows">
                                     </div>
                                     <!-- Stroke Controls -->
                                     <div class="input-group">
@@ -1345,7 +1345,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                         <div>
                             <div class="button-label">Top (Both Sides)</div>
-                            <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')" title="Label drawn next to BOTH top side-action buttons (top-left and top-right share this label)">
+                            <input type="text" class="button-input" id="action-top" value="ACTION" oninput="updateActionButton('top')" data-tooltip="Label drawn next to BOTH top side-action buttons (top-left and top-right share this label)">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                                 <div>
                                     <label style="font-size: 9px; color: #666;">X: <span id="action-top-offset-x-value">0.0</span>mm</label>
@@ -1359,7 +1359,7 @@
                         </div>
                         <div>
                             <div class="button-label">Bottom Left</div>
-                            <input type="text" class="button-input" id="action-bottom-left" value="ACTION" oninput="updateActionButton('bottom-left')" title="Label drawn next to the bottom-left side action button">
+                            <input type="text" class="button-input" id="action-bottom-left" value="ACTION" oninput="updateActionButton('bottom-left')" data-tooltip="Label drawn next to the bottom-left side action button">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                                 <div>
                                     <label style="font-size: 9px; color: #666;">X: <span id="action-bottom-left-offset-x-value">0.0</span>mm</label>
@@ -1373,7 +1373,7 @@
                         </div>
                         <div>
                             <div class="button-label">Bottom Right</div>
-                            <input type="text" class="button-input" id="action-bottom-right" value="ACTION" oninput="updateActionButton('bottom-right')" title="Label drawn next to the bottom-right side action button">
+                            <input type="text" class="button-input" id="action-bottom-right" value="ACTION" oninput="updateActionButton('bottom-right')" data-tooltip="Label drawn next to the bottom-right side action button">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                                 <div>
                                     <label style="font-size: 9px; color: #666;">X: <span id="action-bottom-right-offset-x-value">0.0</span>mm</label>
@@ -1389,7 +1389,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div>
                             <div class="button-label">Left Side Description</div>
-                            <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('left')" title="Vertical text drawn down the left edge of the overlay (between the top-left and bottom-left action buttons). E.g. 'FIRE' or 'JUMP'.">
+                            <input type="text" class="button-input" id="action-desc-left-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('left')" data-tooltip="Vertical text drawn down the left edge of the overlay (between the top-left and bottom-left action buttons). E.g. 'FIRE' or 'JUMP'.">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                                 <div>
                                     <label style="font-size: 9px; color: #666;">X: <span id="action-desc-left-offset-x-value">0.0</span>mm</label>
@@ -1403,7 +1403,7 @@
                         </div>
                         <div>
                             <div class="button-label">Right Side Description</div>
-                            <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('right')" title="Vertical text drawn down the right edge of the overlay (between the top-right and bottom-right action buttons)">
+                            <input type="text" class="button-input" id="action-desc-right-input" placeholder="Optional (runs vertically)" oninput="updateActionDescription('right')" data-tooltip="Vertical text drawn down the right edge of the overlay (between the top-right and bottom-right action buttons)">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                                 <div>
                                     <label style="font-size: 9px; color: #666;">X: <span id="action-desc-right-offset-x-value">0.0</span>mm</label>
@@ -1429,7 +1429,7 @@
                         <div>
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label for="bottom-text-input" style="font-weight: 600;">Label Text</label>
-                                <input type="text" class="button-input" id="bottom-text-input" value="DIRECTION" oninput="updateBottomText()" style="text-align: center;" title="Horizontal label drawn between the disc direction arrows at the bottom of the overlay (e.g. 'MOVE' or 'STEER')">
+                                <input type="text" class="button-input" id="bottom-text-input" value="DIRECTION" oninput="updateBottomText()" style="text-align: center;" data-tooltip="Horizontal label drawn between the disc direction arrows at the bottom of the overlay (e.g. 'MOVE' or 'STEER')">
                                 <div class="helper-text">Common: DIRECTION, AIM, MOVE, etc.</div>
                             </div>
                         </div>
@@ -1582,8 +1582,8 @@
                 </div>
 
                 <div class="preview-options">
-                    <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;" title="When checked, the exported PNG will include the box-art template outline guides — useful for printing onto box art templates">
-                        <input type="checkbox" id="boxart-export-include-template" title="Include template outline + cut/fold guides in the exported PNG">
+                    <label style="font-size: 12px; display: flex; align-items: center; gap: 6px;" data-tooltip="When checked, the exported PNG will include the box-art template outline guides — useful for printing onto box art templates">
+                        <input type="checkbox" id="boxart-export-include-template" data-tooltip="Include template outline + cut/fold guides in the exported PNG">
                         Include template guides in export
                     </label>
                 </div>
@@ -1902,7 +1902,7 @@
                         <h2>Main Artwork</h2>
                         <div class="input-group">
                             <label for="boxart-artwork-upload">Upload Artwork</label>
-                            <input type="file" id="boxart-artwork-upload" accept="image/*" onchange="handleBoxArtArtworkUpload(event)" title="Upload main box art image — fills the front cover artwork area">
+                            <input type="file" id="boxart-artwork-upload" accept="image/*" onchange="handleBoxArtArtworkUpload(event)" data-tooltip="Upload main box art image — fills the front cover artwork area">
                             <div class="helper-text">Upload game artwork to fill the content frame</div>
                         </div>
                         <div id="boxart-artwork-controls" style="display: none;">
@@ -1929,7 +1929,7 @@
                                 <input type="range" id="boxart-art-opacity" min="0" max="1" value="1" step="0.05" oninput="updateBoxArtArtwork()">
                                 <div class="helper-text">Opacity: <span id="boxart-art-opacity-value">100</span>%</div>
                             </div>
-                            <button class="btn btn-secondary btn-sm" onclick="clearBoxArtArtwork()" style="margin-top: 8px;" title="Remove the uploaded box art image (resets to empty)">
+                            <button class="btn btn-secondary btn-sm" onclick="clearBoxArtArtwork()" style="margin-top: 8px;" data-tooltip="Remove the uploaded box art image (resets to empty)">
                                 🗑️ Clear Artwork
                             </button>
                         </div>
@@ -1952,7 +1952,7 @@
                                     <div class="upload-icon">🖼️</div>
                                     <div><strong>Click to upload vignette artwork</strong></div>
                                     <div class="helper-text">Artwork will be clipped to the vignette frame</div>
-                                    <input type="file" id="boxart-vignette-artwork-upload" accept="image/*" onchange="handleBoxArtVignetteArtworkUpload(event)" title="Upload artwork specifically for the inner vignette frame (the inset picture area on the box)">
+                                    <input type="file" id="boxart-vignette-artwork-upload" accept="image/*" onchange="handleBoxArtVignetteArtworkUpload(event)" data-tooltip="Upload artwork specifically for the inner vignette frame (the inset picture area on the box)">
                                 </label>
                             </div>
 
@@ -2012,7 +2012,7 @@
                                     <div class="helper-text">Angle: <span id="boxart-vignette-art-rotation-value">0</span>°</div>
                                 </div>
                                 <div class="input-group" style="margin-top: 10px;">
-                                    <button class="btn btn-danger" onclick="clearBoxArtVignetteArtwork()" style="width: 100%;" title="Remove the artwork from the vignette frame (the inner picture area)">Clear Vignette Artwork</button>
+                                    <button class="btn btn-danger" onclick="clearBoxArtVignetteArtwork()" style="width: 100%;" data-tooltip="Remove the artwork from the vignette frame (the inner picture area)">Clear Vignette Artwork</button>
                                 </div>
                             </div>
 
@@ -2098,16 +2098,16 @@
 
                         <!-- IntelliVoice Badge -->
                         <div class="input-group">
-                            <label style="display: flex; align-items: center; gap: 6px;" title="Add the classic IntelliVoice 'IT TALKS!' / 'Adds Voices' speech bubble to your box art">
-                                <input type="checkbox" id="boxart-voice-badge" onchange="toggleBoxArtVoiceBadge()" title="Show/hide the IntelliVoice badge overlay">
+                            <label style="display: flex; align-items: center; gap: 6px;" data-tooltip="Add the classic IntelliVoice 'IT TALKS!' / 'Adds Voices' speech bubble to your box art">
+                                <input type="checkbox" id="boxart-voice-badge" onchange="toggleBoxArtVoiceBadge()" data-tooltip="Show/hide the IntelliVoice badge overlay">
                                 IntelliVoice Badge
                             </label>
                         </div>
                         <div id="voice-badge-controls" style="display: none;">
                             <!-- Style -->
                             <div class="input-group">
-                                <label for="boxart-voice-badge-style" title="Pre-made badge designs from the original IntelliVoice marketing — pick a shape, then add custom text below if desired">Style</label>
-                                <select id="boxart-voice-badge-style" onchange="updateBoxArtVoiceBadgeStyle()" style="width: 100%; padding: 6px; border: 2px solid #ddd; border-radius: 6px;" title="Choose a pre-designed badge shape (with or without baked-in text)">
+                                <label for="boxart-voice-badge-style" data-tooltip="Pre-made badge designs from the original IntelliVoice marketing — pick a shape, then add custom text below if desired">Style</label>
+                                <select id="boxart-voice-badge-style" onchange="updateBoxArtVoiceBadgeStyle()" style="width: 100%; padding: 6px; border: 2px solid #ddd; border-radius: 6px;" data-tooltip="Choose a pre-designed badge shape (with or without baked-in text)">
                                     <optgroup label="Shape Only">
                                         <option value="bubble-shape-teal">Teal (red outline)</option>
                                         <option value="bubble-shape-white">White (red outline)</option>
@@ -2136,8 +2136,8 @@
                                 <input type="range" id="boxart-voice-badge-scale" min="20" max="150" value="60" step="1" oninput="updateBoxArtVoiceBadgePosition()">
                             </div>
                             <div class="input-group">
-                                <label style="display: flex; align-items: center; gap: 6px;" title="Mirror the badge — useful if the badge tail points the wrong way for your layout">
-                                    <input type="checkbox" id="boxart-voice-badge-flip" onchange="updateBoxArtVoiceBadgePosition()" title="Mirror badge horizontally (changes which way the speech bubble tail points)">
+                                <label style="display: flex; align-items: center; gap: 6px;" data-tooltip="Mirror the badge — useful if the badge tail points the wrong way for your layout">
+                                    <input type="checkbox" id="boxart-voice-badge-flip" onchange="updateBoxArtVoiceBadgePosition()" data-tooltip="Mirror badge horizontally (changes which way the speech bubble tail points)">
                                     Flip Horizontally
                                 </label>
                             </div>
@@ -2215,11 +2215,11 @@
                     <div class="sprite-canvas-header">
                         <h3>Pixel Canvas</h3>
                         <div id="sprite-size-selector" class="sprite-size-btn-group">
-                            <button class="sprite-size-btn"        data-size="4x8"   onclick="setSpriteSize(4,8)"   title="4×8 split tile — half a GRAM card, shown as 4 side-by-side panels for backtab stitching">4×8</button>
-                            <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)"   title="8×8 — one GRAM card (the standard MOB/backtab tile size)">8×8</button>
-                            <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)"  title="8×16 — two stacked GRAM cards (double-tall MOB, common for player characters)">8×16</button>
-                            <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)"  title="16×8 — two side-by-side GRAM cards (double-wide composite)">16×8</button>
-                            <button class="sprite-size-btn"        data-size="16x16" onclick="setSpriteSize(16,16)" title="16×16 — four GRAM cards in a 2×2 grid (large boss-class composite)">16×16</button>
+                            <button class="sprite-size-btn"        data-size="4x8"   onclick="setSpriteSize(4,8)"   data-tooltip="4×8 split tile — half a GRAM card, shown as 4 side-by-side panels for backtab stitching">4×8</button>
+                            <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)"   data-tooltip="8×8 — one GRAM card (the standard MOB/backtab tile size)">8×8</button>
+                            <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)"  data-tooltip="8×16 — two stacked GRAM cards (double-tall MOB, common for player characters)">8×16</button>
+                            <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)"  data-tooltip="16×8 — two side-by-side GRAM cards (double-wide composite)">16×8</button>
+                            <button class="sprite-size-btn"        data-size="16x16" onclick="setSpriteSize(16,16)" data-tooltip="16×16 — four GRAM cards in a 2×2 grid (large boss-class composite)">16×16</button>
                         </div>
                     </div>
 
@@ -2246,16 +2246,16 @@
                     <div class="sprite-tools-section">
                         <h4>Tools</h4>
                         <div class="sprite-tools-grid">
-                            <button class="sprite-tool-btn" onclick="spriteClear()" title="Set every pixel to background color (BG)">🗑️ Clear</button>
-                            <button class="sprite-tool-btn" onclick="spriteFill()" title="Set every pixel to foreground color (FG)">🪣 Fill</button>
-                            <button class="sprite-tool-btn" onclick="spriteInvert()" title="Invert: ON pixels become OFF and vice versa (swaps FG/BG visually)">🔄 Invert</button>
-                            <button class="sprite-tool-btn" onclick="spriteFlipH()" title="Mirror the sprite left-to-right">↔️ Flip H</button>
-                            <button class="sprite-tool-btn" onclick="spriteFlipV()" title="Mirror the sprite top-to-bottom">↕️ Flip V</button>
-                            <button class="sprite-tool-btn" onclick="spriteRotate()" title="Rotate 90° clockwise (only works on square sprites — 8×8 / 16×16)">🔃 Rotate</button>
-                            <button class="sprite-tool-btn" onclick="spriteShiftUp()" title="Shift all pixels up by 1 row (wraps around — top row reappears at bottom)">⬆️ Up</button>
-                            <button class="sprite-tool-btn" onclick="spriteShiftDown()" title="Shift all pixels down by 1 row (wraps around — bottom row reappears at top)">⬇️ Down</button>
-                            <button class="sprite-tool-btn" onclick="spriteShiftLeft()" title="Shift all pixels left by 1 column (wraps around)">⬅️ Left</button>
-                            <button class="sprite-tool-btn" onclick="spriteShiftRight()" title="Shift all pixels right by 1 column (wraps around)">➡️ Right</button>
+                            <button class="sprite-tool-btn" onclick="spriteClear()" data-tooltip="Set every pixel to background color (BG)">🗑️ Clear</button>
+                            <button class="sprite-tool-btn" onclick="spriteFill()" data-tooltip="Set every pixel to foreground color (FG)">🪣 Fill</button>
+                            <button class="sprite-tool-btn" onclick="spriteInvert()" data-tooltip="Invert: ON pixels become OFF and vice versa (swaps FG/BG visually)">🔄 Invert</button>
+                            <button class="sprite-tool-btn" onclick="spriteFlipH()" data-tooltip="Mirror the sprite left-to-right">↔️ Flip H</button>
+                            <button class="sprite-tool-btn" onclick="spriteFlipV()" data-tooltip="Mirror the sprite top-to-bottom">↕️ Flip V</button>
+                            <button class="sprite-tool-btn" onclick="spriteRotate()" data-tooltip="Rotate 90° clockwise (only works on square sprites — 8×8 / 16×16)">🔃 Rotate</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftUp()" data-tooltip="Shift all pixels up by 1 row (wraps around — top row reappears at bottom)">⬆️ Up</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftDown()" data-tooltip="Shift all pixels down by 1 row (wraps around — bottom row reappears at top)">⬇️ Down</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftLeft()" data-tooltip="Shift all pixels left by 1 column (wraps around)">⬅️ Left</button>
+                            <button class="sprite-tool-btn" onclick="spriteShiftRight()" data-tooltip="Shift all pixels right by 1 column (wraps around)">➡️ Right</button>
                         </div>
                     </div>
 
@@ -2264,10 +2264,10 @@
                         <h4>Import</h4>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <input type="file" id="sprite-import-input" accept="image/*" onchange="importSpriteImage(event)" style="display: none;">
-                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sprite-import-input').click()" title="Load a PNG/JPG image, auto-slice into 8×8 GRAM cards, quantize colors to the Intellivision palette">
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sprite-import-input').click()" data-tooltip="Load a PNG/JPG image, auto-slice into 8×8 GRAM cards, quantize colors to the Intellivision palette">
                                 📷 Import from Image
                             </button>
-                            <button class="btn btn-secondary btn-sm" onclick="pasteBitmapText()" title="Paste IntyBASIC BITMAP, as1600 DECLE/WORD, or jzIntv gt GRAM text dump — multi-sprite groups auto-merge (TL/TR/BL/BR → 16×16)">
+                            <button class="btn btn-secondary btn-sm" onclick="pasteBitmapText()" data-tooltip="Paste IntyBASIC BITMAP, as1600 DECLE/WORD, or jzIntv gt GRAM text dump — multi-sprite groups auto-merge (TL/TR/BL/BR → 16×16)">
                                 📋 Paste BITMAP Code
                             </button>
                         </div>
@@ -2276,7 +2276,7 @@
                 </div>
 
                 <!-- Resizable divider between canvas and list/output panels -->
-                <div class="sprite-panel-divider" title="Drag to resize"></div>
+                <div class="sprite-panel-divider" data-tooltip="Drag to resize"></div>
 
                 <!-- Middle Panel: Sprite List -->
                 <div class="sprite-list-panel">
@@ -2296,24 +2296,24 @@
 
                         <!-- Name -->
                         <div class="input-group">
-                            <label for="sprite-name-input" title="Label used in BITMAP/DEFINE output (no spaces — use underscores)">Name</label>
-                            <input type="text" id="sprite-name-input" placeholder="Sprite name" value="sprite_0" oninput="updateSpriteName()" title="Identifier emitted in IntyBASIC output (e.g. 'player_l'). Must be a valid label — letters, digits, underscores only.">
+                            <label for="sprite-name-input" data-tooltip="Label used in BITMAP/DEFINE output (no spaces — use underscores)">Name</label>
+                            <input type="text" id="sprite-name-input" placeholder="Sprite name" value="sprite_0" oninput="updateSpriteName()" data-tooltip="Identifier emitted in IntyBASIC output (e.g. 'player_l'). Must be a valid label — letters, digits, underscores only.">
                         </div>
 
                         <!-- GRAM Slot -->
                         <div class="input-group sprite-gram-row">
-                            <label for="sprite-gram-card" title="Which of the 64 GRAM slots this sprite occupies (multi-card sprites consume consecutive slots)">GRAM Slot</label>
+                            <label for="sprite-gram-card" data-tooltip="Which of the 64 GRAM slots this sprite occupies (multi-card sprites consume consecutive slots)">GRAM Slot</label>
                             <input type="number" id="sprite-gram-card" min="0" max="63" value="0"
-                                   onchange="updateSpriteGramCard(this.value)" title="0–63. Watch the GRAM Budget grid below for collisions — slots are highlighted by mode (MOB/CS/FGBG).">
+                                   onchange="updateSpriteGramCard(this.value)" data-tooltip="0–63. Watch the GRAM Budget grid below for collisions — slots are highlighted by mode (MOB/CS/FGBG).">
                         </div>
 
                         <!-- Use Mode -->
                         <div class="sprite-mode-group">
-                            <label title="How the Intellivision will display this sprite — changes the IntyBASIC usage snippet below">Use Mode</label>
+                            <label data-tooltip="How the Intellivision will display this sprite — changes the IntyBASIC usage snippet below">Use Mode</label>
                             <div class="sprite-mode-btn-group">
-                                <button class="sprite-mode-btn active" data-mode="mob"  onclick="updateSpriteMode('mob')" title="MOB (Mobile Object) — hardware sprite drawn via SPRITE n,x,y,attr. 8 simultaneous, can collide, can stretch (2×W/2×H).">MOB</button>
-                                <button class="sprite-mode-btn"        data-mode="cs"   onclick="updateSpriteMode('cs')" title="Color Stack mode tile — placed in BACKTAB at row,col. Uses the global 4-color rotation stack (set via MODE 0).">Color Stack</button>
-                                <button class="sprite-mode-btn"        data-mode="fgbg" onclick="updateSpriteMode('fgbg')" title="Foreground/Background mode tile — placed in BACKTAB. Per-cell FG (0–7) and BG (0–15) colors. Set via MODE 1.">FG/BG</button>
+                                <button class="sprite-mode-btn active" data-mode="mob"  onclick="updateSpriteMode('mob')" data-tooltip="MOB (Mobile Object) — hardware sprite drawn via SPRITE n,x,y,attr. 8 simultaneous, can collide, can stretch (2×W/2×H).">MOB</button>
+                                <button class="sprite-mode-btn"        data-mode="cs"   onclick="updateSpriteMode('cs')" data-tooltip="Color Stack mode tile — placed in BACKTAB at row,col. Uses the global 4-color rotation stack (set via MODE 0).">Color Stack</button>
+                                <button class="sprite-mode-btn"        data-mode="fgbg" onclick="updateSpriteMode('fgbg')" data-tooltip="Foreground/Background mode tile — placed in BACKTAB. Per-cell FG (0–7) and BG (0–15) colors. Set via MODE 1.">FG/BG</button>
                             </div>
                         </div>
 
@@ -2327,8 +2327,8 @@
                         <div id="sprite-cs-colors" class="sprite-color-section" style="display:none;">
                             <label>CS Foreground <span class="color-range">(0–7)</span></label>
                             <div id="sprite-cs-color-palette" class="sprite-palette sm"></div>
-                            <label class="sprite-cs-advance-label" title="Sets bit 13 of the BACKTAB word — STIC advances to the next color in the 4-entry color stack when drawing this tile">
-                                <input type="checkbox" id="sprite-cs-advance" onchange="updateCsAdvance(this.checked)" title="When checked, this tile rotates the color stack. Use sparingly — typically on tile boundaries where the BG color should change.">
+                            <label class="sprite-cs-advance-label" data-tooltip="Sets bit 13 of the BACKTAB word — STIC advances to the next color in the 4-entry color stack when drawing this tile">
+                                <input type="checkbox" id="sprite-cs-advance" onchange="updateCsAdvance(this.checked)" data-tooltip="When checked, this tile rotates the color stack. Use sparingly — typically on tile boundaries where the BG color should change.">
                                 Advance color stack
                             </label>
                         </div>
@@ -2359,8 +2359,8 @@
                 <div class="sprite-output-panel">
                     <h3>IntyBASIC Output</h3>
                     <div class="sprite-output-controls">
-                        <button id="sprite-copy-btn" class="btn btn-success btn-sm" onclick="copySpriteBitmap()" title="Copy the current sprite's IntyBASIC code (BITMAP + DEFINE + usage hint) to clipboard">📋 Copy</button>
-                        <button id="sprite-copy-all-btn" class="btn btn-secondary btn-sm" onclick="copyAllSprites()" title="Copy ALL sprites' IntyBASIC code as one big block, ready to paste at the top of your .bas file">📋 Copy All</button>
+                        <button id="sprite-copy-btn" class="btn btn-success btn-sm" onclick="copySpriteBitmap()" data-tooltip="Copy the current sprite's IntyBASIC code (BITMAP + DEFINE + usage hint) to clipboard">📋 Copy</button>
+                        <button id="sprite-copy-all-btn" class="btn btn-secondary btn-sm" onclick="copyAllSprites()" data-tooltip="Copy ALL sprites' IntyBASIC code as one big block, ready to paste at the top of your .bas file">📋 Copy All</button>
                     </div>
                     <textarea id="sprite-output" class="sprite-output-textarea" readonly placeholder="BITMAP output will appear here..."></textarea>
 
@@ -2376,19 +2376,19 @@
                                 <span class="stretch-label">Stretch:</span>
                                 <div class="stretch-btns">
                                     <button class="stretch-btn" data-stretch="0.5x"
-                                            onclick="setSpriteStretch('0.5x')" title="Half size — default MOB rendering scale (1.5× card size)">½×</button>
+                                            onclick="setSpriteStretch('0.5x')" data-tooltip="Half size — default MOB rendering scale (1.5× card size)">½×</button>
                                     <button class="stretch-btn active" data-stretch="1x1"
-                                            onclick="setSpriteStretch('1x1')" title="Normal — no hardware stretch">1×</button>
+                                            onclick="setSpriteStretch('1x1')" data-tooltip="Normal — no hardware stretch">1×</button>
                                     <button class="stretch-btn" data-stretch="2x1"
-                                            onclick="setSpriteStretch('2x1')" title="Double-X — pixels doubled horizontally (STIC XSIZE bit)">2× W</button>
+                                            onclick="setSpriteStretch('2x1')" data-tooltip="Double-X — pixels doubled horizontally (STIC XSIZE bit)">2× W</button>
                                     <button class="stretch-btn" data-stretch="1x2"
-                                            onclick="setSpriteStretch('1x2')" title="Double-Y — pixels doubled vertically (STIC YSIZE bit)">2× H</button>
+                                            onclick="setSpriteStretch('1x2')" data-tooltip="Double-Y — pixels doubled vertically (STIC YSIZE bit)">2× H</button>
                                     <button class="stretch-btn" data-stretch="2x2"
-                                            onclick="setSpriteStretch('2x2')" title="Double-X + Double-Y — both STIC size bits set">2× Both</button>
+                                            onclick="setSpriteStretch('2x2')" data-tooltip="Double-X + Double-Y — both STIC size bits set">2× Both</button>
                                 </div>
                                 <button id="sprite-tv-btn" class="stretch-btn"
                                         onclick="toggleSpriteTvAspect()"
-                                        title="TV aspect correction — Intellivision pixels are ~1.6× wider than tall on a 4:3 screen (160×192 → 4:3)">📺 TV</button>
+                                        data-tooltip="TV aspect correction — Intellivision pixels are ~1.6× wider than tall on a 4:3 screen (160×192 → 4:3)">📺 TV</button>
                             </div>
                         </div>
 
@@ -2404,8 +2404,8 @@
                             </div>
                         </div>
                         <div class="animation-sequence-actions">
-                            <button class="btn btn-secondary btn-xs" onclick="addAllToAnimation()" title="Append every sprite (in list order) to the animation sequence">+ All</button>
-                            <button class="btn btn-secondary btn-xs" onclick="clearAnimationSequence()" title="Remove all frames from the animation sequence (sprites are not deleted)">Clear</button>
+                            <button class="btn btn-secondary btn-xs" onclick="addAllToAnimation()" data-tooltip="Append every sprite (in list order) to the animation sequence">+ All</button>
+                            <button class="btn btn-secondary btn-xs" onclick="clearAnimationSequence()" data-tooltip="Remove all frames from the animation sequence (sprites are not deleted)">Clear</button>
                         </div>
                         <!-- Preview layout: how many sprites compose one frame -->
                         <div class="anim-layout-row">
@@ -2413,26 +2413,26 @@
                             <div class="anim-layout-btns">
                                 <button class="anim-layout-btn active" data-layout="1x1"
                                         onclick="spriteSetPreviewLayout('1x1')"
-                                        title="Single sprite per frame">1×1</button>
+                                        data-tooltip="Single sprite per frame">1×1</button>
                                 <button class="anim-layout-btn" data-layout="2x1"
                                         onclick="spriteSetPreviewLayout('2x1')"
-                                        title="Two sprites side-by-side per frame — 8×8 pairs become 16-wide">2×1 H</button>
+                                        data-tooltip="Two sprites side-by-side per frame — 8×8 pairs become 16-wide">2×1 H</button>
                                 <button class="anim-layout-btn" data-layout="1x2"
                                         onclick="spriteSetPreviewLayout('1x2')"
-                                        title="Two sprites stacked per frame — 8×8 pairs become 16-tall">1×2 V</button>
+                                        data-tooltip="Two sprites stacked per frame — 8×8 pairs become 16-tall">1×2 V</button>
                                 <button class="anim-layout-btn" data-layout="4x1"
                                         onclick="spriteSetPreviewLayout('4x1')"
-                                        title="Four half-width (4px) sprites per frame — split vertical backtab tiles">4×1 Split</button>
+                                        data-tooltip="Four half-width (4px) sprites per frame — split vertical backtab tiles">4×1 Split</button>
                             </div>
                         </div>
                         <div class="animation-controls">
-                            <button id="animation-play-btn" class="btn btn-success btn-sm" onclick="toggleAnimation()" title="Play/pause the animation at the current FPS">▶ Play</button>
-                            <button class="btn btn-secondary btn-sm" onclick="stopAnimation()" title="Stop and rewind to frame 1">⏹ Stop</button>
-                            <span id="animation-frame-display" class="animation-frame-display" title="Current frame / total frames in sequence">0/0</span>
+                            <button id="animation-play-btn" class="btn btn-success btn-sm" onclick="toggleAnimation()" data-tooltip="Play/pause the animation at the current FPS">▶ Play</button>
+                            <button class="btn btn-secondary btn-sm" onclick="stopAnimation()" data-tooltip="Stop and rewind to frame 1">⏹ Stop</button>
+                            <span id="animation-frame-display" class="animation-frame-display" data-tooltip="Current frame / total frames in sequence">0/0</span>
                         </div>
                         <div class="animation-fps-control">
-                            <label for="animation-fps" title="Frames per second — how fast the animation plays back">FPS:</label>
-                            <input type="range" id="animation-fps" min="1" max="30" value="10" oninput="updateAnimationFps()" title="1–30 FPS. Real Intellivision games typically animate at 4–12 FPS.">
+                            <label for="animation-fps" data-tooltip="Frames per second — how fast the animation plays back">FPS:</label>
+                            <input type="range" id="animation-fps" min="1" max="30" value="10" oninput="updateAnimationFps()" data-tooltip="1–30 FPS. Real Intellivision games typically animate at 4–12 FPS.">
                             <span id="animation-fps-value">10</span>
                         </div>
                         <div class="animation-preview-container">
@@ -2453,33 +2453,33 @@
 
             <!-- Top toolbar -->
             <div class="layout-toolbar">
-                <button class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Return to sprite editor">← Sprites</button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" data-tooltip="Return to sprite editor">← Sprites</button>
 
                 <div class="layout-toolbar-group">
-                    <span class="layout-toolbar-label" title="Canvas zoom level (display only — does not change exported data)">Zoom</span>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="2" onclick="layoutSetZoom(2)" title="2× zoom — fit more on screen">2×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs active" data-zoom="3" onclick="layoutSetZoom(3)" title="3× zoom — balanced default">3×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="4" onclick="layoutSetZoom(4)" title="4× zoom — see tile detail clearly">4×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="5" onclick="layoutSetZoom(5)" title="5× zoom — maximum detail">5×</button>
+                    <span class="layout-toolbar-label" data-tooltip="Canvas zoom level (display only — does not change exported data)">Zoom</span>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="2" onclick="layoutSetZoom(2)" data-tooltip="2× zoom — fit more on screen">2×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs active" data-zoom="3" onclick="layoutSetZoom(3)" data-tooltip="3× zoom — balanced default">3×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="4" onclick="layoutSetZoom(4)" data-tooltip="4× zoom — see tile detail clearly">4×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="5" onclick="layoutSetZoom(5)" data-tooltip="5× zoom — maximum detail">5×</button>
                 </div>
 
                 <div class="layout-toolbar-group">
-                    <span class="layout-toolbar-label" title="Foreground color — limited to colors 0–7 in FG/BG mode">FG</span>
+                    <span class="layout-toolbar-label" data-tooltip="Foreground color — limited to colors 0–7 in FG/BG mode">FG</span>
                     <div id="layout-color-picker" class="layout-color-row"></div>
                 </div>
 
                 <div class="layout-toolbar-group">
-                    <span class="layout-toolbar-label" title="Background color — any of the 16 colors (FG/BG mode)">BG</span>
+                    <span class="layout-toolbar-label" data-tooltip="Background color — any of the 16 colors (FG/BG mode)">BG</span>
                     <div id="layout-bg-color-picker" class="layout-color-row"></div>
                 </div>
 
                 <div class="layout-toolbar-group layout-toolbar-right">
-                    <button class="btn btn-secondary btn-sm" id="layout-undo-btn" onclick="layoutUndo()" title="Undo last change (up to 50 steps)">↶ Undo</button>
-                    <button class="btn btn-secondary btn-sm" id="layout-eraser-btn" onclick="layoutToggleEraser()" title="Toggle eraser mode (left-click to erase). Right-click always picks up.">🧹 Eraser</button>
-                    <button class="btn btn-secondary btn-sm" onclick="layoutFill()" title="Fill entire canvas with selected tile">🪣 Fill</button>
-                    <button class="btn btn-secondary btn-sm" onclick="layoutClear()" title="Clear all cells">🗑️ Clear</button>
-                    <button class="btn btn-secondary btn-sm" onclick="layoutExportPng()" title="Download PNG mockup">🖼️ PNG</button>
-                    <button class="btn btn-success btn-sm" onclick="layoutExportBacktab()" title="Export IntyBASIC BACKTAB data">📋 Export BACKTAB</button>
+                    <button class="btn btn-secondary btn-sm" id="layout-undo-btn" onclick="layoutUndo()" data-tooltip="Undo last change (up to 50 steps)">↶ Undo</button>
+                    <button class="btn btn-secondary btn-sm" id="layout-eraser-btn" onclick="layoutToggleEraser()" data-tooltip="Toggle eraser mode (left-click to erase). Right-click always picks up.">🧹 Eraser</button>
+                    <button class="btn btn-secondary btn-sm" onclick="layoutFill()" data-tooltip="Fill entire canvas with selected tile">🪣 Fill</button>
+                    <button class="btn btn-secondary btn-sm" onclick="layoutClear()" data-tooltip="Clear all cells">🗑️ Clear</button>
+                    <button class="btn btn-secondary btn-sm" onclick="layoutExportPng()" data-tooltip="Download PNG mockup">🖼️ PNG</button>
+                    <button class="btn btn-success btn-sm" onclick="layoutExportBacktab()" data-tooltip="Export IntyBASIC BACKTAB data">📋 Export BACKTAB</button>
                 </div>
             </div>
 
@@ -2516,10 +2516,10 @@
 
                     <!-- Overlay name -->
                     <div class="ds-section">
-                        <label class="form-label ds-section-title" title="The base filename for the exported .ovl/.tile/.map/.pal package (no extension)">Overlay Name</label>
+                        <label class="form-label ds-section-title" data-tooltip="The base filename for the exported .ovl/.tile/.map/.pal package (no extension)">Overlay Name</label>
                         <input type="text" id="ds-overlay-name" class="form-control" value="My Overlay"
                                placeholder="Game name (used for file name)…"
-                               title="Used to name the downloaded files (e.g. 'BurgerTime' → BurgerTime.ovl, BurgerTime.tile, etc.)">
+                               data-tooltip="Used to name the downloaded files (e.g. 'BurgerTime' → BurgerTime.ovl, BurgerTime.tile, etc.)">
                     </div>
 
                     <!-- Background image -->
@@ -2554,7 +2554,7 @@
                     <div class="ds-canvas-wrapper">
                         <canvas id="ds-preview-canvas"
                                 width="512" height="384"
-                                title="Click a hotspot row on the left, then drag here to set its touch area"></canvas>
+                                data-tooltip="Click a hotspot row on the left, then drag here to set its touch area"></canvas>
                     </div>
                     <!-- Legend -->
                     <div class="ds-legend">
@@ -2594,31 +2594,31 @@
 
                     <!-- Word lookup + paste -->
                     <div class="voice-word-panel">
-                        <label class="form-label" title="Type English words/phrases and they'll be converted to SP0256 allophones using the CMU Pronouncing Dictionary">Word lookup</label>
+                        <label class="form-label" data-tooltip="Type English words/phrases and they'll be converted to SP0256 allophones using the CMU Pronouncing Dictionary">Word lookup</label>
                         <div class="voice-word-row">
                             <input type="text" id="voice-word-input" class="form-control"
                                    placeholder="e.g. break a leg" onkeydown="voiceWordKey(event)"
-                                   title="Type any English word or phrase. Press Enter or click Add to convert to allophones and append to the sequence.">
-                            <button class="btn btn-primary btn-sm" onclick="voiceAddWord()" title="Convert the typed words to allophones and append them to the sequence">Add</button>
+                                   data-tooltip="Type any English word or phrase. Press Enter or click Add to convert to allophones and append to the sequence.">
+                            <button class="btn btn-primary btn-sm" onclick="voiceAddWord()" data-tooltip="Convert the typed words to allophones and append them to the sequence">Add</button>
                         </div>
                         <p class="voice-hint">Phrases work: "break a leg", "game over", "player one" — ~700 words built-in</p>
 
                         <!-- Paste VOICE data -->
-                        <label class="form-label" style="margin-top:10px;" title="Paste IntyBASIC VOICE data from existing code to load it into the sequencer">Paste VOICE Data</label>
+                        <label class="form-label" style="margin-top:10px;" data-tooltip="Paste IntyBASIC VOICE data from existing code to load it into the sequencer">Paste VOICE Data</label>
                         <textarea id="voice-paste-input" class="form-control voice-paste-textarea"
                                   placeholder="VOICE HH1,EH,LL,OW,0" rows="2"
-                                  title="Paste any IntyBASIC VOICE statement (e.g. 'VOICE HH1,EH,LL,OW,0'). The trailing 0 terminator is optional."></textarea>
+                                  data-tooltip="Paste any IntyBASIC VOICE statement (e.g. 'VOICE HH1,EH,LL,OW,0'). The trailing 0 terminator is optional."></textarea>
                         <div class="voice-paste-btns">
-                            <button class="btn btn-primary btn-sm" onclick="voicePasteReplace()" title="Replace the current sequence with the pasted allophones">Replace Sequence</button>
-                            <button class="btn btn-secondary btn-sm" onclick="voicePasteAppend()" title="Append the pasted allophones to the end of the current sequence">Append</button>
+                            <button class="btn btn-primary btn-sm" onclick="voicePasteReplace()" data-tooltip="Replace the current sequence with the pasted allophones">Replace Sequence</button>
+                            <button class="btn btn-secondary btn-sm" onclick="voicePasteAppend()" data-tooltip="Append the pasted allophones to the end of the current sequence">Append</button>
                         </div>
                     </div>
 
                     <!-- Sequencer strip -->
                     <div class="voice-sequencer-panel">
                         <div class="voice-sequencer-header">
-                            <label class="form-label" title="Drag to reorder, click an allophone to remove it. This is what will be played and exported.">Sequence</label>
-                            <button class="btn btn-secondary btn-sm" onclick="voiceClear()" title="Empty the entire sequence (start over)">Clear</button>
+                            <label class="form-label" data-tooltip="Drag to reorder, click an allophone to remove it. This is what will be played and exported.">Sequence</label>
+                            <button class="btn btn-secondary btn-sm" onclick="voiceClear()" data-tooltip="Empty the entire sequence (start over)">Clear</button>
                         </div>
                         <div id="voice-sequencer" class="voice-sequencer">
                             <span class="voice-seq-empty">Click allophones below to build a sequence</span>
@@ -2638,8 +2638,8 @@
                                   placeholder="hello = HH1,EH,LL,OW&#10;world = WW,ER2,LL,DD1&#10;my_game = MM,AY,PA2,GG1,EY,MM" rows="6"
                                   spellcheck="false"></textarea>
                         <div class="voice-dict-btns">
-                            <button class="btn btn-primary btn-sm" onclick="voiceSaveUserDict()" title="Save custom word→allophone mappings to browser localStorage. They override the built-in dictionary.">Save Dictionary</button>
-                            <button class="btn btn-secondary btn-sm" onclick="voiceClearUserDict()" title="Remove all custom dictionary entries (built-in ~700-word dictionary remains active)">Clear All</button>
+                            <button class="btn btn-primary btn-sm" onclick="voiceSaveUserDict()" data-tooltip="Save custom word→allophone mappings to browser localStorage. They override the built-in dictionary.">Save Dictionary</button>
+                            <button class="btn btn-secondary btn-sm" onclick="voiceClearUserDict()" data-tooltip="Remove all custom dictionary entries (built-in ~700-word dictionary remains active)">Clear All</button>
                         </div>
                     </div>
                 </details>
@@ -2669,8 +2669,8 @@
                 <div class="voice-output-panel">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                         <label class="form-label" style="margin:0;">SP0256 Execution Trace</label>
-                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnose()" title="Trace SP0256 microsequencer for each allophone in the sequence">Diagnose</button>
-                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnoseAll()" title="Trace all 64 allophones">Trace All</button>
+                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnose()" data-tooltip="Trace SP0256 microsequencer for each allophone in the sequence">Diagnose</button>
+                        <button class="btn btn-secondary btn-sm" onclick="voiceDiagnoseAll()" data-tooltip="Trace all 64 allophones">Trace All</button>
                     </div>
                     <pre id="voice-diag" style="display:none;font-size:11px;background:#1a1a2e;color:#a0f0a0;padding:8px;border-radius:4px;max-height:300px;overflow-y:auto;white-space:pre;margin:0;"></pre>
                 </div>
@@ -2854,22 +2854,22 @@ BACKTAB(2, 4) = 5 + 3 * 8 + $800</pre>
                     <h3 class="primer-section-title">⑦ The 16 Intellivision Colors</h3>
                     <p>MOBs and Color Stack tiles use colors <strong>0–7</strong> (primary). FG/BG tiles and backgrounds can also use <strong>8–15</strong> (pastel/extended).</p>
                     <div class="primer-palette-row">
-                        <div class="primer-palette-swatch" style="background:#0C0005;" title="0 — Black"><span>0</span></div>
-                        <div class="primer-palette-swatch" style="background:#002DFF;" title="1 — Blue"><span>1</span></div>
-                        <div class="primer-palette-swatch" style="background:#FF3E00;" title="2 — Red"><span>2</span></div>
-                        <div class="primer-palette-swatch" style="background:#C9D464;" title="3 — Tan"><span>3</span></div>
-                        <div class="primer-palette-swatch" style="background:#00780F;" title="4 — Dark Green"><span>4</span></div>
-                        <div class="primer-palette-swatch" style="background:#00A720;" title="5 — Green"><span>5</span></div>
-                        <div class="primer-palette-swatch" style="background:#FAEA27;" title="6 — Yellow"><span>6</span></div>
-                        <div class="primer-palette-swatch" style="background:#FFFCFF; border: 1px solid #ccc;" title="7 — White"><span style="color:#333">7</span></div>
-                        <div class="primer-palette-swatch" style="background:#A7A8A8;" title="8 — Grey"><span>8</span></div>
-                        <div class="primer-palette-swatch" style="background:#5ACBFF;" title="9 — Cyan"><span>9</span></div>
-                        <div class="primer-palette-swatch" style="background:#FFA600;" title="10 — Orange"><span>10</span></div>
-                        <div class="primer-palette-swatch" style="background:#3C5800;" title="11 — Brown"><span>11</span></div>
-                        <div class="primer-palette-swatch" style="background:#FF3276;" title="12 — Pink"><span>12</span></div>
-                        <div class="primer-palette-swatch" style="background:#BD95FF;" title="13 — Light Blue"><span>13</span></div>
-                        <div class="primer-palette-swatch" style="background:#6CCD30;" title="14 — Yellow-Green"><span>14</span></div>
-                        <div class="primer-palette-swatch" style="background:#C81A7D;" title="15 — Purple"><span>15</span></div>
+                        <div class="primer-palette-swatch" style="background:#0C0005;" data-tooltip="0 — Black"><span>0</span></div>
+                        <div class="primer-palette-swatch" style="background:#002DFF;" data-tooltip="1 — Blue"><span>1</span></div>
+                        <div class="primer-palette-swatch" style="background:#FF3E00;" data-tooltip="2 — Red"><span>2</span></div>
+                        <div class="primer-palette-swatch" style="background:#C9D464;" data-tooltip="3 — Tan"><span>3</span></div>
+                        <div class="primer-palette-swatch" style="background:#00780F;" data-tooltip="4 — Dark Green"><span>4</span></div>
+                        <div class="primer-palette-swatch" style="background:#00A720;" data-tooltip="5 — Green"><span>5</span></div>
+                        <div class="primer-palette-swatch" style="background:#FAEA27;" data-tooltip="6 — Yellow"><span>6</span></div>
+                        <div class="primer-palette-swatch" style="background:#FFFCFF; border: 1px solid #ccc;" data-tooltip="7 — White"><span style="color:#333">7</span></div>
+                        <div class="primer-palette-swatch" style="background:#A7A8A8;" data-tooltip="8 — Grey"><span>8</span></div>
+                        <div class="primer-palette-swatch" style="background:#5ACBFF;" data-tooltip="9 — Cyan"><span>9</span></div>
+                        <div class="primer-palette-swatch" style="background:#FFA600;" data-tooltip="10 — Orange"><span>10</span></div>
+                        <div class="primer-palette-swatch" style="background:#3C5800;" data-tooltip="11 — Brown"><span>11</span></div>
+                        <div class="primer-palette-swatch" style="background:#FF3276;" data-tooltip="12 — Pink"><span>12</span></div>
+                        <div class="primer-palette-swatch" style="background:#BD95FF;" data-tooltip="13 — Light Blue"><span>13</span></div>
+                        <div class="primer-palette-swatch" style="background:#6CCD30;" data-tooltip="14 — Yellow-Green"><span>14</span></div>
+                        <div class="primer-palette-swatch" style="background:#C81A7D;" data-tooltip="15 — Purple"><span>15</span></div>
                     </div>
                     <div class="primer-palette-names">
                         <span>Black</span><span>Blue</span><span>Red</span><span>Tan</span>
