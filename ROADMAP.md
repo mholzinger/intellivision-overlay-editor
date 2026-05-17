@@ -19,6 +19,7 @@
 - Copy/paste between sprites
 - **GIF GRAM snapshot import** — Import jzIntv `gs` (GRAM snapshot) GIF files, auto-slice into 8×8 GRAM cards, populate sprite list and Layout Designer tile picker
 - **MOB layer preview** — Composite preview showing 2-3 MOBs stacked at the same X,Y with independent foreground colors, simulating multi-sprite layering technique used for multi-colored characters
+- **BACKTAB import from jzIntv debugger** — Round-trip workflow: paste the backtab word dump from jzIntv's debugger alongside the `gt` GRAM dump into Layout View, reconstruct the full screen mockup with correct GRAM card placement + FG/BG colors. Enables modifying existing game screens visually instead of only authoring new layouts from scratch. Requested by Steve Ettinger for inspecting/editing existing Intellivision game screens. Parser would decode each backtab word into card num + FG + BG (CS or FG/BG mode), reverse of `_encodeBacktabWord` in layoutDesigner.js.
 
 ### Emulator — Landscape Mobile Layout
 **Goal:** On phones in landscape orientation, arrange the emulator as `[disc] | [canvas] | [keypad]`
