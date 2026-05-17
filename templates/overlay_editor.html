@@ -22,23 +22,23 @@
         <!-- Tab Navigation with Action Buttons -->
         <div class="editor-tabs-toolbar">
             <div class="editor-tabs">
-                <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')">
+                <button class="editor-tab active" data-tab="overlay" onclick="switchEditorTab('overlay')" title="Design custom Intellivision controller overlay cards. Title, buttons, action arrows, artwork — export framed PNGs or full Sprint bundles.">
                     🎮 Overlay Editor
                 </button>
-                <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')">
+                <button class="editor-tab" data-tab="boxart" onclick="switchEditorTab('boxart')" title="Design custom Intellivision box art with frame, vignette, IntelliVoice badge, and per-game artwork.">
                     📦 Box Art Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')">
-                    🎨 Sprite Editor <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                <button class="editor-tab" data-tab="sprite" onclick="switchEditorTab('sprite')" title="Design 8×8 / 8×16 / 16×16 sprites for IntyBASIC + as1600. Import BITMAP/DECLE/jzIntv gt dumps, animate frames, paint backtab layouts.">
+                    🎨 Sprite Editor
                 </button>
-                <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')">
+                <button class="editor-tab" data-tab="ds" onclick="switchEditorTab('ds')" title="Design touchscreen hotspots for the NINTV-DS Intellivision emulator on Nintendo DS. Exports .ovl files with PNG → 8bpp tile/map/palette conversion.">
                     🕹️ DS Overlay <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')">
+                <button class="editor-tab" data-tab="voice" onclick="switchEditorTab('voice')" title="Build IntelliVoice phrases from 61 SP0256-AL2 allophones. Type words, hear pre-recorded WAVs, export IntyBASIC VOICE statements.">
                     🔊 IntelliVoice <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
-                <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')">
-                    ▶ Emulator <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')" title="In-browser jzIntv WASM emulator. Drag a ROM, play with touch or keyboard controls. BIOS files load once and persist.">
+                    ▶ Emulator
                 </button>
             </div>
 
@@ -93,13 +93,13 @@
 
             <!-- Sprite Editor Action Buttons -->
             <div id="sprite-toolbar" class="editor-toolbar">
-                <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()">📋 Copy Bitmap</button>
-                <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()">💾 Export Project</button>
-                <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()">📂 Import Project</button>
-                <button class="btn btn-secondary btn-sm" onclick="addNewSprite()">➕ New Sprite</button>
-                <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()">🗑️ Clear All</button>
-                <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" title="INTV graphics concepts for beginners">📖 INTV Primer</button>
-                <button id="layout-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Full-screen 20×12 backtab layout designer">🖥️ Layout View</button>
+                <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()" title="Copy the current sprite's IntyBASIC BITMAP output to clipboard">📋 Copy Bitmap</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()" title="Download a .sprproj JSON file containing all sprites + layout">💾 Export Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()" title="Restore a saved .sprproj file. Also supports pasting BITMAP / DECLE / jzIntv gt dumps via the dialog below.">📂 Import Project</button>
+                <button class="btn btn-secondary btn-sm" onclick="addNewSprite()" title="Create a new blank sprite using the current size selection">➕ New Sprite</button>
+                <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()" title="Delete all sprites and reset the editor (asks for confirmation)">🗑️ Clear All</button>
+                <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" title="INTV graphics concepts for beginners — GRAM, BACKTAB, MOBs, color modes">📖 INTV Primer</button>
+                <button id="layout-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Full-screen 20×12 backtab layout designer with FG/BG color picker">🖥️ Layout View</button>
             </div>
 
             <!-- DS Overlay Editor Action Buttons -->
@@ -2215,11 +2215,11 @@
                     <div class="sprite-canvas-header">
                         <h3>Pixel Canvas</h3>
                         <div id="sprite-size-selector" class="sprite-size-btn-group">
-                            <button class="sprite-size-btn"        data-size="4x8"   onclick="setSpriteSize(4,8)">4×8</button>
-                            <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)">8×8</button>
-                            <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)">8×16</button>
-                            <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)">16×8</button>
-                            <button class="sprite-size-btn"        data-size="16x16" onclick="setSpriteSize(16,16)">16×16</button>
+                            <button class="sprite-size-btn"        data-size="4x8"   onclick="setSpriteSize(4,8)"   title="4×8 split tile — half a GRAM card, shown as 4 side-by-side panels for backtab stitching">4×8</button>
+                            <button class="sprite-size-btn active" data-size="8x8"   onclick="setSpriteSize(8,8)"   title="8×8 — one GRAM card (the standard MOB/backtab tile size)">8×8</button>
+                            <button class="sprite-size-btn"        data-size="8x16"  onclick="setSpriteSize(8,16)"  title="8×16 — two stacked GRAM cards (double-tall MOB, common for player characters)">8×16</button>
+                            <button class="sprite-size-btn"        data-size="16x8"  onclick="setSpriteSize(16,8)"  title="16×8 — two side-by-side GRAM cards (double-wide composite)">16×8</button>
+                            <button class="sprite-size-btn"        data-size="16x16" onclick="setSpriteSize(16,16)" title="16×16 — four GRAM cards in a 2×2 grid (large boss-class composite)">16×16</button>
                         </div>
                     </div>
 
@@ -2456,11 +2456,11 @@
                 <button class="btn btn-secondary btn-sm" onclick="toggleLayoutView()" title="Return to sprite editor">← Sprites</button>
 
                 <div class="layout-toolbar-group">
-                    <span class="layout-toolbar-label">Zoom</span>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="2" onclick="layoutSetZoom(2)">2×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs active" data-zoom="3" onclick="layoutSetZoom(3)">3×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="4" onclick="layoutSetZoom(4)">4×</button>
-                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="5" onclick="layoutSetZoom(5)">5×</button>
+                    <span class="layout-toolbar-label" title="Canvas zoom level (display only — does not change exported data)">Zoom</span>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="2" onclick="layoutSetZoom(2)" title="2× zoom — fit more on screen">2×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs active" data-zoom="3" onclick="layoutSetZoom(3)" title="3× zoom — balanced default">3×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="4" onclick="layoutSetZoom(4)" title="4× zoom — see tile detail clearly">4×</button>
+                    <button class="layout-zoom-btn btn btn-secondary btn-xs" data-zoom="5" onclick="layoutSetZoom(5)" title="5× zoom — maximum detail">5×</button>
                 </div>
 
                 <div class="layout-toolbar-group">
