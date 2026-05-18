@@ -193,21 +193,30 @@ export class LayoutDesigner {
             return;
         }
 
-        // GROM cards: we don't have pixel data, so show a gray placeholder
-        // with the card number prefixed by "G" (e.g. "G42")
+        // GROM cards: render as the BG color (we don't have GROM pixel art).
+        // - GROM 0 is the canonical "blank" tile — render as pure BG, no marker
+        //   (most games use it for sky/water/empty space, where any overlay
+        //   would obscure the BG color users want to see).
+        // - GROM 1-255: dominant BG color + tiny low-contrast corner label so
+        //   the placeholder identity is hinted without hiding the BG.
         if (cell.isGram === false) {
-            const bgHex = this.PALETTE[cell.bgColor ?? 0]?.hex ?? '#444';
+            const bgHex = this.PALETTE[cell.bgColor ?? 0]?.hex ?? '#0C0005';
             ctx.fillStyle = bgHex;
             ctx.fillRect(ox, oy, cs, cs);
-            // Translucent gray overlay so it reads as "placeholder"
-            ctx.fillStyle = 'rgba(96, 96, 112, 0.6)';
-            ctx.fillRect(ox, oy, cs, cs);
-            const fgHex = this.PALETTE[cell.fgColor]?.hex ?? '#fff';
-            ctx.fillStyle = fgHex;
-            ctx.font = `${Math.max(7, this.zoom * 2.2)}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('G' + cell.cardNum, ox + cs / 2, oy + cs / 2);
+
+            if (cell.cardNum !== 0) {
+                // Small "G<n>" label in the top-left corner with reduced
+                // alpha so the BG color remains visually dominant.
+                const fgHex = this.PALETTE[cell.fgColor]?.hex ?? '#fff';
+                ctx.save();
+                ctx.fillStyle = fgHex;
+                ctx.globalAlpha = 0.55;
+                ctx.font = `${Math.max(6, this.zoom * 1.4)}px monospace`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillText('G' + cell.cardNum, ox + 1, oy + 1);
+                ctx.restore();
+            }
             return;
         }
 
