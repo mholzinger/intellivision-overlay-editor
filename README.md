@@ -33,6 +33,20 @@ Professional web-based tool for creating custom Intellivision controller overlay
 - **Vignette Frame** - Optional circular/oval vignette with inner ring
 - **Badges** - Intellivoice badge and player count indicators
 
+### Sprite Editor + Layout Designer
+- **Pixel canvas** - Design 8×8, 8×16, 16×8, 16×16, or 4×8 (split backtab tile) sprites with full 16-color Intellivision palette
+- **Three Use Modes** - MOB (hardware sprite), Color Stack (background tile), FG/BG (per-tile foreground+background)
+- **Animation preview** - Sequence frames with 1×1, 2×1 H, 1×2 V, or 4×1 Split layouts at 1–30 FPS
+- **Hardware preview** - Toggle Double-X / Double-Y / TV aspect ratio (~1.6:1) to see how the STIC will render
+- **Layout Designer** - Full-screen 20×12 backtab editor with FG (0–7) and BG (0–15) color pickers, undo/eraser/pick-up, exports IntyBASIC `DATA backtab` for both Color Stack and FG/BG MODE 1 screens
+- **Reconstruct screens from live jzIntv games** - Paste the `m 3800 200` and `m 200 F0` debugger dumps to rebuild any GRAM + BACKTAB combination, then inspect or edit in the browser. Works on any Intellivision ROM — your own homebrew, a commercial title, anything jzIntv runs. GROM cells render as `G<n>` placeholders.
+- **Import / Export** - IntyBASIC `BITMAP`, as1600 `DECLE` (hex/binary/decimal), jzIntv `show_grom` ASCII grid, PNG image quantize, and now jzIntv memory dumps from the `m` command
+
+### Other tabs (Beta)
+- **DS Overlay** - Touchscreen hotspot designer for the NINTV-DS emulator (Nintendo DS Intellivision core). Exports `.ovl` + auto-generated `.tile`/`.map`/`.pal` from a background PNG.
+- **IntelliVoice Builder** - Build SP0256-AL2 allophone sequences from English words via the CMU Pronouncing Dictionary; play back with pre-recorded WAV samples; export IntyBASIC `VOICE` statements.
+- **Emulator** - In-browser jzIntv WASM. Drop a ROM, play in browser with touch or keyboard controls. Per-game settings persist (JLP, PAL, ECS, etc.). Saved game library with box art.
+
 ### Export Options
 - **PNG Export** - High-resolution 300 DPI output with proper overlay mask (rounded corners)
 - **Framed Export** - Export with controller frame templates:

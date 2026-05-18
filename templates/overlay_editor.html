@@ -2928,6 +2928,32 @@ LOOP</pre>
                     </ol>
                 </section>
 
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑩ Reconstruct Screens from a Live Game</h3>
+                    <p>The Sprite Editor and Layout Designer can import memory dumps from jzIntv's debugger to rebuild any screen of any Intellivision game — your own work, a homebrew, or a commercial title.</p>
+                    <p><strong>What you need:</strong></p>
+                    <ul class="primer-list">
+                        <li>jzIntv launched with the <code>-d</code> flag (debugger enabled)</li>
+                        <li>Any Intellivision ROM running to the screen you want to capture</li>
+                        <li>Press <kbd>F4</kbd> in the game window to break into the debugger (or <kbd>Ctrl+C</kbd> in the terminal)</li>
+                    </ul>
+
+                    <p><strong>Step 1 — Capture GRAM:</strong> At the debugger prompt, run <code>m 3800 200</code>. Copy the output (lines starting <code>3800:</code>), then in the Sprite Editor toolbar click <strong>📥 Paste GRAM</strong> and paste. Every non-empty GRAM card becomes an editable 8×8 sprite at its original GRAM slot.</p>
+
+                    <p><strong>Step 2 — Capture BACKTAB:</strong> At the same break point, run <code>m 200 F0</code>. Copy the output. Open <strong>🖥️ Layout View</strong>, click <strong>📥 Paste BACKTAB</strong>, and paste. The full 20×12 screen reconstructs:</p>
+                    <ul class="primer-list">
+                        <li>GRAM tiles render with the pixel art you imported in Step 1</li>
+                        <li>GROM tiles (the Intellivision's built-in character set) show as gray <code>G&lt;n&gt;</code> placeholders so the layout structure is always visible</li>
+                        <li>Per-cell foreground and background colors are decoded for both Color Stack and FG/BG STIC modes</li>
+                    </ul>
+
+                    <p><strong>Tip:</strong> take both dumps at the <em>same</em> break point. The GRAM and BACKTAB need to match — if the game animates between dumps, the BACKTAB may reference card numbers that don't exist yet in your imported GRAM.</p>
+
+                    <p style="color:#666; font-size: 0.9em; margin-top: 12px;">
+                        Feature suggested by <strong>Steve Ettinger</strong> (original Mattel Electronics Intellivision design team).
+                    </p>
+                </section>
+
             </div><!-- /.intv-primer-body -->
 
             <div class="intv-primer-footer">
