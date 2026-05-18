@@ -657,6 +657,7 @@ window.layoutClear         = () => LayoutDesigner.clearLayout();
 window.layoutFill          = () => LayoutDesigner.fillLayout();
 window.layoutUndo          = () => LayoutDesigner.undo();
 window.layoutToggleEraser  = () => LayoutDesigner.toggleEraser();
+window.layoutPasteBacktab  = () => LayoutDesigner.showPasteBacktabDialog();
 window.layoutExportBacktab = () => LayoutDesigner.exportBacktab();
 window.layoutExportPng     = () => LayoutDesigner.exportPng();
 window.layoutCopyExport    = () => LayoutDesigner.copyExport();

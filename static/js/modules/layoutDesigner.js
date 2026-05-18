@@ -121,7 +121,7 @@ export class LayoutDesigner {
     // =========================================================================
 
     static _makeCell(cardNum = 0, fgColor = 7, bgColor = 0) {
-        return { cardNum, fgColor, bgColor, isEmpty: true };
+        return { cardNum, fgColor, bgColor, isGram: true, advanceFlag: false, isEmpty: true };
     }
 
     static _cellIndex(col, row) {
@@ -193,16 +193,35 @@ export class LayoutDesigner {
             return;
         }
 
-        // Get tile pixel data from SpriteEditor
+        // GROM cards: we don't have pixel data, so show a gray placeholder
+        // with the card number prefixed by "G" (e.g. "G42")
+        if (cell.isGram === false) {
+            const bgHex = this.PALETTE[cell.bgColor ?? 0]?.hex ?? '#444';
+            ctx.fillStyle = bgHex;
+            ctx.fillRect(ox, oy, cs, cs);
+            // Translucent gray overlay so it reads as "placeholder"
+            ctx.fillStyle = 'rgba(96, 96, 112, 0.6)';
+            ctx.fillRect(ox, oy, cs, cs);
+            const fgHex = this.PALETTE[cell.fgColor]?.hex ?? '#fff';
+            ctx.fillStyle = fgHex;
+            ctx.font = `${Math.max(7, this.zoom * 2.2)}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('G' + cell.cardNum, ox + cs / 2, oy + cs / 2);
+            return;
+        }
+
+        // GRAM cards: get pixel data from SpriteEditor
         const tileData = SpriteEditor.getGramTilePixels(cell.cardNum);
         if (!tileData) {
-            // Card allocated but sprite not found — draw placeholder
+            // GRAM card allocated but sprite not found — draw placeholder
             ctx.fillStyle = '#1a1a2e';
             ctx.fillRect(ox, oy, cs, cs);
-            ctx.fillStyle = '#444';
-            ctx.font = `${Math.max(8, this.zoom * 2)}px monospace`;
+            ctx.fillStyle = '#666';
+            ctx.font = `${Math.max(7, this.zoom * 2.2)}px monospace`;
             ctx.textAlign = 'center';
-            ctx.fillText('?', ox + cs / 2, oy + cs / 2 + 3);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(cell.cardNum, ox + cs / 2, oy + cs / 2);
             return;
         }
 
@@ -590,8 +609,8 @@ export class LayoutDesigner {
      * Word layout: bits 15..0 = xxBP GBBa aaaa aFFF
      *   bits 2–0  (FFF): FG color (0–7)
      *   bits 8–3  (aaaaaa): GRAM card (0–63)
-     *   bit  9   (B): BG bit 1
-     *   bit 10   (B): BG bit 0
+     *   bit  9   (B): BG bit 0
+     *   bit 10   (B): BG bit 1
      *   bit 11   (G): GRAM select (1)
      *   bit 12   (P): BG bit 3
      *   bit 13   (B): BG bit 2
@@ -601,10 +620,12 @@ export class LayoutDesigner {
      *
      * FG/BG mode word (STIC MODE 1, GRAM):
      *   = $800 + (card * 8) + fg
-     *       + ((bg & 0x1) << 10)   // BG bit 0 → word bit 10
-     *       + ((bg & 0x2) << 8)    // BG bit 1 → word bit 9
+     *       + ((bg & 0x1) << 9)    // BG bit 0 → word bit 9
+     *       + ((bg & 0x2) << 9)    // BG bit 1 → word bit 10
      *       + ((bg & 0x4) << 11)   // BG bit 2 → word bit 13
      *       + ((bg & 0x8) << 9)    // BG bit 3 → word bit 12
+     *
+     * Verified: card=33, fg=4, bg=10 → $1D0C (matches jzIntv "m" dump).
      *
      * Empty cells = $0000.
      */
@@ -613,22 +634,163 @@ export class LayoutDesigner {
         const fg = cell.fgColor & 0x7;
         const bg = (cell.bgColor ?? 0) & 0xF;
         const gc = cell.cardNum;
+        const gramBit = (cell.isGram === false) ? 0 : 0x0800;
 
         if (!fgbgMode) {
-            // Color Stack mode
-            return (gc * 8) + fg + 0x0800;
+            // Color Stack mode: bit 13 = advance color stack flag
+            const adv = cell.advanceFlag ? 0x2000 : 0;
+            return gramBit + (gc * 8) + fg + adv;
         }
-        // FG/BG mode — GRAM bit + scattered BG bits per STIC encoding
-        const bgBits = ((bg & 0x1) << 10)
-                     | ((bg & 0x2) << 8)
+        // FG/BG mode — scattered BG bits per STIC encoding
+        const bgBits = ((bg & 0x1) << 9)
+                     | ((bg & 0x2) << 9)
                      | ((bg & 0x4) << 11)
                      | ((bg & 0x8) << 9);
-        return 0x0800 + (gc * 8) + fg + bgBits;
+        return gramBit + (gc * 8) + fg + bgBits;
     }
 
     /** True if any non-empty cell has a non-default BG color set. */
     static _needsFgBgMode() {
         return this.cells.some(c => !c.isEmpty && (c.bgColor ?? 0) !== 0);
+    }
+
+    /**
+     * Decode a 16-bit backtab word back to a cell descriptor.
+     * Inverse of _encodeBacktabWord — handles Color Stack and FG/BG modes.
+     * Mode is heuristic: if any BG bits are set (positions 9, 10, 12, 13),
+     * we assume FG/BG mode for that word.
+     *
+     * Returns: { cardNum, fgColor, bgColor, isGram, advanceFlag, isEmpty }
+     */
+    static _decodeBacktabWord(word) {
+        if (word === 0x0000) {
+            return { cardNum: 0, fgColor: 7, bgColor: 0, isGram: false, advanceFlag: false, isEmpty: true };
+        }
+
+        const fg     = word & 0x7;
+        const cardNum = (word >> 3) & 0x3F;
+        const isGram = (word & 0x0800) !== 0;
+
+        // Detect FG/BG mode by checking the BG-bit positions
+        // Mapping per STIC: BG bit 0→word bit 9, BG bit 1→word bit 10,
+        //                   BG bit 2→word bit 13, BG bit 3→word bit 12
+        const bgBit0 = (word >>  9) & 0x1;
+        const bgBit1 = (word >> 10) & 0x1;
+        const bgBit2 = (word >> 13) & 0x1;
+        const bgBit3 = (word >> 12) & 0x1;
+        const bgValue = (bgBit3 << 3) | (bgBit2 << 2) | (bgBit1 << 1) | bgBit0;
+
+        // In CS mode, bit 13 is "advance color stack". In FG/BG mode, it's BG bit 2.
+        // If bits 9, 10, 12, 13 are all zero, it's safe to assume CS mode.
+        // If any are set BUT only bit 13 is set, prefer CS+advance interpretation.
+        const onlyBit13 = bgBit2 === 1 && bgBit0 === 0 && bgBit1 === 0 && bgBit3 === 0;
+        const isFgBg = bgValue !== 0 && !onlyBit13;
+
+        if (isFgBg) {
+            return { cardNum, fgColor: fg, bgColor: bgValue, isGram, advanceFlag: false, isEmpty: false };
+        } else {
+            // CS mode — bit 13 is advance, BG defaults to 0
+            return { cardNum, fgColor: fg, bgColor: 0, isGram, advanceFlag: bgBit2 === 1, isEmpty: false };
+        }
+    }
+
+    /**
+     * Parse a jzIntv debugger memory dump (output of the 'm' command).
+     * Format example:
+     *   0200:  0000* 0000  0000  0000   0000  0000  0000  3D03    # ................
+     *   0208:  3D03  3D03  3D03  1A1B   1203  1203  1203  1204    # ................
+     *
+     * Extracts hex words and returns a Map<address, wordValue>.
+     * The `*` marker (recently-changed flag) is stripped. Anything after `#` is ignored.
+     */
+    static _parseMemoryDump(text) {
+        const result = new Map();
+        const lineRe = /^\s*([0-9A-Fa-f]{4}):\s*(.+?)(?:\s*#.*)?$/;
+
+        for (const rawLine of text.split('\n')) {
+            const m = rawLine.match(lineRe);
+            if (!m) continue;
+            const startAddr = parseInt(m[1], 16);
+            const wordStr = m[2];
+            // Extract each 4-char hex word, optionally followed by *
+            const words = wordStr.match(/\b[0-9A-Fa-f]{4}\*?/g) || [];
+            words.forEach((w, i) => {
+                const value = parseInt(w.replace(/\*$/, ''), 16);
+                if (!isNaN(value)) {
+                    result.set(startAddr + i, value);
+                }
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Import BACKTAB from a pasted jzIntv 'm' command memory dump.
+     * Looks for addresses in the BACKTAB range ($0200-$02EF, 240 words).
+     * Returns true on success.
+     */
+    static importBacktabFromDump(text) {
+        if (!text || !text.trim()) {
+            alert('Please paste a jzIntv memory dump first');
+            return false;
+        }
+
+        const wordMap = this._parseMemoryDump(text);
+        if (wordMap.size === 0) {
+            alert('No valid memory dump lines found.\n\nExpected format from jzIntv "m" command:\n  0200:  3D03 1A1B 1204 ...');
+            return false;
+        }
+
+        // Slice the BACKTAB range
+        const BACKTAB_BASE = 0x0200;
+        const BACKTAB_LEN  = 240;
+        let cellsFound = 0;
+        for (let i = 0; i < BACKTAB_LEN; i++) {
+            const addr = BACKTAB_BASE + i;
+            if (wordMap.has(addr)) cellsFound++;
+        }
+        if (cellsFound === 0) {
+            alert(`Memory dump didn't include the BACKTAB range ($0200-$02EF).\n\nIn jzIntv debugger run:\n  m 200 F0\n\nThen paste the output here.`);
+            return false;
+        }
+
+        this._pushUndo();
+        const newCells = [];
+        for (let i = 0; i < BACKTAB_LEN; i++) {
+            const addr = BACKTAB_BASE + i;
+            const word = wordMap.get(addr) ?? 0x0000;
+            const decoded = this._decodeBacktabWord(word);
+            newCells.push({
+                cardNum:     decoded.cardNum,
+                fgColor:     decoded.fgColor,
+                bgColor:     decoded.bgColor,
+                isGram:      decoded.isGram,
+                advanceFlag: decoded.advanceFlag,
+                isEmpty:     decoded.isEmpty,
+            });
+        }
+        this.cells = newCells;
+        this.render();
+        this._updateStatus();
+
+        const fgbgCount = newCells.filter(c => !c.isEmpty && c.bgColor !== 0).length;
+        const gromCount = newCells.filter(c => !c.isEmpty && !c.isGram).length;
+        const summary = `Imported ${cellsFound}/240 backtab cells. ${fgbgCount} use FG/BG colors. ${gromCount} reference GROM cards (shown as gray G<n> placeholders).`;
+        alert(summary);
+        return true;
+    }
+
+    static showPasteBacktabDialog() {
+        const text = prompt(
+            'Paste a jzIntv memory dump containing BACKTAB ($0200-$02EF).\n\n' +
+            'In the jzIntv debugger, run:\n' +
+            '  m 200 F0\n\n' +
+            'Then copy the output and paste it here.\n\n' +
+            'Example format:\n' +
+            '  0200:  0000 0000 0000 0000   0000 0000 0000 3D03   # ...\n' +
+            '  0208:  3D03 3D03 3D03 1A1B   1203 1203 1203 1204   # ...'
+        );
+        if (text) this.importBacktabFromDump(text);
     }
 
     static exportBacktab() {
@@ -742,6 +904,8 @@ export class LayoutDesigner {
             n: c.cardNum,
             f: c.fgColor,
             b: c.bgColor ?? 0,
+            g: c.isGram === false ? 0 : 1,        // GROM = 0, GRAM = 1 (default)
+            a: c.advanceFlag ? 1 : 0,             // advance color stack flag
             e: c.isEmpty ? 1 : 0,
         }));
     }
@@ -749,10 +913,12 @@ export class LayoutDesigner {
     static deserializeCells(data) {
         if (!Array.isArray(data)) return;
         this.cells = data.map(c => ({
-            cardNum:  c.n ?? 0,
-            fgColor:  c.f ?? 7,
-            bgColor:  c.b ?? 0,
-            isEmpty:  (c.e ?? 1) === 1,
+            cardNum:     c.n ?? 0,
+            fgColor:     c.f ?? 7,
+            bgColor:     c.b ?? 0,
+            isGram:      (c.g ?? 1) === 1,
+            advanceFlag: (c.a ?? 0) === 1,
+            isEmpty:     (c.e ?? 1) === 1,
         }));
         // Pad to 240 if needed
         while (this.cells.length < this.COLS * this.ROWS) {
