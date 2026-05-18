@@ -707,7 +707,8 @@ export class LayoutDesigner {
         const result = new Map();
         const lineRe = /^\s*([0-9A-Fa-f]{4}):\s*(.+?)(?:\s*#.*)?$/;
 
-        for (const rawLine of text.split('\n')) {
+        // Normalize CRLF → LF so the $ anchor matches on Windows clipboards too
+        for (const rawLine of text.replace(/\r/g, '').split('\n')) {
             const m = rawLine.match(lineRe);
             if (!m) continue;
             const startAddr = parseInt(m[1], 16);

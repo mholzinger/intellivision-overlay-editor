@@ -1407,7 +1407,8 @@ export class SpriteEditor {
     static _parseMemoryDump(text) {
         const result = new Map();
         const lineRe = /^\s*([0-9A-Fa-f]{4}):\s*(.+?)(?:\s*#.*)?$/;
-        for (const rawLine of text.split('\n')) {
+        // Normalize CRLF → LF so the $ anchor matches on Windows clipboards too
+        for (const rawLine of text.replace(/\r/g, '').split('\n')) {
             const m = rawLine.match(lineRe);
             if (!m) continue;
             const startAddr = parseInt(m[1], 16);
@@ -1427,7 +1428,10 @@ export class SpriteEditor {
      * Each card is 8 consecutive words; the low byte of each word is the
      * 8-pixel row pattern (MSB = leftmost pixel).
      *
-     * Skips all-zero cards (treats them as unused slots).
+     * Imports ALL 64 cards in the dump range — including all-zero cards
+     * (a game may intentionally use a blank GRAM card rather than GROM 0,
+     * and the slot numbering must stay intact for the BACKTAB references
+     * to line up).
      */
     static importGramFromDump(text) {
         if (!text || !text.trim()) {
@@ -1445,17 +1449,21 @@ export class SpriteEditor {
         const GRAM_CARDS = 64;
         const WORDS_PER_CARD = 8;
         const created = [];
+        let nonEmptyCount = 0;
+        let cardsInDump = 0;
 
         for (let card = 0; card < GRAM_CARDS; card++) {
             const baseAddr = GRAM_BASE + (card * WORDS_PER_CARD);
             const rows = [];
             let allZero = true;
+            let anyWordSeen = false;
             for (let row = 0; row < 8; row++) {
                 const word = wordMap.get(baseAddr + row);
                 if (word === undefined) {
                     rows.push(new Array(8).fill(0));
                     continue;
                 }
+                anyWordSeen = true;
                 // Low byte of the word holds the pixel row (MSB = left pixel)
                 const byte = word & 0xFF;
                 if (byte !== 0) allZero = false;
@@ -1465,8 +1473,11 @@ export class SpriteEditor {
                 }
                 rows.push(pixelRow);
             }
-            // Skip empty cards — user can manually add later if needed
-            if (allZero) continue;
+            // Skip cards NOT covered by the dump at all (user pasted partial range)
+            if (!anyWordSeen) continue;
+
+            cardsInDump++;
+            if (!allZero) nonEmptyCount++;
 
             created.push({
                 name:      `gram_${card}`,
@@ -1486,13 +1497,14 @@ export class SpriteEditor {
         }
 
         if (created.length === 0) {
-            alert(`Memory dump didn't include any non-empty GRAM cards in $3800-$39FF.\n\nIn jzIntv debugger run:\n  m 3800 200\n\nThen paste the output here.`);
+            alert(`Memory dump didn't include any GRAM cards in $3800-$39FF.\n\nIn jzIntv debugger run:\n  m 3800 200\n\nThen paste the output here.`);
             return false;
         }
 
         // Replace existing sprites with the imported set (full GRAM snapshot)
+        const blankCount = cardsInDump - nonEmptyCount;
         const replace = confirm(
-            `Found ${created.length} non-empty GRAM cards in the dump.\n\n` +
+            `Found ${cardsInDump} GRAM cards in the dump (${nonEmptyCount} with pixel data, ${blankCount} intentionally blank).\n\n` +
             `OK = REPLACE all current sprites with the imported GRAM data\n` +
             `Cancel = APPEND imported cards to existing sprites\n` +
             `(Cancel preserves your work but may cause GRAM slot collisions.)`
@@ -1528,7 +1540,7 @@ export class SpriteEditor {
             }
         }).catch(() => {});
 
-        alert(`Imported ${created.length} GRAM cards from dump.`);
+        alert(`Imported ${created.length} GRAM cards (${nonEmptyCount} with art, ${blankCount} blank).`);
         return true;
     }
 
