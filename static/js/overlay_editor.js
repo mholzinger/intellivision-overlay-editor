@@ -640,6 +640,7 @@ window.toggleSpriteTvAspect   = ()        => SpriteEditor.toggleTvAspect();
 
 // BITMAP import
 window.pasteBitmapText = () => SpriteEditor.showPasteBitmapDialog();
+window.spritePasteGramDump = () => SpriteEditor.showPasteGramDumpDialog();
 
 // Sprite properties panel
 window.updateSpriteGramCard = (val)     => SpriteEditor.updateGramCard(val);

@@ -1396,6 +1396,158 @@ export class SpriteEditor {
     }
 
     // ==========================================
+    // jzIntv memory dump → GRAM sprites
+    // ==========================================
+
+    /**
+     * Parse a jzIntv 'm' command memory dump into a Map<address, word>.
+     * Same format as BACKTAB parser in layoutDesigner — handles the *
+     * recently-changed marker, addresses, and # ASCII comment column.
+     */
+    static _parseMemoryDump(text) {
+        const result = new Map();
+        const lineRe = /^\s*([0-9A-Fa-f]{4}):\s*(.+?)(?:\s*#.*)?$/;
+        for (const rawLine of text.split('\n')) {
+            const m = rawLine.match(lineRe);
+            if (!m) continue;
+            const startAddr = parseInt(m[1], 16);
+            const wordStr = m[2];
+            const words = wordStr.match(/\b[0-9A-Fa-f]{4}\*?/g) || [];
+            words.forEach((w, i) => {
+                const value = parseInt(w.replace(/\*$/, ''), 16);
+                if (!isNaN(value)) result.set(startAddr + i, value);
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Import GRAM sprites from a pasted jzIntv 'm 3800 200' memory dump.
+     * GRAM lives at $3800-$39FF (64 cards × 8 rows = 512 words).
+     * Each card is 8 consecutive words; the low byte of each word is the
+     * 8-pixel row pattern (MSB = leftmost pixel).
+     *
+     * Skips all-zero cards (treats them as unused slots).
+     */
+    static importGramFromDump(text) {
+        if (!text || !text.trim()) {
+            alert('Please paste a jzIntv memory dump first');
+            return false;
+        }
+
+        const wordMap = this._parseMemoryDump(text);
+        if (wordMap.size === 0) {
+            alert('No valid memory dump lines found.\n\nExpected format from jzIntv "m" command:\n  3800:  007C 00C6 00C0 007C ...');
+            return false;
+        }
+
+        const GRAM_BASE = 0x3800;
+        const GRAM_CARDS = 64;
+        const WORDS_PER_CARD = 8;
+        const created = [];
+
+        for (let card = 0; card < GRAM_CARDS; card++) {
+            const baseAddr = GRAM_BASE + (card * WORDS_PER_CARD);
+            const rows = [];
+            let allZero = true;
+            for (let row = 0; row < 8; row++) {
+                const word = wordMap.get(baseAddr + row);
+                if (word === undefined) {
+                    rows.push(new Array(8).fill(0));
+                    continue;
+                }
+                // Low byte of the word holds the pixel row (MSB = left pixel)
+                const byte = word & 0xFF;
+                if (byte !== 0) allZero = false;
+                const pixelRow = [];
+                for (let bit = 7; bit >= 0; bit--) {
+                    pixelRow.push((byte >> bit) & 1);
+                }
+                rows.push(pixelRow);
+            }
+            // Skip empty cards — user can manually add later if needed
+            if (allZero) continue;
+
+            created.push({
+                name:      `gram_${card}`,
+                width:     8,
+                height:    8,
+                pixels:    rows,
+                fgColor:   this.selectedFgColor,
+                bgColor:   this.selectedBgColor,
+                gramCard:  card,           // honor the GRAM slot from the dump
+                useMode:   'mob',
+                mobColor:  7,
+                csColor:   7,
+                csAdvance: false,
+                fgbgFg:    7,
+                fgbgBg:    0,
+            });
+        }
+
+        if (created.length === 0) {
+            alert(`Memory dump didn't include any non-empty GRAM cards in $3800-$39FF.\n\nIn jzIntv debugger run:\n  m 3800 200\n\nThen paste the output here.`);
+            return false;
+        }
+
+        // Replace existing sprites with the imported set (full GRAM snapshot)
+        const replace = confirm(
+            `Found ${created.length} non-empty GRAM cards in the dump.\n\n` +
+            `OK = REPLACE all current sprites with the imported GRAM data\n` +
+            `Cancel = APPEND imported cards to existing sprites\n` +
+            `(Cancel preserves your work but may cause GRAM slot collisions.)`
+        );
+
+        if (replace) {
+            this.sprites = created;
+            this.currentSpriteIndex = 0;
+        } else {
+            // Append, fixing slot collisions
+            for (const spr of created) {
+                spr.gramCard = this._nextGramCardAfter(this.sprites);
+                this.sprites.push(spr);
+            }
+            this.currentSpriteIndex = this.sprites.length - 1;
+        }
+
+        this.gridWidth  = 8;
+        this.gridHeight = 8;
+
+        this.updateSpriteList();
+        this.renderPalette();
+        this.renderGrid();
+        this.renderPreview();
+        this.updateOutput();
+        this.updateSizeSelector();
+        this.updateSpriteProperties();
+
+        // If Layout Designer is open, refresh its tile picker so the new sprites appear
+        import('./layoutDesigner.js').then(({ LayoutDesigner }) => {
+            if (typeof LayoutDesigner.refreshTilePicker === 'function') {
+                LayoutDesigner.refreshTilePicker();
+            }
+        }).catch(() => {});
+
+        alert(`Imported ${created.length} GRAM cards from dump.`);
+        return true;
+    }
+
+    static showPasteGramDumpDialog() {
+        const text = prompt(
+            'Paste a jzIntv memory dump containing GRAM ($3800-$39FF).\n\n' +
+            'In the jzIntv debugger, run:\n' +
+            '  m 3800 200\n\n' +
+            'Then copy the output and paste it here.\n\n' +
+            'Each card = 8 consecutive words. Low byte of each word is the\n' +
+            'pixel row (bit 7 = leftmost pixel). Empty cards are skipped.\n\n' +
+            'Example format:\n' +
+            '  3800:  007C 00C6 00C0 007C   0006 0006 00C6 007C   # ...\n' +
+            '  3808:  007C 00C4 00C0 007C   0004 0004 00C4 007C   # ...'
+        );
+        if (text) this.importGramFromDump(text);
+    }
+
+    // ==========================================
     // Sprite Properties UI
     // ==========================================
 

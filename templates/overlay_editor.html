@@ -96,6 +96,7 @@
                 <button class="btn btn-success btn-sm" onclick="copySpriteBitmap()" data-tooltip="Copy the current sprite's IntyBASIC BITMAP output to clipboard">📋 Copy Bitmap</button>
                 <button class="btn btn-secondary btn-sm" onclick="exportSpriteProject()" data-tooltip="Download a .sprproj JSON file containing all sprites + layout">💾 Export Project</button>
                 <button class="btn btn-secondary btn-sm" onclick="importSpriteProject()" data-tooltip="Restore a saved .sprproj file. Also supports pasting BITMAP / DECLE / jzIntv gt dumps via the dialog below.">📂 Import Project</button>
+                <button class="btn btn-info btn-sm" onclick="spritePasteGramDump()" data-tooltip="Paste a jzIntv 'm 3800 200' memory dump to import all 64 GRAM cards at once. Each card decoded from 8 consecutive 16-bit words.">📥 Paste GRAM</button>
                 <button class="btn btn-secondary btn-sm" onclick="addNewSprite()" data-tooltip="Create a new blank sprite using the current size selection">➕ New Sprite</button>
                 <button class="btn btn-secondary btn-sm" onclick="clearAllSprites()" data-tooltip="Delete all sprites and reset the editor (asks for confirmation)">🗑️ Clear All</button>
                 <button class="btn btn-info btn-sm" onclick="openIntvPrimer()" data-tooltip="INTV graphics concepts for beginners — GRAM, BACKTAB, MOBs, color modes">📖 INTV Primer</button>
