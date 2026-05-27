@@ -11,6 +11,7 @@
 
 import { IntyBasicMusic } from './music/engines/intybasicMusic.js';
 import { PianoRoll }      from './music/pianoRoll.js';
+import { PsgSynth }       from './music/playback/psgSynth.js';
 
 // Registry of available engines. Phases 5/8/9 add ECS / JLP-zmus / raw-PSG here.
 const ENGINES = {
@@ -91,13 +92,39 @@ export class MusicEditor {
     }
 
     static play() {
-        // Phase 2: spin up psgSynth, schedule events, animate playhead.
-        alert('Playback arrives in Phase 2 (Web Audio synth).');
+        if (!this.song || !this.song.notes || this.song.notes.length === 0) {
+            alert('Nothing to play — paste an IntyBASIC MUSIC song first.');
+            return;
+        }
+        // If already playing, treat as stop (button doubles as pause)
+        if (PsgSynth.isPlaying()) {
+            this.stop();
+            return;
+        }
+        const events     = this.engine.toPlaybackEvents(this.song);
+        const totalTicks = this.engine.getTotalTicks(this.song);
+
+        PsgSynth.play(events, totalTicks, (tick) => {
+            PianoRoll.setPlayhead(tick);
+            if (tick === null) {
+                this.isPlaying = false;
+                this._updatePlayButton();
+            }
+        });
+        this.isPlaying = true;
+        this._updatePlayButton();
     }
 
     static stop() {
-        // Phase 2: tear down synth.
+        PsgSynth.stop();
         this.isPlaying = false;
+        PianoRoll.setPlayhead(null);
+        this._updatePlayButton();
+    }
+
+    static _updatePlayButton() {
+        const btn = document.querySelector('#music-toolbar button[onclick="musicPlay()"]');
+        if (btn) btn.textContent = this.isPlaying ? '⏸ Pause' : '▶ Play';
     }
 
     // ── Status line ─────────────────────────────────────────────────────────

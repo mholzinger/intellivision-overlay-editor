@@ -27,6 +27,7 @@ export class PianoRoll {
     static ctx              = null;
     static song             = null;     // SongIR currently displayed
     static scrollX          = 0;        // tick-grid horizontal scroll
+    static playheadTick     = null;     // current playback position, null = not playing
 
     /** Wire the piano-roll to its host canvas element. Called once on tab init. */
     static init(canvasId = 'music-piano-roll') {
@@ -65,6 +66,14 @@ export class PianoRoll {
         this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT + drumStripHeight;
     }
 
+    /** Set/clear the playhead position (in ticks). Called from PsgSynth. */
+    static setPlayhead(tick) {
+        this.playheadTick = tick;
+        this._renderPlayheadOnly();
+        // Auto-scroll the parent container so the playhead stays visible.
+        if (tick !== null) this._scrollPlayheadIntoView();
+    }
+
     /** Re-render everything. */
     static render() {
         if (!this.ctx) return;
@@ -77,6 +86,39 @@ export class PianoRoll {
         this._renderKeyboard();
         this._renderGrid();
         this._renderNotes();
+        this._renderPlayhead();
+    }
+
+    static _renderPlayhead() {
+        if (this.playheadTick == null) return;
+        const { ctx, KEYBOARD_WIDTH, TICK_WIDTH } = this;
+        const x = KEYBOARD_WIDTH + this.playheadTick * TICK_WIDTH;
+        ctx.fillStyle = 'rgba(255, 80, 80, 0.85)';
+        ctx.fillRect(x, 0, 2, this.canvas.height);
+    }
+
+    /** Lightweight: redraw just the playhead column (clear via full render).
+     *  For Phase 2 we just re-render everything — it's cheap enough on raf. */
+    static _renderPlayheadOnly() {
+        this.render();
+    }
+
+    /** Keep the playhead visible by scrolling the container if needed. */
+    static _scrollPlayheadIntoView() {
+        if (!this.canvas || this.playheadTick == null) return;
+        const container = this.canvas.parentElement;
+        if (!container) return;
+        const x = this.KEYBOARD_WIDTH + this.playheadTick * this.TICK_WIDTH;
+        // Scale x from canvas-pixels to displayed-pixels
+        const ratio = container.clientWidth / this.canvas.clientWidth;
+        const displayedX = x * ratio;
+        const margin = 100;     // keep playhead this far from the right edge
+        if (displayedX > container.scrollLeft + container.clientWidth - margin) {
+            container.scrollLeft = displayedX - container.clientWidth + margin;
+        }
+        if (displayedX < container.scrollLeft + margin) {
+            container.scrollLeft = Math.max(0, displayedX - margin);
+        }
     }
 
     // ── Drawing primitives ──────────────────────────────────────────────────

@@ -298,8 +298,52 @@ export class IntyBasicMusic extends MusicEngine {
         return `${label}:\n  DATA ${song.ticksPerNote}\n  ' (serializer not yet implemented)\n  MUSIC STOP\n`;
     }
 
-    /** Phase 2 stub — Web Audio playback events. */
-    static toPlaybackEvents(song) {
-        return [];
+    /**
+     * Convert SongIR into a flat list of timed playback events for psgSynth.
+     *
+     * IntyBASIC NTSC ticks at 60 Hz (PAL = 50 Hz; we default to NTSC for now).
+     * Each tick = 1/60 second of song time.
+     *
+     * @returns {Array<{ timeSec, type, ... }>}
+     *   type 'note' has { pitch, durationTicks, instrument, channel }
+     *   type 'drum' has { drumType, channel }
+     */
+    static toPlaybackEvents(song, framerate = 60) {
+        const events = [];
+        const tickSec = 1 / framerate;
+
+        for (const note of (song.notes || [])) {
+            const timeSec = note.startTick * tickSec;
+            if (note.drum) {
+                events.push({
+                    timeSec,
+                    type:     'drum',
+                    channel:  note.channel,
+                    drumType: note.drum,
+                });
+            } else if (note.pitch !== null && note.pitch !== undefined) {
+                events.push({
+                    timeSec,
+                    type:           'note',
+                    channel:        note.channel,
+                    pitch:          note.pitch,
+                    durationTicks:  note.durationTicks,
+                    instrument:     note.instrument || 'W',
+                });
+            }
+        }
+
+        // Stable sort by time so the synth processes them in playback order
+        events.sort((a, b) => a.timeSec - b.timeSec);
+        return events;
+    }
+
+    /** Total song length in ticks (for end-of-song detection during playback). */
+    static getTotalTicks(song) {
+        let maxTick = 0;
+        for (const note of (song.notes || [])) {
+            maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
+        }
+        return maxTick;
     }
 }
