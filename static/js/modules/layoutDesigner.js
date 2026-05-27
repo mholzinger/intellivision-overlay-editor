@@ -17,9 +17,10 @@ export class LayoutDesigner {
 
     // ── Editor state ─────────────────────────────────────────────────────────
     static cells           = [];   // 240 entries; see _makeCell()
-    static selectedSlot    = 0;    // active GRAM slot in tile picker (0–63)
+    static selectedSlot    = 0;    // active GRAM/GROM card number (0–63 for GRAM)
     static selectedColor   = 7;    // active foreground color (0–7 in FG/BG mode)
     static selectedBgColor = 0;    // active background color (0–15 in FG/BG mode)
+    static selectedIsGram  = true; // paint as GRAM (true) or GROM (false)
     static zoom            = 3;    // canvas scale: 1 canvas px = zoom hardware px
     static isPainting      = false;
     static lastPainted     = -1;   // cell index painted last drag step
@@ -340,10 +341,19 @@ export class LayoutDesigner {
         });
     }
 
-    static selectSlot(slot) {
+    /**
+     * Set the active tile slot.
+     * @param {number} slot - card number
+     * @param {boolean} [isGram=true] - true for GRAM, false for GROM. The
+     *   tile-picker UI only shows GRAM slots, so a user-driven click always
+     *   means GRAM. Pick-up from a cell may pass false to preserve GROM state.
+     */
+    static selectSlot(slot, isGram = true) {
         this.selectedSlot = slot;
+        this.selectedIsGram = isGram;
         document.querySelectorAll('.layout-tile-item').forEach(el => {
-            el.classList.toggle('selected', parseInt(el.dataset.slot) === slot);
+            // Only highlight the picker if we're in GRAM mode (picker shows GRAM slots)
+            el.classList.toggle('selected', isGram && parseInt(el.dataset.slot) === slot);
         });
         this._updateStatus();
     }
@@ -415,7 +425,8 @@ export class LayoutDesigner {
         const fgName = this.PALETTE[this.selectedColor]?.name ?? '?';
         const bgName = this.PALETTE[this.selectedBgColor]?.name ?? '?';
         const eraser = this.eraserMode ? ' · <span class="layout-status-mode">ERASER</span>' : '';
-        let html = `GRAM <span class="layout-status-gram">${this.selectedSlot}</span>`
+        const selKind = this.selectedIsGram !== false ? 'GRAM' : 'GROM';
+        let html = `${selKind} <span class="layout-status-gram">${this.selectedSlot}</span>`
                  + ` · FG: ${fgName} (${this.selectedColor})`
                  + ` · BG: ${bgName} (${this.selectedBgColor})${eraser}`;
         if (col !== null) {
@@ -424,7 +435,8 @@ export class LayoutDesigner {
             const cell = this.cells[idx];
             html += ` · [${col},${row}] (backtab + ${offset})`;
             if (!cell.isEmpty) {
-                html += ` → GRAM <span class="layout-status-gram">${cell.cardNum}</span>`
+                const cellKind = cell.isGram !== false ? 'GRAM' : 'GROM';
+                html += ` → ${cellKind} <span class="layout-status-gram">${cell.cardNum}</span>`
                       + `, FG ${cell.fgColor}, BG ${cell.bgColor ?? 0}`;
             } else {
                 html += ' (empty)';
@@ -470,14 +482,20 @@ export class LayoutDesigner {
         this._paint(pos.col, pos.row);
     }
 
-    /** Right-click handler: copy cell's GRAM/FG/BG to the active picker selection. */
+    /** Right-click handler: copy cell's card+GRAM/GROM flag+FG+BG to the active selection. */
     static _pickUpCell(col, row) {
         const idx = this._cellIndex(col, row);
         const cell = this.cells[idx];
         if (!cell || cell.isEmpty) return;
-        this.selectSlot(cell.cardNum);
+        // Preserve GRAM vs GROM identity from the picked-up cell so subsequent
+        // paint strokes recreate the same kind of cell.
+        const cellIsGram = cell.isGram !== false;
+        this.selectSlot(cell.cardNum, cellIsGram);
         this.selectColor(cell.fgColor);
         this.selectBgColor(cell.bgColor ?? 0);
+        // Refresh status bar with cell-under-cursor info (selectSlot/Color/BgColor
+        // call _updateStatus() with no args, which clears the [col,row] portion).
+        this._updateStatus(col, row);
     }
 
     /** Push a deep copy of the current cells array to the undo stack. */
@@ -538,12 +556,14 @@ export class LayoutDesigner {
             // Erase
             this.cells[idx] = this._makeCell();
         } else {
-            // Draw
+            // Draw — preserve GRAM/GROM flag from current selection
             this.cells[idx] = {
-                cardNum:  this.selectedSlot,
-                fgColor:  this.selectedColor,
-                bgColor:  this.selectedBgColor,
-                isEmpty:  false,
+                cardNum:     this.selectedSlot,
+                fgColor:     this.selectedColor,
+                bgColor:     this.selectedBgColor,
+                isGram:      this.selectedIsGram !== false,
+                advanceFlag: false,
+                isEmpty:     false,
             };
         }
 
@@ -597,10 +617,12 @@ export class LayoutDesigner {
     static fillLayout() {
         this._pushUndo();
         this.cells = this.cells.map(() => ({
-            cardNum: this.selectedSlot,
-            fgColor: this.selectedColor,
-            bgColor: this.selectedBgColor,
-            isEmpty: false,
+            cardNum:     this.selectedSlot,
+            fgColor:     this.selectedColor,
+            bgColor:     this.selectedBgColor,
+            isGram:      this.selectedIsGram !== false,
+            advanceFlag: false,
+            isEmpty:     false,
         }));
         this.render();
     }
@@ -664,14 +686,36 @@ export class LayoutDesigner {
     }
 
     /**
+     * Detect whether a screen-full of backtab words is using FG/BG mode (STIC MODE 1)
+     * by looking for words that can ONLY be FG/BG mode (i.e. have BG bits 9, 10, or 12
+     * set — these positions are unused in CS mode). Returns true if any such word is
+     * found, false otherwise.
+     *
+     * Bit 13 alone is ambiguous (advance-color-stack in CS, BG bit 2 in FG/BG), so we
+     * don't use it as a mode signal — that was the original per-word heuristic bug
+     * where BG=4 (only bit 2 set, only word bit 13 set) was mis-detected as CS+advance.
+     */
+    static _detectFgBgMode(words) {
+        for (const w of words) {
+            if (w === 0) continue;
+            if ((w & 0x0200) !== 0) return true;  // bit 9 = BG bit 0
+            if ((w & 0x0400) !== 0) return true;  // bit 10 = BG bit 1
+            if ((w & 0x1000) !== 0) return true;  // bit 12 = BG bit 3
+        }
+        return false;
+    }
+
+    /**
      * Decode a 16-bit backtab word back to a cell descriptor.
-     * Inverse of _encodeBacktabWord — handles Color Stack and FG/BG modes.
-     * Mode is heuristic: if any BG bits are set (positions 9, 10, 12, 13),
-     * we assume FG/BG mode for that word.
+     * Inverse of _encodeBacktabWord.
+     *
+     * The STIC mode (Color Stack vs FG/BG) is GLOBAL per-frame, not per-cell — bit 13
+     * means "advance color stack" in CS mode but "BG bit 2" in FG/BG mode. Callers must
+     * pass the screen-wide fgbgMode flag (see _detectFgBgMode).
      *
      * Returns: { cardNum, fgColor, bgColor, isGram, advanceFlag, isEmpty }
      */
-    static _decodeBacktabWord(word) {
+    static _decodeBacktabWord(word, fgbgMode = false) {
         if (word === 0x0000) {
             return { cardNum: 0, fgColor: 7, bgColor: 0, isGram: false, advanceFlag: false, isEmpty: true };
         }
@@ -680,25 +724,19 @@ export class LayoutDesigner {
         const cardNum = (word >> 3) & 0x3F;
         const isGram = (word & 0x0800) !== 0;
 
-        // Detect FG/BG mode by checking the BG-bit positions
         // Mapping per STIC: BG bit 0→word bit 9, BG bit 1→word bit 10,
         //                   BG bit 2→word bit 13, BG bit 3→word bit 12
         const bgBit0 = (word >>  9) & 0x1;
         const bgBit1 = (word >> 10) & 0x1;
         const bgBit2 = (word >> 13) & 0x1;
         const bgBit3 = (word >> 12) & 0x1;
-        const bgValue = (bgBit3 << 3) | (bgBit2 << 2) | (bgBit1 << 1) | bgBit0;
 
-        // In CS mode, bit 13 is "advance color stack". In FG/BG mode, it's BG bit 2.
-        // If bits 9, 10, 12, 13 are all zero, it's safe to assume CS mode.
-        // If any are set BUT only bit 13 is set, prefer CS+advance interpretation.
-        const onlyBit13 = bgBit2 === 1 && bgBit0 === 0 && bgBit1 === 0 && bgBit3 === 0;
-        const isFgBg = bgValue !== 0 && !onlyBit13;
-
-        if (isFgBg) {
+        if (fgbgMode) {
+            // FG/BG mode: all four bits are BG color
+            const bgValue = (bgBit3 << 3) | (bgBit2 << 2) | (bgBit1 << 1) | bgBit0;
             return { cardNum, fgColor: fg, bgColor: bgValue, isGram, advanceFlag: false, isEmpty: false };
         } else {
-            // CS mode — bit 13 is advance, BG defaults to 0
+            // Color Stack mode: bit 13 is advance-color-stack flag, BG always 0
             return { cardNum, fgColor: fg, bgColor: 0, isGram, advanceFlag: bgBit2 === 1, isEmpty: false };
         }
     }
@@ -764,28 +802,35 @@ export class LayoutDesigner {
             return false;
         }
 
-        this._pushUndo();
-        const newCells = [];
+        // First pass — collect all backtab words and detect screen-wide mode
+        const allWords = [];
         for (let i = 0; i < BACKTAB_LEN; i++) {
-            const addr = BACKTAB_BASE + i;
-            const word = wordMap.get(addr) ?? 0x0000;
-            const decoded = this._decodeBacktabWord(word);
-            newCells.push({
+            allWords.push(wordMap.get(BACKTAB_BASE + i) ?? 0x0000);
+        }
+        const fgbgMode = this._detectFgBgMode(allWords);
+
+        // Second pass — decode each word using the detected mode
+        this._pushUndo();
+        const newCells = allWords.map(word => {
+            const decoded = this._decodeBacktabWord(word, fgbgMode);
+            return {
                 cardNum:     decoded.cardNum,
                 fgColor:     decoded.fgColor,
                 bgColor:     decoded.bgColor,
                 isGram:      decoded.isGram,
                 advanceFlag: decoded.advanceFlag,
                 isEmpty:     decoded.isEmpty,
-            });
-        }
+            };
+        });
         this.cells = newCells;
         this.render();
         this._updateStatus();
 
         const fgbgCount = newCells.filter(c => !c.isEmpty && c.bgColor !== 0).length;
         const gromCount = newCells.filter(c => !c.isEmpty && !c.isGram).length;
-        const summary = `Imported ${cellsFound}/240 backtab cells. ${fgbgCount} use FG/BG colors. ${gromCount} reference GROM cards (shown as gray G<n> placeholders).`;
+        const modeLabel = fgbgMode ? 'FG/BG (MODE 1)' : 'Color Stack (MODE 0)';
+        const summary = `Imported ${cellsFound}/240 backtab cells in ${modeLabel}.\n` +
+                        `${fgbgCount} cells use non-black BG colors. ${gromCount} reference GROM cards.`;
         alert(summary);
         return true;
     }
