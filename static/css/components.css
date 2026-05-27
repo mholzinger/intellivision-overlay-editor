@@ -2185,3 +2185,60 @@ details[open] .voice-dict-summary::before {
    which creates a single shared .js-tooltip element on hover or
    long-press. This works on form controls (input/select) where
    CSS pseudo-elements aren't allowed. */
+
+/* ============================================================ */
+/* MUSIC STUDIO (tab: music)                                    */
+/* ============================================================ */
+.music-editor-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.music-status-line {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: monospace;
+    color: #586069;
+    background: #f5f7fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+}
+
+.music-piano-roll-container {
+    background: #0a0a14;
+    border: 1px solid #2a2a36;
+    border-radius: 8px;
+    padding: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#music-piano-roll {
+    display: block;
+    image-rendering: pixelated;
+}
+
+.music-helper-text {
+    font-size: 13px;
+    color: #586069;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.music-helper-text a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.music-helper-text a:hover {
+    text-decoration: underline;
+}

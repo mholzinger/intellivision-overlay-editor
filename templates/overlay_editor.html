@@ -40,6 +40,9 @@
                 <button class="editor-tab" data-tab="emulator" onclick="switchEditorTab('emulator')" data-tooltip="In-browser jzIntv WASM emulator. Drag a ROM, play with touch or keyboard controls. BIOS files load once and persist.">
                     ▶ Emulator
                 </button>
+                <button class="editor-tab" data-tab="music" onclick="switchEditorTab('music')" data-tooltip="Compose and play back Intellivision music — IntyBASIC native, ECS 8-channel, JLP/zmus, raw PSG. Piano-roll editor with Web Audio playback.">
+                    🎵 Music Studio <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -168,6 +171,21 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Music Studio toolbar -->
+            <div id="music-toolbar" class="editor-toolbar">
+                <button class="btn btn-success btn-sm" onclick="musicPlay()" data-tooltip="Play the current song (Phase 0 stub — full playback in Phase 2)">▶ Play</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicStop()" data-tooltip="Stop playback">■ Stop</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source (Phase 1 will parse and display)">📋 Paste</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>
+                <span style="display:flex; align-items:center; gap:6px; margin-left:12px;">
+                    <span style="font-size:11px; color:#586069; font-weight:600;">Engine:</span>
+                    <select id="music-engine-select" onchange="musicSetEngine(this.value)" data-tooltip="Music format engine. IntyBASIC = native MUSIC statements. ECS/JLP/raw arrive in later phases." style="padding:4px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                        <option value="intybasic">IntyBASIC MUSIC</option>
+                    </select>
+                </span>
             </div>
         </div>
 
@@ -2690,6 +2708,30 @@
                 </iframe>
             </div>
         </div><!-- End emulator-editor-content -->
+
+        <!-- ============================================================ -->
+        <!-- MUSIC STUDIO                                                  -->
+        <!-- ============================================================ -->
+        <div id="music-editor-content" class="editor-content">
+            <div class="music-editor-layout">
+
+                <!-- Status line: current engine, song stats -->
+                <div id="music-status-line" class="music-status-line">
+                    IntyBASIC MUSIC · 3 channels · tempo: 8 ticks/note · 0 notes
+                </div>
+
+                <!-- Piano-roll canvas wrapped for sizing -->
+                <div class="music-piano-roll-container">
+                    <canvas id="music-piano-roll" width="900" height="480"></canvas>
+                </div>
+
+                <!-- Helper hint while Phase 0 ships scaffolding only -->
+                <p class="music-helper-text">
+                    🚧 <strong>Music Studio is in early scaffolding (Phase 0).</strong> The tab loads, the piano-roll grid renders, and the engine selector works. Full parsing, editing, and playback ship in subsequent phases. See <a href="https://github.com/mholzinger/intellivision-overlay-editor" target="_blank" rel="noopener">the project ROADMAP</a> for the full plan.
+                </p>
+
+            </div><!-- end music-editor-layout -->
+        </div><!-- End music-editor-content -->
 
     </div>
 

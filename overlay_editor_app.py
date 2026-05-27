@@ -1239,7 +1239,7 @@ def emulator_shell_static(filename):
 
 
 # Must come after all real API routes so it doesn't shadow them.
-_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator'}
+_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music'}
 
 @app.route('/<tab>')
 def tab_route(tab):

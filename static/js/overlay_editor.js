@@ -25,6 +25,7 @@ import { SpriteEditor } from './modules/spriteEditor.js';
 import { LayoutDesigner } from './modules/layoutDesigner.js';
 import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
 import { VoiceEditor } from './modules/voiceEditor.js';
+import { MusicEditor } from './modules/musicEditor.js';
 import { tooltipInit } from './utils/tooltip.js';
 
 /**
@@ -462,7 +463,7 @@ window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 window.ImageProcessor = ImageProcessor;
 
 // Known tab slugs and their canonical URL paths.
-const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator']);
+const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music']);
 
 // Tab switching — call with pushState=false when restoring from history.
 window.switchEditorTab = (tabName, pushState = true) => {
@@ -523,6 +524,12 @@ window.switchEditorTab = (tabName, pushState = true) => {
             iframe.src = '/emulator/shell/' + qs;
         }
         window._emulatorInitialized = true;
+    }
+
+    // Initialize Music Studio on first switch to that tab
+    if (tabName === 'music' && !window._musicEditorInitialized) {
+        MusicEditor.init();
+        window._musicEditorInitialized = true;
     }
 
     // Sync the browser URL.
@@ -689,6 +696,14 @@ window.voicePasteAppend     = () => VoiceEditor.pasteAppend();
 // Custom dictionary
 window.voiceSaveUserDict    = () => VoiceEditor.saveUserDictFromTextarea();
 window.voiceClearUserDict   = () => VoiceEditor.clearUserDict();
+
+// Music Studio functions
+window.musicPlay            = () => MusicEditor.play();
+window.musicStop            = () => MusicEditor.stop();
+window.musicNew             = () => MusicEditor.newSong();
+window.musicPaste           = () => MusicEditor.showPasteDialog();
+window.musicCopy            = () => MusicEditor.copyToClipboard();
+window.musicSetEngine       = (slug) => MusicEditor.setEngine(slug);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
