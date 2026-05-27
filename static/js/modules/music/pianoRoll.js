@@ -1,18 +1,25 @@
 /**
  * Piano-roll editor surface for the Music Studio.
  *
- * Phase 0: blank canvas with a static grid + keyboard column. Click handler
- * stubbed to log the (channel, pitch, tick) target so we can verify hit
- * detection. Note placement, editing, playback cursor all come in Phase 1+.
+ * Layout (left-to-right):
+ *   ┌──────────┬────────────────────────────────────────────────┐
+ *   │ keyboard │  ruler / time axis                             │ ← RULER_HEIGHT
+ *   │  (fixed) ├────────────────────────────────────────────────┤
+ *   │  C2-B6   │  semitone grid + notes                         │
+ *   │          │                                                │
+ *   │          ├────────────────────────────────────────────────┤
+ *   │          │  drum strip (M1/M2/M3 hits)                    │ ← DRUM_HEIGHT
+ *   └──────────┴────────────────────────────────────────────────┘
  *
- * Layout:
- *   ┌──────────┬─────────────────────────────────────────┐
- *   │ keyboard │  time grid (notes appear here)          │
- *   │  (88     │                                         │
- *   │   keys)  │                                         │
- *   └──────────┴─────────────────────────────────────────┘
- *      ↑          ↑
- *   left gutter   main scrollable area
+ * Two scroll modes:
+ *   • 'static'  — canvas is the full song width, user scrolls the container.
+ *                 Used while stopped / editing. You see the entire score.
+ *   • 'follow'  — canvas is viewport-sized; playhead is FIXED at PLAYHEAD_X.
+ *                 The drawing transform shifts the music horizontally so the
+ *                 score scrolls past the stationary playhead — player-piano
+ *                 style. Used during playback for tracking.
+ *
+ * Mode auto-switches: PianoRoll.setFollowMode(true) on play, false on stop.
  */
 
 export class PianoRoll {
@@ -22,39 +29,51 @@ export class PianoRoll {
     static TICK_WIDTH       = 16;   // px per tempo step
     static NUM_KEYS         = 60;   // 5 octaves (C2-B6) — Intellivision range
     static LOWEST_MIDI      = 36;   // C2 (MIDI 36)
+    static RULER_HEIGHT     = 22;   // px strip at top for timeline ruler
+    static DRUM_HEIGHT      = 24;   // px strip at bottom for drums
+    // Where the stationary playhead sits (in canvas-x coordinates) when in
+    // 'follow' scroll mode. We give some lead-in space after the keyboard
+    // so users can see notes approaching before they hit the line.
+    static PLAYHEAD_X       = 200;
 
     static canvas           = null;
     static ctx              = null;
-    static song             = null;     // SongIR currently displayed
-    static scrollX          = 0;        // tick-grid horizontal scroll
-    static playheadTick     = null;     // current playback position, null = not playing
-    static editorCallbacks  = {};       // { onCellClick(tick, midi, isDrumLane) }
-    static hoverTick        = null;     // tick under mouse (null = not hovering)
-    static hoverMidi        = null;     // midi under mouse
-    static hoverIsDrumLane  = false;    // true if mouse over drum strip
+    static song             = null;
+    static playheadTick     = null;
+    static editorCallbacks  = {};   // { onCellClick(tick, midi, isDrumLane) }
+    static hoverTick        = null;
+    static hoverMidi        = null;
+    static hoverIsDrumLane  = false;
+    static scrollMode       = 'static';  // 'static' | 'follow'
+    static framerate        = 60;        // for tick→seconds (NTSC default)
 
-    /** Wire the piano-roll to its host canvas element. Called once on tab init. */
+    /** Wire the piano-roll to its host canvas. Called once on tab init. */
     static init(canvasId = 'music-piano-roll') {
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) return;
         this.ctx = this.canvas.getContext('2d');
 
-        // Click-to-add / click-to-delete
         this.canvas.addEventListener('click', e => this._onClick(e));
-        // Hover preview ghost
         this.canvas.addEventListener('mousemove', e => this._onMouseMove(e));
         this.canvas.addEventListener('mouseleave', () => {
             this.hoverTick = null;
             this.hoverMidi = null;
             this.render();
         });
-        // Right-click on a note = delete (and suppress the context menu)
         this.canvas.addEventListener('contextmenu', e => {
             e.preventDefault();
             this._onClick(e);
         });
 
-        this._sizeToContainer();
+        // Resize follow-mode canvas when the window changes
+        window.addEventListener('resize', () => {
+            if (this.scrollMode === 'follow') {
+                this._sizeForFollowMode();
+                this.render();
+            }
+        });
+
+        this._sizeForStaticMode();
         this.render();
     }
 
@@ -63,39 +82,85 @@ export class PianoRoll {
         this.editorCallbacks = cbs || {};
     }
 
-    /** Update the displayed song, resize the canvas to fit, then re-render. */
-    static setSong(song) {
-        this.song = song;
-        this._sizeToSong();
+    /** Toggle between 'static' (full song visible, free-scroll) and 'follow'
+     *  (player-piano style — fixed playhead, score scrolls past). */
+    static setFollowMode(enabled) {
+        const newMode = enabled ? 'follow' : 'static';
+        if (newMode === this.scrollMode) return;
+        this.scrollMode = newMode;
+        if (enabled) {
+            this._sizeForFollowMode();
+        } else {
+            this._sizeForStaticMode();
+        }
         this.render();
     }
 
-    /** Compute total song length in ticks so the canvas can be wide enough. */
-    static _sizeToSong() {
-        if (!this.song || !this.canvas) return;
-        let maxTick = 0;
-        for (const note of (this.song.notes || [])) {
-            maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
-        }
-        // Default to at least 64 ticks (8 beats × 4 ticks) so a blank song shows
-        // something to click into.
-        const widthTicks = Math.max(64, maxTick + 8);
-        const desiredWidth = this.KEYBOARD_WIDTH + widthTicks * this.TICK_WIDTH;
-        // Keep height fixed (semitones + drum strip)
-        const drumStripHeight = 24;
-        this.canvas.width  = desiredWidth;
-        this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT + drumStripHeight;
+    /** Update the displayed song, resize, then re-render. */
+    static setSong(song) {
+        this.song = song;
+        if (this.scrollMode === 'follow') this._sizeForFollowMode();
+        else                              this._sizeForStaticMode();
+        this.render();
     }
 
     /** Set/clear the playhead position (in ticks). Called from PsgSynth. */
     static setPlayhead(tick) {
         this.playheadTick = tick;
-        this._renderPlayheadOnly();
-        // Auto-scroll the parent container so the playhead stays visible.
-        if (tick !== null) this._scrollPlayheadIntoView();
+        this.render();
+        // In static mode, programmatically scroll the container so the
+        // playhead stays visible. In follow mode the canvas itself handles
+        // the illusion of scrolling.
+        if (tick !== null && this.scrollMode === 'static') {
+            this._scrollPlayheadIntoView();
+        }
     }
 
-    /** Re-render everything. */
+    // ── Sizing ──────────────────────────────────────────────────────────────
+
+    /** Static mode: canvas spans the full song width (container scrolls). */
+    static _sizeForStaticMode() {
+        if (!this.canvas) return;
+        let maxTick = 0;
+        for (const note of (this.song?.notes || [])) {
+            maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
+        }
+        const widthTicks = Math.max(64, maxTick + 8);
+        this.canvas.width  = this.KEYBOARD_WIDTH + widthTicks * this.TICK_WIDTH;
+        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this.DRUM_HEIGHT;
+    }
+
+    /** Follow mode: canvas = container viewport; we control scroll via drawing offset. */
+    static _sizeForFollowMode() {
+        if (!this.canvas) return;
+        const container = this.canvas.parentElement;
+        if (!container) return;
+        // Reset any external scroll — follow mode doesn't use container scrollLeft
+        container.scrollLeft = 0;
+        this.canvas.width  = Math.max(800, container.clientWidth - 20);
+        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this.DRUM_HEIGHT;
+    }
+
+    // ── Coordinate helpers ──────────────────────────────────────────────────
+
+    /** Pixel x at which `tick` should be drawn given the current scroll mode. */
+    static _tickToX(tick) {
+        if (this.scrollMode === 'follow' && this.playheadTick != null) {
+            return this.PLAYHEAD_X + (tick - this.playheadTick) * this.TICK_WIDTH;
+        }
+        return this.KEYBOARD_WIDTH + tick * this.TICK_WIDTH;
+    }
+
+    /** Inverse: a canvas-x pixel converted back to a tick (for clicks). */
+    static _xToTick(x) {
+        if (this.scrollMode === 'follow' && this.playheadTick != null) {
+            return (x - this.PLAYHEAD_X) / this.TICK_WIDTH + this.playheadTick;
+        }
+        return (x - this.KEYBOARD_WIDTH) / this.TICK_WIDTH;
+    }
+
+    // ── Top-level render ────────────────────────────────────────────────────
+
     static render() {
         if (!this.ctx) return;
         const { width, height } = this.canvas;
@@ -104,63 +169,33 @@ export class PianoRoll {
         this.ctx.fillStyle = '#0a0a14';
         this.ctx.fillRect(0, 0, width, height);
 
-        this._renderKeyboard();
+        this._renderRuler();
         this._renderGrid();
         this._renderNotes();
         this._renderHover();
         this._renderPlayhead();
+        // Keyboard drawn LAST so it's always on top — important for follow mode
+        // where notes might otherwise overlap into the keyboard area.
+        this._renderKeyboard();
     }
 
-    static _renderPlayhead() {
-        if (this.playheadTick == null) return;
-        const { ctx, KEYBOARD_WIDTH, TICK_WIDTH } = this;
-        const x = KEYBOARD_WIDTH + this.playheadTick * TICK_WIDTH;
-        ctx.fillStyle = 'rgba(255, 80, 80, 0.85)';
-        ctx.fillRect(x, 0, 2, this.canvas.height);
-    }
-
-    /** Lightweight: redraw just the playhead column (clear via full render).
-     *  For Phase 2 we just re-render everything — it's cheap enough on raf. */
-    static _renderPlayheadOnly() {
-        this.render();
-    }
-
-    /** Keep the playhead visible by scrolling the container if needed. */
-    static _scrollPlayheadIntoView() {
-        if (!this.canvas || this.playheadTick == null) return;
-        const container = this.canvas.parentElement;
-        if (!container) return;
-        const x = this.KEYBOARD_WIDTH + this.playheadTick * this.TICK_WIDTH;
-        // Scale x from canvas-pixels to displayed-pixels
-        const ratio = container.clientWidth / this.canvas.clientWidth;
-        const displayedX = x * ratio;
-        const margin = 100;     // keep playhead this far from the right edge
-        if (displayedX > container.scrollLeft + container.clientWidth - margin) {
-            container.scrollLeft = displayedX - container.clientWidth + margin;
-        }
-        if (displayedX < container.scrollLeft + margin) {
-            container.scrollLeft = Math.max(0, displayedX - margin);
-        }
-    }
-
-    // ── Drawing primitives ──────────────────────────────────────────────────
+    // ── Keyboard column ─────────────────────────────────────────────────────
 
     static _renderKeyboard() {
-        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, NUM_KEYS, LOWEST_MIDI } = this;
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, NUM_KEYS, LOWEST_MIDI, RULER_HEIGHT } = this;
         const { height } = this.canvas;
+        // Mask any music that would have leaked under the keyboard area
         ctx.fillStyle = '#1a1a24';
         ctx.fillRect(0, 0, KEYBOARD_WIDTH, height);
 
-        // Draw 5 octaves of keys from top (highest) to bottom (lowest)
         for (let i = 0; i < NUM_KEYS; i++) {
             const midi = LOWEST_MIDI + (NUM_KEYS - 1 - i);
-            const y    = i * KEY_HEIGHT;
+            const y    = RULER_HEIGHT + i * KEY_HEIGHT;
             const noteInOctave = midi % 12;
             const isBlack = [1, 3, 6, 8, 10].includes(noteInOctave);
             ctx.fillStyle = isBlack ? '#16161e' : '#2a2a36';
             ctx.fillRect(0, y, KEYBOARD_WIDTH - 1, KEY_HEIGHT - 1);
 
-            // Label C of each octave
             if (noteInOctave === 0) {
                 const octave = Math.floor(midi / 12) - 1;
                 ctx.fillStyle = '#888';
@@ -172,108 +207,174 @@ export class PianoRoll {
         }
     }
 
-    static _renderGrid() {
-        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS } = this;
-        const { width, height } = this.canvas;
-        const gridLeft = KEYBOARD_WIDTH;
+    // ── Timeline ruler ──────────────────────────────────────────────────────
 
-        // Horizontal lines per semitone
-        ctx.strokeStyle = 'rgba(60, 60, 80, 0.3)';
+    static _renderRuler() {
+        const { ctx, KEYBOARD_WIDTH, TICK_WIDTH, RULER_HEIGHT } = this;
+        const { width } = this.canvas;
+
+        // Background
+        ctx.fillStyle = '#1e1e2a';
+        ctx.fillRect(KEYBOARD_WIDTH, 0, width - KEYBOARD_WIDTH, RULER_HEIGHT);
+        ctx.fillStyle = 'rgba(80, 80, 110, 0.5)';
+        ctx.fillRect(KEYBOARD_WIDTH, RULER_HEIGHT - 1, width - KEYBOARD_WIDTH, 1);
+
+        // Determine the tick range visible in the current view
+        const tickStep = this.song?.ticksPerNote || 4;
+        const minVisibleX = KEYBOARD_WIDTH;
+        const maxVisibleX = width;
+        const minTick = Math.max(0, Math.floor(this._xToTick(minVisibleX) / tickStep) * tickStep);
+        const maxTick = Math.ceil(this._xToTick(maxVisibleX) / tickStep) * tickStep;
+
+        // Tick marks (every step) and labels (every 4 steps = ~1 beat)
+        ctx.strokeStyle = 'rgba(180, 180, 200, 0.4)';
+        ctx.fillStyle = '#a0a0c0';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let t = minTick; t <= maxTick; t += tickStep) {
+            const x = this._tickToX(t);
+            if (x < KEYBOARD_WIDTH || x > width) continue;
+            const isMajor = (t % (tickStep * 4)) === 0;
+            const tickHeight = isMajor ? 8 : 4;
+            ctx.beginPath();
+            ctx.moveTo(x + 0.5, RULER_HEIGHT - tickHeight);
+            ctx.lineTo(x + 0.5, RULER_HEIGHT - 1);
+            ctx.stroke();
+            if (isMajor) {
+                ctx.fillText(this._tickLabel(t), x, RULER_HEIGHT / 2 - 1);
+            }
+        }
+    }
+
+    /** Render the tick number as "1.1", "1.2", ... where the dot separates
+     *  bar.beat. A "bar" is 4 beats = 16 ticks at tickStep=4 (i.e. 4*4=16 ticks).
+     *  For songs with non-standard tempos we fall back to raw tick count. */
+    static _tickLabel(tick) {
+        const tickStep = this.song?.ticksPerNote || 4;
+        const beatTicks = tickStep * 4;
+        if (beatTicks > 0) {
+            const bar = Math.floor(tick / (beatTicks * 4)) + 1;
+            const beat = Math.floor((tick % (beatTicks * 4)) / beatTicks) + 1;
+            return `${bar}.${beat}`;
+        }
+        return String(tick);
+    }
+
+    // ── Grid ─────────────────────────────────────────────────────────────────
+
+    static _renderGrid() {
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, RULER_HEIGHT } = this;
+        const { width, height } = this.canvas;
+
+        const gridTop = RULER_HEIGHT;
+        const gridBottom = height - this.DRUM_HEIGHT;
+
+        // Horizontal lines per semitone (slightly darker every C)
         ctx.lineWidth = 1;
         for (let i = 0; i <= NUM_KEYS; i++) {
-            const y = i * KEY_HEIGHT;
+            const midi = this.LOWEST_MIDI + (NUM_KEYS - 1 - i);
+            const isC = (midi % 12) === 0;
+            ctx.strokeStyle = isC
+                ? 'rgba(80, 80, 110, 0.35)'
+                : 'rgba(60, 60, 80, 0.20)';
+            const y = gridTop + i * KEY_HEIGHT;
             ctx.beginPath();
-            ctx.moveTo(gridLeft, y + 0.5);
+            ctx.moveTo(KEYBOARD_WIDTH, y + 0.5);
             ctx.lineTo(width, y + 0.5);
             ctx.stroke();
         }
 
-        // Vertical lines per tick (every 4 ticks darker = beat)
-        const ticksVisible = Math.ceil((width - gridLeft) / TICK_WIDTH);
-        for (let t = 0; t <= ticksVisible; t++) {
-            ctx.strokeStyle = (t % 4 === 0)
+        // Vertical lines per tick step (darker every 4 steps = beat)
+        const tickStep = this.song?.ticksPerNote || 4;
+        const minTick = Math.max(0, Math.floor(this._xToTick(KEYBOARD_WIDTH) / tickStep) * tickStep);
+        const maxTick = Math.ceil(this._xToTick(width) / tickStep) * tickStep;
+        for (let t = minTick; t <= maxTick; t += tickStep) {
+            const x = this._tickToX(t);
+            if (x < KEYBOARD_WIDTH || x > width) continue;
+            const isBeat = ((t / tickStep) % 4) === 0;
+            ctx.strokeStyle = isBeat
                 ? 'rgba(80, 80, 110, 0.6)'
                 : 'rgba(50, 50, 70, 0.3)';
-            const x = gridLeft + t * TICK_WIDTH;
             ctx.beginPath();
-            ctx.moveTo(x + 0.5, 0);
-            ctx.lineTo(x + 0.5, height);
+            ctx.moveTo(x + 0.5, gridTop);
+            ctx.lineTo(x + 0.5, gridBottom);
             ctx.stroke();
         }
+
+        // Drum strip background + divider
+        ctx.fillStyle = 'rgba(180, 100, 180, 0.06)';
+        ctx.fillRect(KEYBOARD_WIDTH, gridBottom, width - KEYBOARD_WIDTH, this.DRUM_HEIGHT);
+        ctx.strokeStyle = 'rgba(180, 100, 180, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(KEYBOARD_WIDTH, gridBottom + 0.5);
+        ctx.lineTo(width, gridBottom + 0.5);
+        ctx.stroke();
     }
 
-    // ── Note rendering ──────────────────────────────────────────────────────
+    // ── Notes ───────────────────────────────────────────────────────────────
 
-    /** Per-channel colors. Channel 3 = drums (rendered in a strip at the bottom). */
     static CHANNEL_COLORS = {
         0: { fill: '#4a90d9', stroke: '#7bb8ff' },   // ch1 — blue
         1: { fill: '#5cb85c', stroke: '#8fdc8f' },   // ch2 — green
         2: { fill: '#d97a4a', stroke: '#ffa67b' },   // ch3 — orange
-        3: { fill: '#c060c0', stroke: '#e896e8' },   // drums — purple (strip)
+        3: { fill: '#c060c0', stroke: '#e896e8' },   // drums — purple
     };
 
     static _renderNotes() {
         if (!this.song || !this.song.notes || this.song.notes.length === 0) {
-            const { ctx, KEYBOARD_WIDTH } = this;
+            const { ctx, KEYBOARD_WIDTH, RULER_HEIGHT } = this;
             ctx.fillStyle = '#555';
             ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText('Click anywhere to add a note · 🎶 Demos for inspiration · 📋 Paste to import',
-                         KEYBOARD_WIDTH + 12, 12);
+                         KEYBOARD_WIDTH + 12, RULER_HEIGHT + 8);
             return;
         }
 
-        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI } = this;
-        const { height } = this.canvas;
-        const drumStripHeight = 24;
-        const drumStripY = height - drumStripHeight;
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI, RULER_HEIGHT } = this;
+        const { width, height } = this.canvas;
+        const drumStripY = height - this.DRUM_HEIGHT;
+        const gridTop = RULER_HEIGHT;
 
-        // Draw a faint divider above the drum strip
-        ctx.fillStyle = 'rgba(180, 100, 180, 0.08)';
-        ctx.fillRect(KEYBOARD_WIDTH, drumStripY, this.canvas.width - KEYBOARD_WIDTH, drumStripHeight);
-        ctx.strokeStyle = 'rgba(180, 100, 180, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(KEYBOARD_WIDTH, drumStripY + 0.5);
-        ctx.lineTo(this.canvas.width, drumStripY + 0.5);
-        ctx.stroke();
-
-        // Draw each note
         for (const note of this.song.notes) {
-            const isDrum = note.drum !== null && note.drum !== undefined;
-            const x = KEYBOARD_WIDTH + note.startTick * TICK_WIDTH;
+            const x = this._tickToX(note.startTick);
             const w = Math.max(2, note.durationTicks * TICK_WIDTH - 1);
+            // Cull anything entirely off-screen for performance
+            if (x + w < KEYBOARD_WIDTH || x > width) continue;
+
+            const isDrum = note.drum !== null && note.drum !== undefined;
             const color = this.CHANNEL_COLORS[note.channel] || this.CHANNEL_COLORS[0];
 
             if (isDrum) {
-                // Drums render as colored squares in the bottom strip
-                const drumX = x;
-                const drumW = Math.min(w, drumStripHeight - 4);
+                const drumX = Math.max(KEYBOARD_WIDTH, x);
+                const drumW = Math.min(w, this.DRUM_HEIGHT - 4);
                 const drumY = drumStripY + 4;
                 ctx.fillStyle = color.fill;
-                ctx.fillRect(drumX, drumY, drumW, drumStripHeight - 8);
-                // Tiny label
+                ctx.fillRect(drumX, drumY, drumW, this.DRUM_HEIGHT - 8);
                 ctx.fillStyle = '#fff';
                 ctx.font = '9px monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(note.drum, drumX + drumW / 2, drumY + (drumStripHeight - 8) / 2);
+                ctx.fillText(note.drum, drumX + drumW / 2, drumY + (this.DRUM_HEIGHT - 8) / 2);
                 continue;
             }
 
-            // Melody notes
             if (note.pitch < LOWEST_MIDI || note.pitch >= LOWEST_MIDI + NUM_KEYS) continue;
             const keyIdx = (NUM_KEYS - 1) - (note.pitch - LOWEST_MIDI);
-            const y = keyIdx * KEY_HEIGHT;
+            const y = gridTop + keyIdx * KEY_HEIGHT;
+            // Clip x so notes can't draw into the keyboard column
+            const clippedX = Math.max(KEYBOARD_WIDTH, x);
+            const clippedW = w - (clippedX - x);
+            if (clippedW <= 0) continue;
             ctx.fillStyle = color.fill;
-            ctx.fillRect(x, y + 1, w, KEY_HEIGHT - 2);
+            ctx.fillRect(clippedX, y + 1, clippedW, KEY_HEIGHT - 2);
             ctx.strokeStyle = color.stroke;
             ctx.lineWidth = 1;
-            ctx.strokeRect(x + 0.5, y + 1.5, w - 1, KEY_HEIGHT - 3);
+            ctx.strokeRect(clippedX + 0.5, y + 1.5, clippedW - 1, KEY_HEIGHT - 3);
 
-            // Instrument letter overlay if the note is wide enough
-            if (note.instrument && w > 14 && KEY_HEIGHT >= 8) {
+            if (note.instrument && clippedW > 14 && KEY_HEIGHT >= 8 && clippedX === x) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
                 ctx.font = `${Math.min(KEY_HEIGHT - 2, 9)}px monospace`;
                 ctx.textAlign = 'left';
@@ -283,12 +384,48 @@ export class PianoRoll {
         }
     }
 
-    // ── Hit detection / click-to-edit ───────────────────────────────────────
+    // ── Playhead ────────────────────────────────────────────────────────────
 
-    /**
-     * Convert a mouse event into (tick, midi, isDrumLane) using the song's
-     * tempo for snap. Returns null if click was in the keyboard gutter.
-     */
+    /** Draw the playhead — thick red line + triangle marker at the top. */
+    static _renderPlayhead() {
+        if (this.playheadTick == null) return;
+        const { ctx, RULER_HEIGHT } = this;
+        const x = this._tickToX(this.playheadTick);
+        if (x < this.KEYBOARD_WIDTH || x > this.canvas.width) return;
+
+        // Vertical line — bright red, 3px
+        ctx.fillStyle = 'rgba(255, 60, 60, 0.92)';
+        ctx.fillRect(x - 1, RULER_HEIGHT, 3, this.canvas.height - RULER_HEIGHT);
+
+        // Triangle marker at the top — pointing down into the canvas
+        ctx.fillStyle = '#ff3030';
+        ctx.beginPath();
+        ctx.moveTo(x - 6, 2);
+        ctx.lineTo(x + 6, 2);
+        ctx.lineTo(x,     RULER_HEIGHT - 2);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    /** In static mode, scroll the container so the playhead stays in view. */
+    static _scrollPlayheadIntoView() {
+        if (!this.canvas || this.playheadTick == null) return;
+        const container = this.canvas.parentElement;
+        if (!container) return;
+        const x = this.KEYBOARD_WIDTH + this.playheadTick * this.TICK_WIDTH;
+        const ratio = container.clientWidth / this.canvas.clientWidth;
+        const displayedX = x * ratio;
+        const margin = 100;
+        if (displayedX > container.scrollLeft + container.clientWidth - margin) {
+            container.scrollLeft = displayedX - container.clientWidth + margin;
+        }
+        if (displayedX < container.scrollLeft + margin) {
+            container.scrollLeft = Math.max(0, displayedX - margin);
+        }
+    }
+
+    // ── Click / hover handling ──────────────────────────────────────────────
+
     static _eventToCell(e) {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
@@ -296,26 +433,35 @@ export class PianoRoll {
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
         if (x < this.KEYBOARD_WIDTH) return null;
+        if (y < this.RULER_HEIGHT) {
+            // Click in ruler area — interpret as seek request
+            const rawTick = this._xToTick(x);
+            const tickStep = this.song?.ticksPerNote || 1;
+            const tick = Math.max(0, Math.floor(rawTick / tickStep) * tickStep);
+            return { tick, midi: null, isDrumLane: false, isRuler: true };
+        }
 
-        const drumStripHeight = 24;
-        const drumStripY = this.canvas.height - drumStripHeight;
+        const drumStripY = this.canvas.height - this.DRUM_HEIGHT;
         const isDrumLane = y >= drumStripY;
 
-        // Snap tick to nearest multiple of ticksPerNote so notes line up with
-        // the underlying MUSIC grid. Fall back to 1 if no song loaded.
         const tickStep = this.song?.ticksPerNote || 1;
-        const rawTick = (x - this.KEYBOARD_WIDTH) / this.TICK_WIDTH;
-        const tick = Math.floor(rawTick / tickStep) * tickStep;
+        const rawTick = this._xToTick(x);
+        const tick = Math.max(0, Math.floor(rawTick / tickStep) * tickStep);
 
-        const keyIdx = Math.floor(y / this.KEY_HEIGHT);
+        const keyIdx = Math.floor((y - this.RULER_HEIGHT) / this.KEY_HEIGHT);
         const midi = this.LOWEST_MIDI + (this.NUM_KEYS - 1 - keyIdx);
 
-        return { tick, midi, isDrumLane };
+        return { tick, midi, isDrumLane, isRuler: false };
     }
 
     static _onClick(e) {
         const cell = this._eventToCell(e);
         if (!cell) return;
+        if (cell.isRuler) {
+            const cb = this.editorCallbacks.onSeek;
+            if (typeof cb === 'function') cb(cell.tick);
+            return;
+        }
         const cb = this.editorCallbacks.onCellClick;
         if (typeof cb === 'function') {
             cb(cell.tick, cell.midi, cell.isDrumLane);
@@ -324,7 +470,7 @@ export class PianoRoll {
 
     static _onMouseMove(e) {
         const cell = this._eventToCell(e);
-        if (!cell) {
+        if (!cell || cell.isRuler) {
             if (this.hoverTick !== null) { this.hoverTick = null; this.render(); }
             return;
         }
@@ -338,37 +484,28 @@ export class PianoRoll {
         }
     }
 
-    /** Render the hover ghost (semi-transparent preview of where a note would land). */
     static _renderHover() {
         if (this.hoverTick == null) return;
-        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI } = this;
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI, RULER_HEIGHT } = this;
         const tickStep = this.song?.ticksPerNote || 1;
-        const x = KEYBOARD_WIDTH + this.hoverTick * TICK_WIDTH;
+        const x = this._tickToX(this.hoverTick);
         const w = Math.max(2, tickStep * TICK_WIDTH - 1);
 
         if (this.hoverIsDrumLane) {
-            const drumStripHeight = 24;
-            const drumStripY = this.canvas.height - drumStripHeight;
+            const drumStripY = this.canvas.height - this.DRUM_HEIGHT;
             ctx.fillStyle = 'rgba(192, 96, 192, 0.35)';
-            ctx.fillRect(x, drumStripY + 4, w, drumStripHeight - 8);
+            ctx.fillRect(Math.max(KEYBOARD_WIDTH, x), drumStripY + 4, w, this.DRUM_HEIGHT - 8);
             return;
         }
 
         if (this.hoverMidi < LOWEST_MIDI || this.hoverMidi >= LOWEST_MIDI + NUM_KEYS) return;
         const keyIdx = (NUM_KEYS - 1) - (this.hoverMidi - LOWEST_MIDI);
-        const y = keyIdx * KEY_HEIGHT;
+        const y = RULER_HEIGHT + keyIdx * KEY_HEIGHT;
+        const clippedX = Math.max(KEYBOARD_WIDTH, x);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-        ctx.fillRect(x, y + 1, w, KEY_HEIGHT - 2);
+        ctx.fillRect(clippedX, y + 1, w, KEY_HEIGHT - 2);
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x + 0.5, y + 1.5, w - 1, KEY_HEIGHT - 3);
-    }
-
-    static _sizeToContainer() {
-        const container = this.canvas.parentElement;
-        if (!container) return;
-        this.canvas.width  = Math.max(600, container.clientWidth - 20);
-        // 24px drum strip at the bottom matches _sizeToSong
-        this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT + 24;
+        ctx.strokeRect(clippedX + 0.5, y + 1.5, w - 1, KEY_HEIGHT - 3);
     }
 }

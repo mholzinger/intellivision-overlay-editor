@@ -2309,3 +2309,7 @@ details[open] .voice-dict-summary::before {
 #music-piano-roll {
     cursor: crosshair;
 }
+
+/* Cursor changes for the music piano-roll regions handled in canvas pointer
+   logic (defaults to crosshair via earlier rule). The container itself
+   doesn't need a sticky keyboard since the canvas redraws it in follow mode. */

@@ -35,6 +35,7 @@ export class MusicEditor {
         PianoRoll.setSong(this.song);
         PianoRoll.setEditorCallbacks({
             onCellClick: (tick, midi, isDrumLane) => this.handleCellClick(tick, midi, isDrumLane),
+            onSeek:      (tick) => this.handleSeek(tick),
         });
         this._renderEngineSelector();
         this._updateStatusLine();
@@ -47,6 +48,20 @@ export class MusicEditor {
             const btn  = e.target.closest('.music-demos-dropdown');
             if (menu && !btn) menu.style.display = 'none';
         });
+    }
+
+    /** Ruler click — seek to that tick. While playing this jumps the playback. */
+    static handleSeek(tick) {
+        if (PsgSynth.isPlaying()) {
+            // Stop current playback then resume from the new position.
+            // For Phase MVP: just stop and let the user press Play again.
+            PsgSynth.stop();
+            this.isPlaying = false;
+            this._updatePlayButton();
+        }
+        // Show the playhead at the seeked position even when not playing
+        PianoRoll.setPlayhead(tick);
+        this._updateStatusLine(tick);
     }
 
     // ── Edit controls ───────────────────────────────────────────────────────
@@ -293,11 +308,17 @@ export class MusicEditor {
         const events     = this.engine.toPlaybackEvents(this.song);
         const totalTicks = this.engine.getTotalTicks(this.song);
 
+        // Switch to player-piano scroll mode for tracking
+        PianoRoll.setFollowMode(true);
+
         PsgSynth.play(events, totalTicks, (tick) => {
             PianoRoll.setPlayhead(tick);
+            this._updateStatusLine(tick);
             if (tick === null) {
                 this.isPlaying = false;
                 this._updatePlayButton();
+                // Back to static mode so the user can scroll/edit freely
+                PianoRoll.setFollowMode(false);
             }
         });
         this.isPlaying = true;
@@ -307,8 +328,11 @@ export class MusicEditor {
     static stop() {
         PsgSynth.stop();
         this.isPlaying = false;
-        PianoRoll.setPlayhead(null);
+        // Switch back to static view but KEEP the playhead at its last
+        // position so users see where they stopped (and can resume from there).
+        PianoRoll.setFollowMode(false);
         this._updatePlayButton();
+        this._updateStatusLine();
     }
 
     static _updatePlayButton() {
@@ -318,18 +342,37 @@ export class MusicEditor {
 
     // ── Status line ─────────────────────────────────────────────────────────
 
-    static _updateStatusLine() {
+    /** Update the status line. Optional currentTick shows position during playback. */
+    static _updateStatusLine(currentTick = null) {
         const status = document.getElementById('music-status-line');
         if (!status) return;
         const notes  = this.song?.notes ?? [];
         const melody = notes.filter(n => n.pitch !== null).length;
         const drums  = notes.filter(n => n.drum !== null && n.drum !== undefined).length;
-        const ch     = this.engine.channelCount;
         const tempo  = this.song?.ticksPerNote ?? 8;
         const label  = this.song?.label || '(unnamed)';
+        const totalTicks = this.engine.getTotalTicks?.(this.song) ?? 0;
+
+        const framerate = 60;   // NTSC; PAL toggle later
+        const totalSec  = totalTicks / framerate;
+        const fmt = (sec) => {
+            const m = Math.floor(sec / 60);
+            const s = (sec % 60).toFixed(1).padStart(4, '0');
+            return `${m}:${s}`;
+        };
+
+        let position = '';
+        const tick = currentTick ?? PianoRoll.playheadTick;
+        if (tick != null) {
+            const curSec = tick / framerate;
+            position = ` · ⏱ ${fmt(curSec)} / ${fmt(totalSec)}`;
+        } else if (totalTicks > 0) {
+            position = ` · ⏱ ${fmt(totalSec)} total`;
+        }
+
         status.textContent =
-            `${this.engine.formatName} · ${label} · ${ch} channels · ` +
-            `tempo: ${tempo} ticks/note · ` +
-            `${melody} notes, ${drums} drum hits`;
+            `${label}  ·  ${melody} notes, ${drums} drums  ·  ` +
+            `tempo: ${tempo} ticks/note  ·  ` +
+            `${this.engine.formatName}${position}`;
     }
 }
