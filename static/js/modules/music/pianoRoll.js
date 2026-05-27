@@ -41,10 +41,28 @@ export class PianoRoll {
         this.render();
     }
 
-    /** Update the displayed song and re-render. */
+    /** Update the displayed song, resize the canvas to fit, then re-render. */
     static setSong(song) {
         this.song = song;
+        this._sizeToSong();
         this.render();
+    }
+
+    /** Compute total song length in ticks so the canvas can be wide enough. */
+    static _sizeToSong() {
+        if (!this.song || !this.canvas) return;
+        let maxTick = 0;
+        for (const note of (this.song.notes || [])) {
+            maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
+        }
+        // Default to at least 64 ticks (8 beats × 4 ticks) so a blank song shows
+        // something to click into.
+        const widthTicks = Math.max(64, maxTick + 8);
+        const desiredWidth = this.KEYBOARD_WIDTH + widthTicks * this.TICK_WIDTH;
+        // Keep height fixed (semitones + drum strip)
+        const drumStripHeight = 24;
+        this.canvas.width  = desiredWidth;
+        this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT + drumStripHeight;
     }
 
     /** Re-render everything. */
@@ -120,17 +138,85 @@ export class PianoRoll {
         }
     }
 
+    // ── Note rendering ──────────────────────────────────────────────────────
+
+    /** Per-channel colors. Channel 3 = drums (rendered in a strip at the bottom). */
+    static CHANNEL_COLORS = {
+        0: { fill: '#4a90d9', stroke: '#7bb8ff' },   // ch1 — blue
+        1: { fill: '#5cb85c', stroke: '#8fdc8f' },   // ch2 — green
+        2: { fill: '#d97a4a', stroke: '#ffa67b' },   // ch3 — orange
+        3: { fill: '#c060c0', stroke: '#e896e8' },   // drums — purple (strip)
+    };
+
     static _renderNotes() {
-        if (!this.song || !this.song.notes) return;
-        // Phase 1+: iterate this.song.notes and draw colored rectangles by channel.
-        // Placeholder text for Phase 0:
-        const { ctx, KEYBOARD_WIDTH } = this;
-        ctx.fillStyle = '#666';
-        ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText('Phase 0 scaffolding — note rendering in Phase 1',
-                     KEYBOARD_WIDTH + 12, 12);
+        if (!this.song || !this.song.notes || this.song.notes.length === 0) {
+            const { ctx, KEYBOARD_WIDTH } = this;
+            ctx.fillStyle = '#555';
+            ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('No notes yet — click ➕ New Song or 📋 Paste to begin',
+                         KEYBOARD_WIDTH + 12, 12);
+            return;
+        }
+
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI } = this;
+        const { height } = this.canvas;
+        const drumStripHeight = 24;
+        const drumStripY = height - drumStripHeight;
+
+        // Draw a faint divider above the drum strip
+        ctx.fillStyle = 'rgba(180, 100, 180, 0.08)';
+        ctx.fillRect(KEYBOARD_WIDTH, drumStripY, this.canvas.width - KEYBOARD_WIDTH, drumStripHeight);
+        ctx.strokeStyle = 'rgba(180, 100, 180, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(KEYBOARD_WIDTH, drumStripY + 0.5);
+        ctx.lineTo(this.canvas.width, drumStripY + 0.5);
+        ctx.stroke();
+
+        // Draw each note
+        for (const note of this.song.notes) {
+            const isDrum = note.drum !== null && note.drum !== undefined;
+            const x = KEYBOARD_WIDTH + note.startTick * TICK_WIDTH;
+            const w = Math.max(2, note.durationTicks * TICK_WIDTH - 1);
+            const color = this.CHANNEL_COLORS[note.channel] || this.CHANNEL_COLORS[0];
+
+            if (isDrum) {
+                // Drums render as colored squares in the bottom strip
+                const drumX = x;
+                const drumW = Math.min(w, drumStripHeight - 4);
+                const drumY = drumStripY + 4;
+                ctx.fillStyle = color.fill;
+                ctx.fillRect(drumX, drumY, drumW, drumStripHeight - 8);
+                // Tiny label
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(note.drum, drumX + drumW / 2, drumY + (drumStripHeight - 8) / 2);
+                continue;
+            }
+
+            // Melody notes
+            if (note.pitch < LOWEST_MIDI || note.pitch >= LOWEST_MIDI + NUM_KEYS) continue;
+            const keyIdx = (NUM_KEYS - 1) - (note.pitch - LOWEST_MIDI);
+            const y = keyIdx * KEY_HEIGHT;
+            ctx.fillStyle = color.fill;
+            ctx.fillRect(x, y + 1, w, KEY_HEIGHT - 2);
+            ctx.strokeStyle = color.stroke;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 0.5, y + 1.5, w - 1, KEY_HEIGHT - 3);
+
+            // Instrument letter overlay if the note is wide enough
+            if (note.instrument && w > 14 && KEY_HEIGHT >= 8) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                ctx.font = `${Math.min(KEY_HEIGHT - 2, 9)}px monospace`;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(note.instrument, x + 2, y + KEY_HEIGHT / 2);
+            }
+        }
     }
 
     // ── Hit detection (Phase 3 will use this for click-to-add) ──────────────
@@ -154,6 +240,7 @@ export class PianoRoll {
         const container = this.canvas.parentElement;
         if (!container) return;
         this.canvas.width  = Math.max(600, container.clientWidth - 20);
-        this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT;
+        // 24px drum strip at the bottom matches _sizeToSong
+        this.canvas.height = this.NUM_KEYS * this.KEY_HEIGHT + 24;
     }
 }

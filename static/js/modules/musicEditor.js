@@ -105,12 +105,15 @@ export class MusicEditor {
     static _updateStatusLine() {
         const status = document.getElementById('music-status-line');
         if (!status) return;
-        const noteCount = this.song?.notes?.length ?? 0;
-        const ch        = this.engine.channelCount;
-        const tempo     = this.song?.ticksPerNote ?? 8;
+        const notes  = this.song?.notes ?? [];
+        const melody = notes.filter(n => n.pitch !== null).length;
+        const drums  = notes.filter(n => n.drum !== null && n.drum !== undefined).length;
+        const ch     = this.engine.channelCount;
+        const tempo  = this.song?.ticksPerNote ?? 8;
+        const label  = this.song?.label || '(unnamed)';
         status.textContent =
-            `${this.engine.formatName} · ${ch} channels · ` +
+            `${this.engine.formatName} · ${label} · ${ch} channels · ` +
             `tempo: ${tempo} ticks/note · ` +
-            `${noteCount} notes`;
+            `${melody} notes, ${drums} drum hits`;
     }
 }
