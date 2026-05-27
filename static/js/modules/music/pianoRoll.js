@@ -28,6 +28,10 @@ export class PianoRoll {
     static song             = null;     // SongIR currently displayed
     static scrollX          = 0;        // tick-grid horizontal scroll
     static playheadTick     = null;     // current playback position, null = not playing
+    static editorCallbacks  = {};       // { onCellClick(tick, midi, isDrumLane) }
+    static hoverTick        = null;     // tick under mouse (null = not hovering)
+    static hoverMidi        = null;     // midi under mouse
+    static hoverIsDrumLane  = false;    // true if mouse over drum strip
 
     /** Wire the piano-roll to its host canvas element. Called once on tab init. */
     static init(canvasId = 'music-piano-roll') {
@@ -35,11 +39,28 @@ export class PianoRoll {
         if (!this.canvas) return;
         this.ctx = this.canvas.getContext('2d');
 
-        // Click-to-add-note hook (Phase 3 wires this to the editor).
+        // Click-to-add / click-to-delete
         this.canvas.addEventListener('click', e => this._onClick(e));
+        // Hover preview ghost
+        this.canvas.addEventListener('mousemove', e => this._onMouseMove(e));
+        this.canvas.addEventListener('mouseleave', () => {
+            this.hoverTick = null;
+            this.hoverMidi = null;
+            this.render();
+        });
+        // Right-click on a note = delete (and suppress the context menu)
+        this.canvas.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            this._onClick(e);
+        });
 
         this._sizeToContainer();
         this.render();
+    }
+
+    /** Editor registers callbacks here so the piano-roll stays format-neutral. */
+    static setEditorCallbacks(cbs) {
+        this.editorCallbacks = cbs || {};
     }
 
     /** Update the displayed song, resize the canvas to fit, then re-render. */
@@ -86,6 +107,7 @@ export class PianoRoll {
         this._renderKeyboard();
         this._renderGrid();
         this._renderNotes();
+        this._renderHover();
         this._renderPlayhead();
     }
 
@@ -197,7 +219,7 @@ export class PianoRoll {
             ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-            ctx.fillText('No notes yet — click ➕ New Song or 📋 Paste to begin',
+            ctx.fillText('Click anywhere to add a note · 🎶 Demos for inspiration · 📋 Paste to import',
                          KEYBOARD_WIDTH + 12, 12);
             return;
         }
@@ -261,21 +283,85 @@ export class PianoRoll {
         }
     }
 
-    // ── Hit detection (Phase 3 will use this for click-to-add) ──────────────
+    // ── Hit detection / click-to-edit ───────────────────────────────────────
 
-    static _onClick(e) {
+    /**
+     * Convert a mouse event into (tick, midi, isDrumLane) using the song's
+     * tempo for snap. Returns null if click was in the keyboard gutter.
+     */
+    static _eventToCell(e) {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
-        if (x < this.KEYBOARD_WIDTH) return;     // clicked the keyboard gutter
+        if (x < this.KEYBOARD_WIDTH) return null;
 
-        const tick = Math.floor((x - this.KEYBOARD_WIDTH) / this.TICK_WIDTH);
+        const drumStripHeight = 24;
+        const drumStripY = this.canvas.height - drumStripHeight;
+        const isDrumLane = y >= drumStripY;
+
+        // Snap tick to nearest multiple of ticksPerNote so notes line up with
+        // the underlying MUSIC grid. Fall back to 1 if no song loaded.
+        const tickStep = this.song?.ticksPerNote || 1;
+        const rawTick = (x - this.KEYBOARD_WIDTH) / this.TICK_WIDTH;
+        const tick = Math.floor(rawTick / tickStep) * tickStep;
+
         const keyIdx = Math.floor(y / this.KEY_HEIGHT);
         const midi = this.LOWEST_MIDI + (this.NUM_KEYS - 1 - keyIdx);
-        // Phase 3: dispatch to MusicEditor.addNoteAt(tick, midi).
-        console.log('[PianoRoll] click → tick', tick, 'midi', midi);
+
+        return { tick, midi, isDrumLane };
+    }
+
+    static _onClick(e) {
+        const cell = this._eventToCell(e);
+        if (!cell) return;
+        const cb = this.editorCallbacks.onCellClick;
+        if (typeof cb === 'function') {
+            cb(cell.tick, cell.midi, cell.isDrumLane);
+        }
+    }
+
+    static _onMouseMove(e) {
+        const cell = this._eventToCell(e);
+        if (!cell) {
+            if (this.hoverTick !== null) { this.hoverTick = null; this.render(); }
+            return;
+        }
+        if (cell.tick !== this.hoverTick ||
+            cell.midi !== this.hoverMidi ||
+            cell.isDrumLane !== this.hoverIsDrumLane) {
+            this.hoverTick = cell.tick;
+            this.hoverMidi = cell.midi;
+            this.hoverIsDrumLane = cell.isDrumLane;
+            this.render();
+        }
+    }
+
+    /** Render the hover ghost (semi-transparent preview of where a note would land). */
+    static _renderHover() {
+        if (this.hoverTick == null) return;
+        const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI } = this;
+        const tickStep = this.song?.ticksPerNote || 1;
+        const x = KEYBOARD_WIDTH + this.hoverTick * TICK_WIDTH;
+        const w = Math.max(2, tickStep * TICK_WIDTH - 1);
+
+        if (this.hoverIsDrumLane) {
+            const drumStripHeight = 24;
+            const drumStripY = this.canvas.height - drumStripHeight;
+            ctx.fillStyle = 'rgba(192, 96, 192, 0.35)';
+            ctx.fillRect(x, drumStripY + 4, w, drumStripHeight - 8);
+            return;
+        }
+
+        if (this.hoverMidi < LOWEST_MIDI || this.hoverMidi >= LOWEST_MIDI + NUM_KEYS) return;
+        const keyIdx = (NUM_KEYS - 1) - (this.hoverMidi - LOWEST_MIDI);
+        const y = keyIdx * KEY_HEIGHT;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.fillRect(x, y + 1, w, KEY_HEIGHT - 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 1.5, w - 1, KEY_HEIGHT - 3);
     }
 
     static _sizeToContainer() {

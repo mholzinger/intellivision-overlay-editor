@@ -706,6 +706,9 @@ window.musicCopy              = () => MusicEditor.copyToClipboard();
 window.musicSetEngine         = (slug) => MusicEditor.setEngine(slug);
 window.musicToggleDemosDropdown = () => MusicEditor.toggleDemosDropdown();
 window.musicLoadDemo          = (file) => MusicEditor.loadDemo(file);
+window.musicSetChannel        = (ch) => MusicEditor.setChannel(ch);
+window.musicSetInstrument     = (letter) => MusicEditor.setInstrument(letter);
+window.musicSetDrum           = (label) => MusicEditor.setDrum(label);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

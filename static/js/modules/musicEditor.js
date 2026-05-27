@@ -23,14 +23,23 @@ export class MusicEditor {
     static song       = null;             // current SongIR
     static isPlaying  = false;
 
+    // ── Edit-mode state ─────────────────────────────────────────────────────
+    static currentChannel    = 0;     // 0/1/2 = melody, 3 = drums
+    static currentInstrument = 'W';   // W/X/Y/Z for melody
+    static currentDrum       = 'M1';  // M1/M2/M3 for drum channel
+
     /** Called once when the user first switches to the Music tab. */
     static init() {
         this.song = this.engine.defaultSong();
         PianoRoll.init('music-piano-roll');
         PianoRoll.setSong(this.song);
+        PianoRoll.setEditorCallbacks({
+            onCellClick: (tick, midi, isDrumLane) => this.handleCellClick(tick, midi, isDrumLane),
+        });
         this._renderEngineSelector();
         this._updateStatusLine();
         this._loadDemosManifest();
+        this._syncEditControls();
 
         // Close demos dropdown when clicking outside it
         document.addEventListener('click', (e) => {
@@ -38,6 +47,108 @@ export class MusicEditor {
             const btn  = e.target.closest('.music-demos-dropdown');
             if (menu && !btn) menu.style.display = 'none';
         });
+    }
+
+    // ── Edit controls ───────────────────────────────────────────────────────
+
+    static setChannel(channel) {
+        this.currentChannel = channel;
+        this._syncEditControls();
+    }
+
+    static setInstrument(letter) {
+        this.currentInstrument = letter;
+        this._syncEditControls();
+    }
+
+    static setDrum(label) {
+        this.currentDrum = label;
+        this._syncEditControls();
+    }
+
+    /** Refresh active-state on the channel/instrument/drum buttons + enable/disable groups. */
+    static _syncEditControls() {
+        document.querySelectorAll('.music-channel-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.channel) === this.currentChannel);
+        });
+        document.querySelectorAll('.music-instrument-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.instrument === this.currentInstrument);
+        });
+        document.querySelectorAll('.music-drum-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.drum === this.currentDrum);
+        });
+        const isDrumChannel = this.currentChannel === 3;
+        const instGroup = document.getElementById('music-instrument-group');
+        const drumGroup = document.getElementById('music-drum-group');
+        if (instGroup) instGroup.classList.toggle('disabled', isDrumChannel);
+        if (drumGroup) drumGroup.classList.toggle('disabled', !isDrumChannel);
+    }
+
+    // ── Click handling: add or delete a note ────────────────────────────────
+
+    /**
+     * Called by the piano-roll on every click.
+     * @param {number} tick - tick position (snapped to ticksPerNote)
+     * @param {number} midi - MIDI pitch (irrelevant for drum lane clicks)
+     * @param {boolean} isDrumLane - true if the click was in the drum strip
+     */
+    static handleCellClick(tick, midi, isDrumLane) {
+        if (!this.song) return;
+        // Force the active channel to drums if user clicked the drum lane
+        // (intuitive: click drum strip → drum note added). Also flip the other way.
+        if (isDrumLane && this.currentChannel !== 3) {
+            this.setChannel(3);
+        }
+        if (!isDrumLane && this.currentChannel === 3) {
+            // Click in melody area while drum is active — silently switch to ch1
+            this.setChannel(0);
+        }
+
+        if (this.currentChannel === 3) {
+            this._toggleDrumAt(tick);
+        } else {
+            this._toggleNoteAt(tick, midi);
+        }
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        this._updateStatusLine();
+    }
+
+    static _toggleNoteAt(tick, midi) {
+        const ch = this.currentChannel;
+        const existing = this.song.notes.findIndex(n =>
+            n.channel === ch && n.startTick === tick && n.pitch === midi
+        );
+        if (existing >= 0) {
+            this.song.notes.splice(existing, 1);
+        } else {
+            this.song.notes.push({
+                startTick:     tick,
+                durationTicks: this.song.ticksPerNote,
+                channel:       ch,
+                pitch:         midi,
+                instrument:    this.currentInstrument,
+                drum:          null,
+            });
+        }
+    }
+
+    static _toggleDrumAt(tick) {
+        const existing = this.song.notes.findIndex(n =>
+            n.channel === 3 && n.startTick === tick
+        );
+        if (existing >= 0) {
+            this.song.notes.splice(existing, 1);
+        } else {
+            this.song.notes.push({
+                startTick:     tick,
+                durationTicks: this.song.ticksPerNote,
+                channel:       3,
+                pitch:         null,
+                instrument:    null,
+                drum:          this.currentDrum,
+            });
+        }
     }
 
     // ── Demos dropdown ─────────────────────────────────────────────────────

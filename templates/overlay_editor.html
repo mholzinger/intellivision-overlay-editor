@@ -2731,6 +2731,36 @@
                     IntyBASIC MUSIC · 3 channels · tempo: 8 ticks/note · 0 notes
                 </div>
 
+                <!-- Edit-mode controls: which channel, which instrument, which drum -->
+                <div class="music-edit-controls">
+                    <div class="music-edit-group" data-tooltip="Which channel future clicks paint into. Ch1/Ch2/Ch3 = melody square waves. Drums = M1/M2/M3 noise hits.">
+                        <span class="music-edit-label">Channel:</span>
+                        <button class="music-channel-btn active" data-channel="0" onclick="musicSetChannel(0)" data-tooltip="Channel 1 — melody (blue)" style="--ch-color:#4a90d9;">1</button>
+                        <button class="music-channel-btn"        data-channel="1" onclick="musicSetChannel(1)" data-tooltip="Channel 2 — melody (green)" style="--ch-color:#5cb85c;">2</button>
+                        <button class="music-channel-btn"        data-channel="2" onclick="musicSetChannel(2)" data-tooltip="Channel 3 — melody (orange) — typically bass when Z is used" style="--ch-color:#d97a4a;">3</button>
+                        <button class="music-channel-btn"        data-channel="3" onclick="musicSetChannel(3)" data-tooltip="Drum channel (purple). Pitch is ignored — click anywhere in the drum strip." style="--ch-color:#c060c0;">Drums</button>
+                    </div>
+
+                    <div class="music-edit-group" id="music-instrument-group" data-tooltip="Instrument envelope for the active melody channel. Each letter selects a different ADSR shape and timbre.">
+                        <span class="music-edit-label">Instrument:</span>
+                        <button class="music-instrument-btn active" data-instrument="W" onclick="musicSetInstrument('W')" data-tooltip="W — Piano: sharp attack, quick decay">W</button>
+                        <button class="music-instrument-btn"        data-instrument="X" onclick="musicSetInstrument('X')" data-tooltip="X — Clarinet: medium attack, strong sustain (most common melody voice)">X</button>
+                        <button class="music-instrument-btn"        data-instrument="Y" onclick="musicSetInstrument('Y')" data-tooltip="Y — Flute: soft attack with gentle vibrato">Y</button>
+                        <button class="music-instrument-btn"        data-instrument="Z" onclick="musicSetInstrument('Z')" data-tooltip="Z — Bass: octave-dropped, long sustain (use on ch3 for bass lines)">Z</button>
+                    </div>
+
+                    <div class="music-edit-group" id="music-drum-group" data-tooltip="Drum type that future clicks in the drum strip will paint.">
+                        <span class="music-edit-label">Drum:</span>
+                        <button class="music-drum-btn active" data-drum="M1" onclick="musicSetDrum('M1')" data-tooltip="M1 — Strong: low kick (lowpass thud)">M1</button>
+                        <button class="music-drum-btn"        data-drum="M2" onclick="musicSetDrum('M2')" data-tooltip="M2 — Tap: short snap (highpass click)">M2</button>
+                        <button class="music-drum-btn"        data-drum="M3" onclick="musicSetDrum('M3')" data-tooltip="M3 — Roll: bandpass burst with re-triggers">M3</button>
+                    </div>
+
+                    <div class="music-edit-hint">
+                        Click an empty cell to add · click an existing note to delete
+                    </div>
+                </div>
+
                 <!-- Piano-roll canvas wrapped for sizing -->
                 <div class="music-piano-roll-container">
                     <canvas id="music-piano-roll" width="900" height="480"></canvas>
@@ -2738,7 +2768,8 @@
 
                 <!-- Helper hint — updated as phases ship -->
                 <p class="music-helper-text">
-                    🎼 <strong>Try a demo:</strong> click <strong>🎶 Demos</strong> above and pick any track — they're real songs from the <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">Space Intruders</a> homebrew. Or 📋 Paste your own IntyBASIC <code>MUSIC</code> source. Press ▶ Play to hear it through the Web Audio synth. Click-to-edit (Phase 3), export round-trip (Phase 4), and bit-perfect WASM jzIntv playback (Phase 7) coming next.
+                    🎼 <strong>Compose:</strong> pick a channel + instrument above, then click the piano-roll to add notes. Click a note again to delete it. Drum channel paints into the bottom strip with the selected M1/M2/M3 type.<br>
+                    <strong>Listen:</strong> click <strong>🎶 Demos</strong> to load a real song from the <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">Space Intruders</a> homebrew, or 📋 Paste your own IntyBASIC <code>MUSIC</code> source. Press ▶ Play to hear it. Export round-trip (Phase 4) and bit-perfect WASM jzIntv playback (Phase 7) coming next.
                 </p>
 
             </div><!-- end music-editor-layout -->

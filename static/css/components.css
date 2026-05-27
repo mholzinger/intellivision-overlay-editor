@@ -2242,3 +2242,70 @@ details[open] .voice-dict-summary::before {
 .music-helper-text a:hover {
     text-decoration: underline;
 }
+
+/* Edit-mode controls — channel / instrument / drum pickers */
+.music-edit-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px;
+    background: #f5f7fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.music-edit-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.music-edit-label {
+    font-weight: 600;
+    color: #586069;
+    margin-right: 4px;
+}
+.music-channel-btn,
+.music-instrument-btn,
+.music-drum-btn {
+    padding: 4px 10px;
+    border: 1px solid #d1d5da;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 600;
+    color: #24292e;
+    transition: all 0.12s;
+}
+.music-channel-btn:hover,
+.music-instrument-btn:hover,
+.music-drum-btn:hover {
+    border-color: #0366d6;
+    background: #f1f8ff;
+}
+.music-channel-btn.active {
+    background: var(--ch-color, #0366d6);
+    color: #fff;
+    border-color: var(--ch-color, #0366d6);
+}
+.music-instrument-btn.active,
+.music-drum-btn.active {
+    background: #0366d6;
+    color: #fff;
+    border-color: #0366d6;
+}
+.music-edit-group.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.music-edit-hint {
+    margin-left: auto;
+    color: #6a737d;
+    font-size: 11px;
+    font-style: italic;
+}
+#music-piano-roll {
+    cursor: crosshair;
+}
