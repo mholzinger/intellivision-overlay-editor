@@ -30,6 +30,84 @@ export class MusicEditor {
         PianoRoll.setSong(this.song);
         this._renderEngineSelector();
         this._updateStatusLine();
+        this._loadDemosManifest();
+
+        // Close demos dropdown when clicking outside it
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('music-demos-dropdown-menu');
+            const btn  = e.target.closest('.music-demos-dropdown');
+            if (menu && !btn) menu.style.display = 'none';
+        });
+    }
+
+    // ── Demos dropdown ─────────────────────────────────────────────────────
+
+    static async _loadDemosManifest() {
+        const listEl = document.getElementById('music-demos-list');
+        if (!listEl) return;
+        try {
+            const r = await fetch('/music/demos/manifest');
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const manifest = await r.json();
+            this._renderDemosList(manifest.demos || []);
+        } catch (e) {
+            listEl.innerHTML = `<div style="padding:12px 14px; color:#a00; font-size:12px;">Could not load demos: ${e.message}</div>`;
+        }
+    }
+
+    static _renderDemosList(demos) {
+        const listEl = document.getElementById('music-demos-list');
+        if (!listEl) return;
+        if (demos.length === 0) {
+            listEl.innerHTML = '<div style="padding:12px 14px; color:#666; font-size:12px;">No demos available.</div>';
+            return;
+        }
+
+        const tagColors = {
+            'Title':     '#0366d6',
+            'Boss':      '#cb2431',
+            'Gameplay':  '#28a745',
+            'Ambient':   '#6f42c1',
+            'Showcase':  '#d97706',
+            'Reference': '#6a737d',
+        };
+
+        listEl.innerHTML = demos.map(d => {
+            const tagColor = tagColors[d.tag] || '#6a737d';
+            return `
+                <div class="music-demo-item" onclick="musicLoadDemo('${d.file}')"
+                     style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;"
+                     onmouseover="this.style.background='#f6f8fa'"
+                     onmouseout="this.style.background='transparent'">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <strong style="font-size:13px; color:#24292e;">${d.title}</strong>
+                        <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:${tagColor}; color:#fff; font-weight:600; letter-spacing:0.5px;">${d.tag.toUpperCase()}</span>
+                    </div>
+                    <div style="font-size:11px; color:#586069; line-height:1.45;">${d.blurb}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    static toggleDemosDropdown() {
+        const menu = document.getElementById('music-demos-dropdown-menu');
+        if (!menu) return;
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    static async loadDemo(filename) {
+        const menu = document.getElementById('music-demos-dropdown-menu');
+        if (menu) menu.style.display = 'none';
+        try {
+            const r = await fetch(`/music/demos/${encodeURIComponent(filename)}`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const text = await r.text();
+            this.song = this.engine.parse(text);
+            PianoRoll.setSong(this.song);
+            this._updateStatusLine();
+        } catch (e) {
+            alert(`Failed to load demo: ${e.message}`);
+        }
     }
 
     // ── Engine selection ────────────────────────────────────────────────────

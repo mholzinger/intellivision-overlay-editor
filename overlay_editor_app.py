@@ -1238,6 +1238,31 @@ def emulator_shell_static(filename):
     return send_from_directory(WASM_DIR, filename)
 
 
+# ── Music Studio: bundled demo songs ─────────────────────────────────────────
+MUSIC_DEMOS_DIR = Path(__file__).parent / 'static' / 'music-demos'
+
+
+@app.route('/music/demos/manifest')
+def music_demos_manifest():
+    """Return the list of bundled demo songs and their metadata."""
+    manifest_file = MUSIC_DEMOS_DIR / 'manifest.json'
+    if not manifest_file.exists():
+        return jsonify({'demos': []})
+    return send_from_directory(MUSIC_DEMOS_DIR, 'manifest.json',
+                               mimetype='application/json')
+
+
+@app.route('/music/demos/<path:filename>')
+def music_demos_serve(filename):
+    """Serve an individual demo .bas file."""
+    # Only allow .bas / .json files to be served from this directory
+    if not (filename.endswith('.bas') or filename.endswith('.json')):
+        return jsonify({'error': 'not found'}), 404
+    if '..' in filename or filename.startswith('/'):
+        return jsonify({'error': 'invalid path'}), 400
+    return send_from_directory(MUSIC_DEMOS_DIR, filename, mimetype='text/plain')
+
+
 # Must come after all real API routes so it doesn't shadow them.
 _TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music'}
 

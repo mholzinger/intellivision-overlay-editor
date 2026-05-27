@@ -1,0 +1,66 @@
+{
+    "description": "Demo songs bundled with the Music Studio. Sourced from the Space Intruders homebrew project (https://paisleyboxers.itch.io/space-intruders) and used as example/test material.",
+    "credit": "Music by paisleyboxers — used with permission as Music Studio demo content.",
+    "demos": [
+        {
+            "file":  "si_title_theme.bas",
+            "title": "Space Intruders — Title Theme",
+            "tag":   "Title",
+            "blurb": "3-channel techno arpeggio (Em–G–D), tempo 6, clarinet X over Z bass pedal. The flagship title-screen track."
+        },
+        {
+            "file":  "si_amen_acid_tracks.bas",
+            "title": "Space Intruders — BG Mid",
+            "tag":   "Gameplay",
+            "blurb": "Amen-break-flavored busy drum loops with acid bass riffs. Great showcase of the M1/M2/M3 drum mix."
+        },
+        {
+            "file":  "dark_descent.bas",
+            "title": "Dark Descent",
+            "tag":   "Boss",
+            "blurb": "Chromatic, dissonant boss track. Heavy Z bass walks + sparse M1 kicks. Tempo 7, very slow and crushing."
+        },
+        {
+            "file":  "dnb_gameplay.bas",
+            "title": "Grid Runner — Low",
+            "tag":   "Gameplay",
+            "blurb": "Drum-and-bass styled gameplay loop. Two-bar pattern, drum-heavy."
+        },
+        {
+            "file":  "dnb_gameplay_high.bas",
+            "title": "Grid Runner — High",
+            "tag":   "Gameplay",
+            "blurb": "Faster/higher variant of the Grid Runner loop. Higher tension."
+        },
+        {
+            "file":  "dnb_gameplay_original.bas",
+            "title": "Grid Runner — Original",
+            "tag":   "Gameplay",
+            "blurb": "Original cut of the Grid Runner gameplay loop."
+        },
+        {
+            "file":  "dnb_gameplay_gears.bas",
+            "title": "Grid Runner — Gears",
+            "tag":   "Gameplay",
+            "blurb": "Gears variation — tempo experiments inline (SPEED control)."
+        },
+        {
+            "file":  "starlight.bas",
+            "title": "Starlight",
+            "tag":   "Ambient",
+            "blurb": "Slower atmospheric piece with sparser drums."
+        },
+        {
+            "file":  "showcase_full.bas",
+            "title": "Neon Cathedral",
+            "tag":   "Showcase",
+            "blurb": "Full-melody showcase track — 136 notes, no drums. Good demo of the three melody channels harmonizing."
+        },
+        {
+            "file":  "gr_tempo_stubs.bas",
+            "title": "Grid Runner — Tempo Stubs",
+            "tag":   "Reference",
+            "blurb": "Tempo reference / scaffolding file. Mostly silent — useful as a structural template."
+        }
+    ]
+}

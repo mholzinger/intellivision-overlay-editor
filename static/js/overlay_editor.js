@@ -698,12 +698,14 @@ window.voiceSaveUserDict    = () => VoiceEditor.saveUserDictFromTextarea();
 window.voiceClearUserDict   = () => VoiceEditor.clearUserDict();
 
 // Music Studio functions
-window.musicPlay            = () => MusicEditor.play();
-window.musicStop            = () => MusicEditor.stop();
-window.musicNew             = () => MusicEditor.newSong();
-window.musicPaste           = () => MusicEditor.showPasteDialog();
-window.musicCopy            = () => MusicEditor.copyToClipboard();
-window.musicSetEngine       = (slug) => MusicEditor.setEngine(slug);
+window.musicPlay              = () => MusicEditor.play();
+window.musicStop              = () => MusicEditor.stop();
+window.musicNew               = () => MusicEditor.newSong();
+window.musicPaste             = () => MusicEditor.showPasteDialog();
+window.musicCopy              = () => MusicEditor.copyToClipboard();
+window.musicSetEngine         = (slug) => MusicEditor.setEngine(slug);
+window.musicToggleDemosDropdown = () => MusicEditor.toggleDemosDropdown();
+window.musicLoadDemo          = (file) => MusicEditor.loadDemo(file);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
