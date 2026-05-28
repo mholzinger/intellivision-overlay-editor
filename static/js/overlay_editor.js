@@ -709,6 +709,7 @@ window.musicLoadDemo          = (file) => MusicEditor.loadDemo(file);
 window.musicSetChannel        = (ch) => MusicEditor.setChannel(ch);
 window.musicSetInstrument     = (letter) => MusicEditor.setInstrument(letter);
 window.musicSetDrum           = (label) => MusicEditor.setDrum(label);
+window.musicToggleLoop        = () => MusicEditor.toggleLoop();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

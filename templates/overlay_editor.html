@@ -177,6 +177,7 @@
             <div id="music-toolbar" class="editor-toolbar">
                 <button class="btn btn-success btn-sm" onclick="musicPlay()" data-tooltip="Play the current song (Web Audio synth — Phase 7 will add bit-perfect WASM jzIntv)">▶ Play</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicStop()" data-tooltip="Stop playback">■ Stop</button>
+                <button id="music-loop-btn" class="btn btn-secondary btn-sm active" onclick="musicToggleLoop()" data-tooltip="Honor MUSIC JUMP / REPEAT during playback. On = song loops 4× per Play. Off = single pass.">🔁 Loop</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source — it will be parsed and rendered on the piano-roll">📋 Paste</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>

@@ -27,6 +27,8 @@ export class MusicEditor {
     static currentChannel    = 0;     // 0/1/2 = melody, 3 = drums
     static currentInstrument = 'W';   // W/X/Y/Z for melody
     static currentDrum       = 'M1';  // M1/M2/M3 for drum channel
+    static loopEnabled       = true;  // honor MUSIC JUMP / REPEAT during playback
+    static LOOP_COUNT        = 4;     // how many iterations per Play press
 
     /** Called once when the user first switches to the Music tab. */
     static init() {
@@ -79,6 +81,17 @@ export class MusicEditor {
     static setDrum(label) {
         this.currentDrum = label;
         this._syncEditControls();
+    }
+
+    /** Toggle whether MUSIC JUMP / REPEAT extends playback duration. */
+    static toggleLoop() {
+        this.loopEnabled = !this.loopEnabled;
+        const btn = document.getElementById('music-loop-btn');
+        if (btn) {
+            btn.classList.toggle('active', this.loopEnabled);
+            btn.textContent = this.loopEnabled ? '🔁 Loop' : '➡️ Once';
+        }
+        this._updateStatusLine();
     }
 
     /** Refresh active-state on the channel/instrument/drum buttons + enable/disable groups. */
@@ -324,8 +337,14 @@ export class MusicEditor {
             this.stop();
             return;
         }
-        const events     = this.engine.toPlaybackEvents(this.song);
-        const totalTicks = this.engine.getTotalTicks(this.song);
+        // Looping is on by default — songs with a JUMP/REPEAT will play N
+        // iterations of the loop body. Off → single pass through whatever
+        // the parser captured.
+        const loops = this.loopEnabled ? this.LOOP_COUNT : 1;
+        const events     = this.engine.toPlaybackEvents(this.song, 50, loops);
+        const totalTicks = this.engine.getPlaybackTicks
+            ? this.engine.getPlaybackTicks(this.song, loops)
+            : this.engine.getTotalTicks(this.song);
 
         // Switch to player-piano scroll mode for tracking
         PianoRoll.setFollowMode(true);
@@ -380,6 +399,16 @@ export class MusicEditor {
             return `${m}:${s}`;
         };
 
+        // Loop indicator — only shown if the song actually has a JUMP/REPEAT
+        const loopInfo = this.engine.getLoopInfo?.(this.song);
+        let loopBadge = '';
+        if (loopInfo) {
+            const loopSec = loopInfo.loopDuration / framerate;
+            loopBadge = this.loopEnabled
+                ? ` · 🔁 ${this.LOOP_COUNT}× (${fmt(loopSec)} loop)`
+                : ` · ➡️ loop disabled`;
+        }
+
         let position = '';
         const tick = currentTick ?? PianoRoll.playheadTick;
         if (tick != null) {
@@ -392,6 +421,6 @@ export class MusicEditor {
         status.textContent =
             `${label}  ·  ${melody} notes, ${drums} drums  ·  ` +
             `tempo: ${tempo} ticks/note  ·  ` +
-            `${this.engine.formatName}${position}`;
+            `${this.engine.formatName}${position}${loopBadge}`;
     }
 }

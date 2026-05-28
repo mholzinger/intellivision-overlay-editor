@@ -299,6 +299,40 @@ export class IntyBasicMusic extends MusicEngine {
     }
 
     /**
+     * Detect the loop structure of the song based on its REPEAT/JUMP control.
+     *
+     *   REPEAT     → loop entire song from tick 0
+     *   JUMP label → loop the slice [label_tick .. jump_tick) indefinitely
+     *
+     * Returns null if the song doesn't loop (no REPEAT, no JUMP, or JUMP
+     * to a label that doesn't exist in the parsed metadata).
+     *
+     * Shape: { introEnd, loopEnd, loopDuration }
+     *   introEnd     — tick where the loop body begins (notes before this
+     *                  play once at the start as an intro)
+     *   loopEnd      — tick where the JUMP/REPEAT fires (loop body ends here)
+     *   loopDuration — loopEnd - introEnd (one iteration's tick count)
+     */
+    static getLoopInfo(song) {
+        if (!song || !song.controls) return null;
+        const ctrl = song.controls.find(c => c.type === 'JUMP' || c.type === 'REPEAT');
+        if (!ctrl) return null;
+
+        const loopEnd = ctrl.tick;
+        let introEnd;
+        if (ctrl.type === 'REPEAT') {
+            introEnd = 0;
+        } else {
+            const target = song.metadata?.labels?.[ctrl.target];
+            if (target == null) return null;
+            introEnd = target;
+        }
+        const loopDuration = loopEnd - introEnd;
+        if (loopDuration <= 0) return null;   // degenerate loop (label after JUMP, etc.)
+        return { introEnd, loopEnd, loopDuration };
+    }
+
+    /**
      * Convert SongIR into a flat list of timed playback events for psgSynth.
      *
      * IntyBASIC's MUSIC engine ticks at a fixed 50 Hz on both NTSC and PAL
@@ -306,33 +340,58 @@ export class IntyBasicMusic extends MusicEngine {
      * the 6th video frame to maintain the cadence.
      * So each tick = 1/50 = 0.02 seconds of song time.
      *
+     * Looping: if the song has a JUMP/REPEAT control, the loop body is
+     * emitted `loopCount` times so the synth's flat event list naturally
+     * plays multiple iterations without needing the synth to know about
+     * structure. Default 4 loops ≈ 1-3 minutes of audio for typical songs.
+     *
      * @returns {Array<{ timeSec, type, ... }>}
      *   type 'note' has { pitch, durationTicks, instrument, channel }
      *   type 'drum' has { drumType, channel }
      */
-    static toPlaybackEvents(song, framerate = 50) {
+    static toPlaybackEvents(song, framerate = 50, loopCount = 4) {
         const events = [];
         const tickSec = 1 / framerate;
+        const loop = this.getLoopInfo(song);
 
-        for (const note of (song.notes || [])) {
-            const timeSec = note.startTick * tickSec;
+        const noteToEvent = (note, startTick) => {
+            const timeSec = startTick * tickSec;
             if (note.drum) {
-                events.push({
+                return {
                     timeSec,
                     type:     'drum',
                     channel:  note.channel,
                     drumType: note.drum,
-                });
+                };
             } else if (note.pitch !== null && note.pitch !== undefined) {
-                events.push({
+                return {
                     timeSec,
                     type:           'note',
                     channel:        note.channel,
                     pitch:          note.pitch,
                     durationTicks:  note.durationTicks,
                     instrument:     note.instrument || 'W',
-                });
+                };
             }
+            return null;
+        };
+
+        for (const note of (song.notes || [])) {
+            // Intro notes (or non-looping songs): emit once at original position
+            if (!loop || note.startTick < loop.introEnd) {
+                const ev = noteToEvent(note, note.startTick);
+                if (ev) events.push(ev);
+                continue;
+            }
+            // Loop body: emit loopCount times, shifted by iteration
+            if (note.startTick < loop.loopEnd) {
+                for (let i = 0; i < loopCount; i++) {
+                    const ev = noteToEvent(note, note.startTick + i * loop.loopDuration);
+                    if (ev) events.push(ev);
+                }
+            }
+            // Notes past loopEnd (shouldn't exist since the parser stops at
+            // JUMP) — silently ignored.
         }
 
         // Stable sort by time so the synth processes them in playback order
@@ -340,12 +399,23 @@ export class IntyBasicMusic extends MusicEngine {
         return events;
     }
 
-    /** Total song length in ticks (for end-of-song detection during playback). */
+    /** Total UNLOOPED song length in ticks (one pass through everything). */
     static getTotalTicks(song) {
         let maxTick = 0;
         for (const note of (song.notes || [])) {
             maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
         }
         return maxTick;
+    }
+
+    /**
+     * Total playback duration in ticks accounting for loop expansion.
+     * For looping songs: intro + loopCount × loopDuration.
+     * For non-looping songs: same as getTotalTicks.
+     */
+    static getPlaybackTicks(song, loopCount = 4) {
+        const loop = this.getLoopInfo(song);
+        if (!loop) return this.getTotalTicks(song);
+        return loop.introEnd + loopCount * loop.loopDuration;
     }
 }
