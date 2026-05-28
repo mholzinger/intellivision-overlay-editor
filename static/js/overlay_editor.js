@@ -710,6 +710,8 @@ window.musicSetChannel        = (ch) => MusicEditor.setChannel(ch);
 window.musicSetInstrument     = (letter) => MusicEditor.setInstrument(letter);
 window.musicSetDrum           = (label) => MusicEditor.setDrum(label);
 window.musicToggleLoop        = () => MusicEditor.toggleLoop();
+window.musicOctaveDown        = () => MusicEditor.octaveDown();
+window.musicOctaveUp          = () => MusicEditor.octaveUp();
 window.musicSetVolume         = (v) => { import('./modules/music/playback/psgSynth.js').then(m => m.PsgSynth.setVolume(v / 100)); };
 
 // Initialize when DOM is ready

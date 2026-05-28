@@ -30,6 +30,11 @@ export class MusicEditor {
     static loopEnabled       = true;  // honor MUSIC JUMP / REPEAT during playback
     static LOOP_COUNT        = 4;     // how many iterations per Play press
 
+    // ── Software keyboard state ─────────────────────────────────────────────
+    static keyboardBaseOctave = 3;    // lowest octave shown (C3–B4 by default)
+    static KEYBOARD_OCTAVES   = 2;    // how many octaves visible
+    static writeCursorTick    = 0;    // where the next keyboard-entered note lands
+
     /** Called once when the user first switches to the Music tab. */
     static init() {
         this.song = this.engine.defaultSong();
@@ -44,6 +49,7 @@ export class MusicEditor {
         this._updateStatusLine();
         this._loadDemosManifest();
         this._syncEditControls();
+        this._renderKeyboard();
 
         // Close demos dropdown when clicking outside it
         document.addEventListener('click', (e) => {
@@ -53,16 +59,14 @@ export class MusicEditor {
         });
     }
 
-    /** Ruler click — seek to that tick. While playing this jumps the playback. */
+    /** Ruler click — seek to that tick. Also moves the keyboard write cursor. */
     static handleSeek(tick) {
         if (PsgSynth.isPlaying()) {
-            // Stop current playback then resume from the new position.
-            // For Phase MVP: just stop and let the user press Play again.
             PsgSynth.stop();
             this.isPlaying = false;
             this._updatePlayButton();
         }
-        // Show the playhead at the seeked position even when not playing
+        this.writeCursorTick = tick;
         PianoRoll.setPlayhead(tick);
         this._updateStatusLine(tick);
     }
@@ -326,14 +330,10 @@ export class MusicEditor {
         }
         this.isPlaying = false;
         this._updatePlayButton();
-        // Force the piano-roll back to static / clean state BEFORE swapping
-        // in the new song — guarantees the next play() starts from a known
-        // baseline regardless of what the previous session left behind.
         PianoRoll.setFollowMode(false);
-        // Drop the previous song's loop info — the new song will register
-        // its own (if any) when Play is pressed.
         PianoRoll.setLoopInfo(null);
         this.song = song;
+        this.writeCursorTick = this.engine.getTotalTicks(song);  // cursor starts at end
         PianoRoll.setSong(this.song);
         this._updateStatusLine();
     }
@@ -461,6 +461,139 @@ export class MusicEditor {
         const el = document.getElementById('music-hover-info');
         if (!el) return;
         el.textContent = info ? `🎵 ${info}` : '';
+    }
+
+    // ── Software keyboard ───────────────────────────────────────────────────
+
+    static NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+    /** Build the software keyboard HTML inside #music-keyboard. */
+    static _renderKeyboard() {
+        const container = document.getElementById('music-keyboard');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const baseMidi = (this.keyboardBaseOctave + 1) * 12;   // C of base octave
+        const totalKeys = this.KEYBOARD_OCTAVES * 12;
+
+        for (let i = 0; i < totalKeys; i++) {
+            const midi = baseMidi + i;
+            const semi = midi % 12;
+            const isBlack = [1, 3, 6, 8, 10].includes(semi);
+            const noteName = this.NOTE_NAMES[semi];
+            const octave = Math.floor(midi / 12) - 1;
+
+            const key = document.createElement('div');
+            key.className = `music-key ${isBlack ? 'music-key-black' : 'music-key-white'}`;
+            key.dataset.midi = midi;
+
+            // Label: show note name on white keys, just the accidental on black
+            if (!isBlack) {
+                key.textContent = `${noteName}${octave}`;
+            } else {
+                key.textContent = noteName;
+            }
+
+            key.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this._onKeyPress(midi);
+                key.classList.add('pressed');
+            });
+            key.addEventListener('mouseup', () => key.classList.remove('pressed'));
+            key.addEventListener('mouseleave', () => key.classList.remove('pressed'));
+
+            // Touch support
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this._onKeyPress(midi);
+                key.classList.add('pressed');
+            }, { passive: false });
+            key.addEventListener('touchend', () => key.classList.remove('pressed'));
+
+            container.appendChild(key);
+        }
+
+        this._updateKeyboardRangeLabel();
+    }
+
+    static _updateKeyboardRangeLabel() {
+        const label = document.getElementById('music-keyboard-range');
+        if (!label) return;
+        const lo = this.keyboardBaseOctave;
+        const hi = lo + this.KEYBOARD_OCTAVES - 1;
+        label.textContent = `C${lo}–B${hi}`;
+    }
+
+    static octaveDown() {
+        if (this.keyboardBaseOctave > 2) {
+            this.keyboardBaseOctave--;
+            this._renderKeyboard();
+        }
+    }
+
+    static octaveUp() {
+        if (this.keyboardBaseOctave + this.KEYBOARD_OCTAVES < 7) {
+            this.keyboardBaseOctave++;
+            this._renderKeyboard();
+        }
+    }
+
+    /**
+     * Software keyboard key press:
+     *   1. Preview the note (short blip so user hears what they're placing)
+     *   2. Add the note at writeCursorTick on the current channel
+     *   3. Advance writeCursorTick by one ticksPerNote step
+     *   4. Update the playhead to show the write cursor position
+     */
+    static _onKeyPress(midi) {
+        if (!this.song) return;
+        const step = this.song.ticksPerNote || 8;
+        const ch   = this.currentChannel;
+
+        // Don't add melody notes if drum channel is selected
+        if (ch === 3) return;
+
+        // Preview: play a short blip so the user hears the note
+        this._previewNote(midi);
+
+        // Add the note at the write cursor
+        this.song.notes.push({
+            startTick:     this.writeCursorTick,
+            durationTicks: step,
+            channel:       ch,
+            pitch:         midi,
+            instrument:    this.currentInstrument,
+            drum:          null,
+        });
+
+        // Advance write cursor
+        this.writeCursorTick += step;
+
+        // Show the cursor position on the piano-roll
+        PianoRoll.setPlayhead(this.writeCursorTick);
+
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        // Restore playhead after setSong clears it
+        PianoRoll.setPlayhead(this.writeCursorTick);
+        this._updateStatusLine();
+    }
+
+    /** Play a brief preview blip for a note (50ms, just enough to hear the pitch). */
+    static _previewNote(midi) {
+        try {
+            PsgSynth._ensureContext();
+            const freq = 440 * Math.pow(2, (midi - 69) / 12);
+            const osc = PsgSynth.ctx.createOscillator();
+            const gain = PsgSynth.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.12, PsgSynth.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, PsgSynth.ctx.currentTime + 0.12);
+            osc.connect(gain).connect(PsgSynth.masterGain || PsgSynth.ctx.destination);
+            osc.start(PsgSynth.ctx.currentTime);
+            osc.stop(PsgSynth.ctx.currentTime + 0.15);
+        } catch (_) { /* audio context not available — skip preview */ }
     }
 
     // ── Status line ─────────────────────────────────────────────────────────
