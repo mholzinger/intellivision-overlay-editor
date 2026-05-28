@@ -46,9 +46,10 @@ export class MusicEditor {
         PianoRoll.init('music-piano-roll');
         PianoRoll.setSong(this.song);
         PianoRoll.setEditorCallbacks({
-            onCellClick: (tick, midi, isDrumLane, shiftKey) => this.handleCellClick(tick, midi, isDrumLane, shiftKey),
-            onSeek:      (tick) => this.handleSeek(tick),
-            onNoteHover: (info) => this._showHoverInfo(info),
+            onCellClick:        (tick, midi, isDrumLane, shiftKey) => this.handleCellClick(tick, midi, isDrumLane, shiftKey),
+            onSeek:             (tick) => this.handleSeek(tick),
+            onNoteHover:        (info) => this._showHoverInfo(info),
+            onSelectionChange:  (sel)  => this._updatePlayButton(sel),
         });
         this._renderEngineSelector();
         this._updateStatusLine();
@@ -406,36 +407,51 @@ export class MusicEditor {
             this.stop();
             return;
         }
-        // Looping is on by default — songs with a JUMP/REPEAT will play N
-        // iterations of the loop body. Off → single pass through whatever
-        // the parser captured.
-        const loops = this.loopEnabled ? this.LOOP_COUNT : 1;
-        const events     = this.engine.toPlaybackEvents(this.song, 50, loops);
-        const totalTicks = this.engine.getPlaybackTicks
-            ? this.engine.getPlaybackTicks(this.song, loops)
-            : this.engine.getTotalTicks(this.song);
 
-        // Tell the piano-roll about the loop boundaries so it can wrap the
-        // playhead back to the loop start visually on each iteration —
-        // otherwise the line would scroll off the right edge into empty
-        // space during iterations 2..N. Pass null if loop is disabled so
-        // raw=visual identity mapping applies.
-        const loopForVisual = this.loopEnabled
-            ? this.engine.getLoopInfo?.(this.song) ?? null
-            : null;
-        PianoRoll.setLoopInfo(loopForVisual);
+        const selection = PianoRoll.getSelection();
+        let events, totalTicks, playheadOffset = 0, loopForVisual = null, useFollowMode;
 
-        // Switch to player-piano scroll mode for tracking
-        PianoRoll.setFollowMode(true);
+        if (selection) {
+            // ── Play Selection mode ────────────────────────────────────────
+            // Filter events to [start, end), shift them to start at time 0,
+            // and skip looping/follow-scroll so the user keeps the selected
+            // region visible. We also annotate the playhead callback so the
+            // line moves through the selection at its real screen position.
+            const all = this.engine.toPlaybackEvents(this.song, 50, 1);
+            const tickSec = 1 / 50;
+            const startSec = selection.start * tickSec;
+            const endSec   = selection.end   * tickSec;
+            events = all
+                .filter(e => e.timeSec >= startSec && e.timeSec < endSec)
+                .map(e => ({ ...e, timeSec: e.timeSec - startSec }));
+            totalTicks     = selection.end - selection.start;
+            playheadOffset = selection.start;
+            useFollowMode  = false;
+            PianoRoll.setLoopInfo(null);
+        } else {
+            // ── Full-song playback (with loop expansion if enabled) ────────
+            const loops = this.loopEnabled ? this.LOOP_COUNT : 1;
+            events     = this.engine.toPlaybackEvents(this.song, 50, loops);
+            totalTicks = this.engine.getPlaybackTicks
+                ? this.engine.getPlaybackTicks(this.song, loops)
+                : this.engine.getTotalTicks(this.song);
+            loopForVisual = this.loopEnabled
+                ? this.engine.getLoopInfo?.(this.song) ?? null
+                : null;
+            PianoRoll.setLoopInfo(loopForVisual);
+            useFollowMode = true;
+        }
+
+        if (useFollowMode) PianoRoll.setFollowMode(true);
 
         PsgSynth.play(events, totalTicks, (tick) => {
-            PianoRoll.setPlayhead(tick);
-            this._updateStatusLine(tick);
+            const displayTick = tick == null ? null : tick + playheadOffset;
+            PianoRoll.setPlayhead(displayTick);
+            this._updateStatusLine(displayTick);
             if (tick === null) {
                 this.isPlaying = false;
                 this._updatePlayButton();
-                // Back to static mode so the user can scroll/edit freely
-                PianoRoll.setFollowMode(false);
+                if (useFollowMode) PianoRoll.setFollowMode(false);
             }
         });
         this.isPlaying = true;
@@ -456,9 +472,24 @@ export class MusicEditor {
         this._updateStatusLine();
     }
 
-    static _updatePlayButton() {
+    /**
+     * @param {{start:number,end:number}|null} [selectionOverride] — optional
+     *   selection state. When called from the onSelectionChange callback, the
+     *   PianoRoll passes us the new selection directly (it may not yet have
+     *   committed it to its own state when this fires). Falls back to the
+     *   PianoRoll's current selection otherwise.
+     */
+    static _updatePlayButton(selectionOverride) {
         const btn = document.querySelector('#music-toolbar button[onclick="musicPlay()"]');
-        if (btn) btn.textContent = this.isPlaying ? '⏸ Pause' : '▶ Play';
+        if (!btn) return;
+        const sel = (selectionOverride !== undefined) ? selectionOverride : PianoRoll.getSelection();
+        if (this.isPlaying) {
+            btn.textContent = '⏸ Pause';
+        } else if (sel) {
+            btn.textContent = '▶ Play Selection';
+        } else {
+            btn.textContent = '▶ Play';
+        }
     }
 
     /** Show note-under-cursor info at the end of the status line (or clear it). */

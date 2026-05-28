@@ -56,12 +56,21 @@ export class PianoRoll {
     static scrollMode       = 'static';  // 'static' | 'follow'
     static framerate        = 50;        // IntyBASIC MUSIC ticks 50/sec (manual.txt:1228)
 
+    // ── Range selection ─────────────────────────────────────────────────────
+    // selectionStart / selectionEnd are ticks (inclusive start, exclusive end).
+    // Both null = no selection. _drag is the live drag state while the user is
+    // pressing the mouse down on the ruler.
+    static selectionStart   = null;
+    static selectionEnd     = null;
+    static _drag            = null;   // { startTick, startX, currentTick, isDrag } | null
+
     /** Wire the piano-roll to its host canvas. Called once on tab init. */
     static init(canvasId = 'music-piano-roll') {
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) return;
         this.ctx = this.canvas.getContext('2d');
 
+        this.canvas.addEventListener('mousedown', e => this._onMouseDown(e));
         this.canvas.addEventListener('click', e => this._onClick(e));
         this.canvas.addEventListener('mousemove', e => this._onMouseMove(e));
         this.canvas.addEventListener('mouseleave', () => {
@@ -72,6 +81,17 @@ export class PianoRoll {
         this.canvas.addEventListener('contextmenu', e => {
             e.preventDefault();
             this._onClick(e);
+        });
+        // Window-level mouseup so a drag that ends off-canvas still finalises
+        window.addEventListener('mouseup', e => this._onMouseUp(e));
+        // Esc clears any active selection (skip when the user is typing in
+        // another input on the page so we don't steal their Escape).
+        window.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            const ae = document.activeElement;
+            const tag = ae?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || ae?.isContentEditable) return;
+            if (this.selectionStart != null) this.clearSelection();
         });
 
         // Resize follow-mode canvas when the window changes
@@ -136,6 +156,39 @@ export class PianoRoll {
         this.render();
         if (tick !== null && this.scrollMode === 'static') {
             this._scrollPlayheadIntoView();
+        }
+    }
+
+    /**
+     * Returns the current ruler selection as { start, end } (start inclusive,
+     * end exclusive, both in ticks). Null when no selection is active.
+     */
+    static getSelection() {
+        if (this.selectionStart == null || this.selectionEnd == null) return null;
+        if (this.selectionEnd <= this.selectionStart) return null;
+        return { start: this.selectionStart, end: this.selectionEnd };
+    }
+
+    static setSelection(start, end) {
+        if (start == null || end == null || end <= start) {
+            this.clearSelection();
+            return;
+        }
+        this.selectionStart = start;
+        this.selectionEnd   = end;
+        this.render();
+        const cb = this.editorCallbacks.onSelectionChange;
+        if (typeof cb === 'function') cb(this.getSelection());
+    }
+
+    static clearSelection() {
+        const had = this.selectionStart != null;
+        this.selectionStart = null;
+        this.selectionEnd   = null;
+        if (had) {
+            this.render();
+            const cb = this.editorCallbacks.onSelectionChange;
+            if (typeof cb === 'function') cb(null);
         }
     }
 
@@ -205,12 +258,68 @@ export class PianoRoll {
 
         this._renderRuler();
         this._renderGrid();
+        this._renderSelection();   // shaded between selection bars + bar markers
         this._renderNotes();
         this._renderHover();
         this._renderPlayhead();
         // Keyboard drawn LAST so it's always on top — important for follow mode
         // where notes might otherwise overlap into the keyboard area.
         this._renderKeyboard();
+    }
+
+    /**
+     * Draw the active selection (or live drag preview): a translucent overlay
+     * spanning the selected tick range plus two vertical bars at the
+     * boundaries. Drag-in-progress uses a slightly different tint so the user
+     * sees feedback before mouseup commits.
+     */
+    static _renderSelection() {
+        let start, end, isPreview = false;
+        if (this._drag && this._drag.isDrag) {
+            // Live drag preview
+            const tickStep = this.song?.ticksPerNote || 1;
+            const a = Math.min(this._drag.startTick, this._drag.currentTick);
+            const b = Math.max(this._drag.startTick, this._drag.currentTick);
+            start = Math.floor(a / tickStep) * tickStep;
+            end   = Math.max(start + tickStep, Math.ceil(b / tickStep) * tickStep);
+            isPreview = true;
+        } else if (this.selectionStart != null && this.selectionEnd != null) {
+            start = this.selectionStart;
+            end   = this.selectionEnd;
+        } else {
+            return;
+        }
+
+        const { ctx, KEYBOARD_WIDTH, RULER_HEIGHT } = this;
+        const { width, height } = this.canvas;
+        const xStart = Math.max(KEYBOARD_WIDTH, this._tickToX(start));
+        const xEnd   = Math.max(KEYBOARD_WIDTH, this._tickToX(end));
+        if (xEnd <= KEYBOARD_WIDTH || xStart >= width) return;
+
+        // Shaded region (skip the keyboard column; cover ruler → bottom)
+        ctx.fillStyle = isPreview
+            ? 'rgba(255, 215, 0, 0.10)'
+            : 'rgba(255, 215, 0, 0.16)';
+        ctx.fillRect(xStart, 0, xEnd - xStart, height);
+
+        // Boundary bars
+        ctx.strokeStyle = isPreview ? 'rgba(255, 215, 0, 0.75)' : '#ffd700';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xStart + 0.5, 0); ctx.lineTo(xStart + 0.5, height);
+        ctx.moveTo(xEnd   - 0.5, 0); ctx.lineTo(xEnd   - 0.5, height);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+        // Mini header above the selection in the ruler area showing length
+        const lenTicks = end - start;
+        const label = `↔ ${lenTicks}t`;
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const midX = (xStart + xEnd) / 2;
+        ctx.fillText(label, Math.max(midX, xStart + 18), 2);
     }
 
     // ── Keyboard column ─────────────────────────────────────────────────────
@@ -336,14 +445,38 @@ export class PianoRoll {
             ctx.stroke();
         }
 
-        // Drum strip background + divider
-        ctx.fillStyle = 'rgba(180, 100, 180, 0.06)';
+        // Drum strip background + divider — stronger contrast so it's clear
+        // this is where drum hits land (not just another melody row).
+        ctx.fillStyle = 'rgba(180, 100, 180, 0.18)';
         ctx.fillRect(KEYBOARD_WIDTH, gridBottom, width - KEYBOARD_WIDTH, this.DRUM_HEIGHT);
-        ctx.strokeStyle = 'rgba(180, 100, 180, 0.4)';
+        // Diagonal-stripe accent so the strip reads as a different surface
+        ctx.save();
+        ctx.fillStyle = 'rgba(180, 100, 180, 0.08)';
+        for (let sx = KEYBOARD_WIDTH; sx < width; sx += 12) {
+            ctx.beginPath();
+            ctx.moveTo(sx, gridBottom);
+            ctx.lineTo(sx + this.DRUM_HEIGHT, gridBottom + this.DRUM_HEIGHT);
+            ctx.lineTo(sx + this.DRUM_HEIGHT - 4, gridBottom + this.DRUM_HEIGHT);
+            ctx.lineTo(sx - 4, gridBottom);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.restore();
+        // Stronger divider above the drum strip
+        ctx.strokeStyle = 'rgba(220, 130, 220, 0.85)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(KEYBOARD_WIDTH, gridBottom + 0.5);
-        ctx.lineTo(width, gridBottom + 0.5);
+        ctx.moveTo(KEYBOARD_WIDTH, gridBottom + 1);
+        ctx.lineTo(width, gridBottom + 1);
         ctx.stroke();
+        ctx.lineWidth = 1;
+        // "DRUMS" gutter label in the keyboard column so the drum strip is
+        // unmistakably labeled (mirrors how piano-key labels do for melody).
+        ctx.fillStyle = '#c060c0';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🥁 DRUMS', KEYBOARD_WIDTH / 2, gridBottom + this.DRUM_HEIGHT / 2);
     }
 
     // ── Notes ───────────────────────────────────────────────────────────────
@@ -489,6 +622,13 @@ export class PianoRoll {
     }
 
     static _onClick(e) {
+        // If the user just finished a real drag on the ruler, the click event
+        // also fires after mouseup — suppress it so the drag doesn't get
+        // double-processed as a seek.
+        if (this._suppressNextClick) {
+            this._suppressNextClick = false;
+            return;
+        }
         const cell = this._eventToCell(e);
         if (!cell) return;
         if (cell.isRuler) {
@@ -502,6 +642,38 @@ export class PianoRoll {
         }
     }
 
+    /** Mouse down: only the ruler starts a potential drag-to-select. */
+    static _onMouseDown(e) {
+        const cell = this._eventToCell(e);
+        if (!cell || !cell.isRuler) return;
+        const rect = this.canvas.getBoundingClientRect();
+        this._drag = {
+            startTick:   cell.tick,
+            startX:      e.clientX - rect.left,
+            currentTick: cell.tick,
+            isDrag:      false,
+        };
+    }
+
+    static _onMouseUp(e) {
+        if (!this._drag) return;
+        const drag = this._drag;
+        this._drag = null;
+        if (drag.isDrag) {
+            // Real drag → commit the selection (snap to tickStep)
+            const tickStep = this.song?.ticksPerNote || 1;
+            const a = Math.min(drag.startTick, drag.currentTick);
+            const b = Math.max(drag.startTick, drag.currentTick);
+            // Snap end UP so it's at least one tick step past start
+            const start = Math.floor(a / tickStep) * tickStep;
+            const end   = Math.max(start + tickStep, Math.ceil(b / tickStep) * tickStep);
+            this.setSelection(start, end);
+            this._suppressNextClick = true;
+        }
+        // If it wasn't a drag, the subsequent click handler will fire and
+        // treat it as a normal ruler seek — nothing to do here.
+    }
+
     // Note names for MIDI → display (e.g. MIDI 60 → "C4")
     static NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
@@ -511,6 +683,20 @@ export class PianoRoll {
     }
 
     static _onMouseMove(e) {
+        // Live drag preview: if the user is dragging on the ruler, update the
+        // selection bounds as they move (no commit until mouseup).
+        if (this._drag) {
+            const rect = this.canvas.getBoundingClientRect();
+            const dx = Math.abs((e.clientX - rect.left) - this._drag.startX);
+            // x-position on canvas → tick (clamped to musical area)
+            const scaleX = this.canvas.width / rect.width;
+            const px = (e.clientX - rect.left) * scaleX;
+            const rawTick = this._xToTick(Math.max(this.KEYBOARD_WIDTH, px));
+            this._drag.currentTick = Math.max(0, rawTick);
+            if (!this._drag.isDrag && dx > 4) this._drag.isDrag = true;
+            if (this._drag.isDrag) this.render();
+            return;
+        }
         const cell = this._eventToCell(e);
         if (!cell || cell.isRuler) {
             if (this.hoverTick !== null) { this.hoverTick = null; this.render(); }
