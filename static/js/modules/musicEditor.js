@@ -120,21 +120,22 @@ export class MusicEditor {
      * @param {number} tick - tick position (snapped to ticksPerNote)
      * @param {number} midi - MIDI pitch (irrelevant for drum lane clicks)
      * @param {boolean} isDrumLane - true if the click was in the drum strip
+     * @param {boolean} shiftKey - true if shift was held (extend/sustain mode)
      */
-    static handleCellClick(tick, midi, isDrumLane) {
+    static handleCellClick(tick, midi, isDrumLane, shiftKey = false) {
         if (!this.song) return;
         // Force the active channel to drums if user clicked the drum lane
-        // (intuitive: click drum strip → drum note added). Also flip the other way.
         if (isDrumLane && this.currentChannel !== 3) {
             this.setChannel(3);
         }
         if (!isDrumLane && this.currentChannel === 3) {
-            // Click in melody area while drum is active — silently switch to ch1
             this.setChannel(0);
         }
 
         if (this.currentChannel === 3) {
             this._toggleDrumAt(tick);
+        } else if (shiftKey) {
+            this._extendNoteAt(tick, midi);
         } else {
             this._toggleNoteAt(tick, midi);
         }
@@ -160,6 +161,45 @@ export class MusicEditor {
                 drum:          null,
             });
         }
+    }
+
+    /**
+     * Shift+click: extend the note that ends at (or covers) this tick.
+     * If a note on the same channel+pitch ends exactly at this tick, extend
+     * it by one ticksPerNote. If a note covers this tick, shrink it back to
+     * this tick (toggle between extended and short).
+     * If no adjacent note exists, add a new one (same as normal click).
+     */
+    static _extendNoteAt(tick, midi) {
+        const ch = this.currentChannel;
+        const step = this.song.ticksPerNote;
+
+        // Find a note whose right edge ends exactly at this tick's left edge
+        // (i.e. the previous note that could be extended into this cell).
+        const adjacent = this.song.notes.find(n =>
+            n.channel === ch && n.pitch === midi &&
+            n.startTick + n.durationTicks === tick
+        );
+        if (adjacent) {
+            // Extend it by one step (= one more "S" sustain in IntyBASIC terms)
+            adjacent.durationTicks += step;
+            return;
+        }
+
+        // Find a note that already covers this tick (user shift+clicked
+        // somewhere inside an extended note — shrink it back).
+        const covering = this.song.notes.find(n =>
+            n.channel === ch && n.pitch === midi &&
+            n.startTick < tick && n.startTick + n.durationTicks > tick
+        );
+        if (covering) {
+            // Shrink back to end at this tick
+            covering.durationTicks = tick - covering.startTick;
+            return;
+        }
+
+        // No adjacent or covering note — add a new one
+        this._toggleNoteAt(tick, midi);
     }
 
     /** Cycle through drum types on repeated clicks: empty→M1→M2→M3→delete. */

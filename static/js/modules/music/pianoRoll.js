@@ -498,7 +498,7 @@ export class PianoRoll {
         }
         const cb = this.editorCallbacks.onCellClick;
         if (typeof cb === 'function') {
-            cb(cell.tick, cell.midi, cell.isDrumLane);
+            cb(cell.tick, cell.midi, cell.isDrumLane, e.shiftKey);
         }
     }
 
