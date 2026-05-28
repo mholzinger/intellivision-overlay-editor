@@ -320,6 +320,44 @@ export class PianoRoll {
         ctx.textBaseline = 'top';
         const midX = (xStart + xEnd) / 2;
         ctx.fillText(label, Math.max(midX, xStart + 18), 2);
+
+        // Clear-selection (✕) button — only on a committed selection, not the
+        // live preview. Sits just inside the right boundary bar at the top.
+        if (!isPreview) {
+            const btnR = 9;
+            const btnX = Math.max(xStart + btnR + 2, xEnd - btnR - 4);
+            const btnY = btnR + 2;
+            ctx.fillStyle = 'rgba(40, 25, 0, 0.92)';
+            ctx.beginPath();
+            ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(btnX - 3, btnY - 3); ctx.lineTo(btnX + 3, btnY + 3);
+            ctx.moveTo(btnX + 3, btnY - 3); ctx.lineTo(btnX - 3, btnY + 3);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            this._selectionClearBtn = { x: btnX, y: btnY, r: btnR };
+        } else {
+            this._selectionClearBtn = null;
+        }
+    }
+
+    /** True if event landed on the in-canvas ✕ clear-selection button. */
+    static _isClickOnClearBtn(e) {
+        const b = this._selectionClearBtn;
+        if (!b) return false;
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top)  * scaleY;
+        const dx = x - b.x, dy = y - b.y;
+        return dx * dx + dy * dy <= b.r * b.r;
     }
 
     // ── Keyboard column ─────────────────────────────────────────────────────
@@ -644,6 +682,13 @@ export class PianoRoll {
 
     /** Mouse down: only the ruler starts a potential drag-to-select. */
     static _onMouseDown(e) {
+        // First: if the click hit the in-canvas ✕ clear button, just clear
+        // the selection and suppress everything else (no drag, no seek).
+        if (this._isClickOnClearBtn(e)) {
+            this.clearSelection();
+            this._suppressNextClick = true;
+            return;
+        }
         const cell = this._eventToCell(e);
         if (!cell || !cell.isRuler) return;
         const rect = this.canvas.getBoundingClientRect();
@@ -683,6 +728,12 @@ export class PianoRoll {
     }
 
     static _onMouseMove(e) {
+        // Cursor affordance: pointer when over the ✕ clear button.
+        if (this._isClickOnClearBtn(e)) {
+            this.canvas.style.cursor = 'pointer';
+        } else if (this.canvas.style.cursor === 'pointer') {
+            this.canvas.style.cursor = '';
+        }
         // Live drag preview: if the user is dragging on the ruler, update the
         // selection bounds as they move (no commit until mouseup).
         if (this._drag) {
