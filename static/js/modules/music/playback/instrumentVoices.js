@@ -29,9 +29,9 @@
  * detuneSemis: integer pitch offset (e.g. Z bass drops an octave)
  */
 export const INSTRUMENTS = {
-    // W = piano: sharp attack, quick decay, no sustain — short percussive note
+    // W = piano: sharp attack, moderate decay — still audible when sustained
     W: {
-        attack: 0.004, decay: 0.10, sustain: 0.25, release: 0.12,
+        attack: 0.004, decay: 0.10, sustain: 0.50, release: 0.12,
         gain: 0.18, type: 'square', vibrato: null, detuneSemis: 0,
     },
     // X = clarinet: medium attack, strong sustain — woody held note

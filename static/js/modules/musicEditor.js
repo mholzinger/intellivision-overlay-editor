@@ -164,41 +164,50 @@ export class MusicEditor {
     }
 
     /**
-     * Shift+click: extend the note that ends at (or covers) this tick.
-     * If a note on the same channel+pitch ends exactly at this tick, extend
-     * it by one ticksPerNote. If a note covers this tick, shrink it back to
-     * this tick (toggle between extended and short).
-     * If no adjacent note exists, add a new one (same as normal click).
+     * Shift+click: extend a note's duration.
+     *
+     * Three ways to trigger:
+     *   1. Shift+click ON an existing note → extend it by one step to the right
+     *   2. Shift+click on the cell RIGHT AFTER a note → same (extend into this cell)
+     *   3. Shift+click INSIDE an already-extended note → shrink it back to this tick
+     *
+     * Each extend = one more "S" (sustain) in IntyBASIC terms.
      */
     static _extendNoteAt(tick, midi) {
         const ch = this.currentChannel;
         const step = this.song.ticksPerNote;
 
-        // Find a note whose right edge ends exactly at this tick's left edge
-        // (i.e. the previous note that could be extended into this cell).
+        // Case 1: shift+click directly ON a note's start tick → extend it
+        const onNote = this.song.notes.find(n =>
+            n.channel === ch && n.pitch === midi && n.startTick === tick
+        );
+        if (onNote) {
+            onNote.durationTicks += step;
+            return;
+        }
+
+        // Case 2: shift+click on the cell immediately after a note's right edge
         const adjacent = this.song.notes.find(n =>
             n.channel === ch && n.pitch === midi &&
             n.startTick + n.durationTicks === tick
         );
         if (adjacent) {
-            // Extend it by one step (= one more "S" sustain in IntyBASIC terms)
             adjacent.durationTicks += step;
             return;
         }
 
-        // Find a note that already covers this tick (user shift+clicked
-        // somewhere inside an extended note — shrink it back).
+        // Case 3: shift+click inside an already-extended note → shrink back
         const covering = this.song.notes.find(n =>
             n.channel === ch && n.pitch === midi &&
             n.startTick < tick && n.startTick + n.durationTicks > tick
         );
         if (covering) {
-            // Shrink back to end at this tick
             covering.durationTicks = tick - covering.startTick;
+            if (covering.durationTicks <= 0) covering.durationTicks = step;
             return;
         }
 
-        // No adjacent or covering note — add a new one
+        // Nothing to extend — add a new note
         this._toggleNoteAt(tick, midi);
     }
 
