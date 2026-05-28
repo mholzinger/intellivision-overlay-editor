@@ -11,6 +11,7 @@
 
 import { IntyBasicMusic } from './music/engines/intybasicMusic.js';
 import { PianoRoll }      from './music/pianoRoll.js';
+import { Minimap }        from './music/minimap.js';
 import { PsgSynth }       from './music/playback/psgSynth.js';
 
 // Registry of available engines. Phases 5/8/9 add ECS / JLP-zmus / raw-PSG here.
@@ -55,6 +56,11 @@ export class MusicEditor {
             onNoteHover:        (info) => this._showHoverInfo(info),
             onSelectionChange:  (sel)  => this._updatePlayButton(sel),
         });
+        Minimap.init('music-minimap', {
+            onSeek:  (tick) => this.handleSeek(tick),
+            onHover: (tick) => this._showHoverInfo(tick == null ? null : `overview · tick ${tick}`),
+        });
+        Minimap.setSong(this.song);
         this._renderEngineSelector();
         this._updateStatusLine();
         this._loadDemosManifest();
@@ -79,6 +85,7 @@ export class MusicEditor {
         }
         this.writeCursorTick = tick;
         PianoRoll.setPlayhead(tick);
+        Minimap.setPlayhead(tick);
         this._updateStatusLine(tick);
     }
 
@@ -157,6 +164,7 @@ export class MusicEditor {
         }
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         this._syncEditControls();
         this._updateStatusLine();
     }
@@ -192,6 +200,7 @@ export class MusicEditor {
         }
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         this._updateStatusLine();
     }
 
@@ -377,9 +386,11 @@ export class MusicEditor {
         this._updatePlayButton();
         PianoRoll.setFollowMode(false);
         PianoRoll.setLoopInfo(null);
+        Minimap.setLoopInfo(null);
         this.song = song;
         this.writeCursorTick = this.engine.getTotalTicks(song);  // cursor starts at end
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         this._syncEditControls();  // pick up channelCount changes (ECS auto-show)
         this._updateStatusLine();
     }
@@ -405,6 +416,7 @@ export class MusicEditor {
         // Phase 5+: offer to convert current song to new engine.
         this.song = this.engine.defaultSong();
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         this._updateStatusLine();
     }
 
@@ -468,6 +480,7 @@ export class MusicEditor {
             playheadOffset = selection.start;
             useFollowMode  = false;
             PianoRoll.setLoopInfo(null);
+            Minimap.setLoopInfo(null);
         } else {
             // ── Full-song playback (with loop expansion if enabled) ────────
             const loops = this.loopEnabled ? this.LOOP_COUNT : 1;
@@ -479,6 +492,7 @@ export class MusicEditor {
                 ? this.engine.getLoopInfo?.(this.song) ?? null
                 : null;
             PianoRoll.setLoopInfo(loopForVisual);
+            Minimap.setLoopInfo(loopForVisual);
             useFollowMode = true;
         }
 
@@ -487,6 +501,7 @@ export class MusicEditor {
         PsgSynth.play(events, totalTicks, (tick) => {
             const displayTick = tick == null ? null : tick + playheadOffset;
             PianoRoll.setPlayhead(displayTick);
+            Minimap.setPlayhead(displayTick);
             this._updateStatusLine(displayTick);
             if (tick === null) {
                 this.isPlaying = false;
@@ -508,6 +523,7 @@ export class MusicEditor {
         // (raw) tick position rather than a wrapped one — once stopped,
         // there's no looping context to map through.
         PianoRoll.setLoopInfo(null);
+        Minimap.setLoopInfo(null);
         this._updatePlayButton();
         this._updateStatusLine();
     }
@@ -556,6 +572,7 @@ export class MusicEditor {
         this._removeNotesInRange(sel.start, sel.end);
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         this._updateStatusLine();
     }
 
@@ -569,7 +586,9 @@ export class MusicEditor {
         this.writeCursorTick = dest + this.clipboard.lengthTicks;
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         PianoRoll.setPlayhead(this.writeCursorTick);
+        Minimap.setPlayhead(this.writeCursorTick);
         UIManager.showStatus(`Pasted ${this.clipboard.notes.length} notes at tick ${dest}`, 'success');
         this._updateStatusLine();
     }
@@ -581,6 +600,7 @@ export class MusicEditor {
         const removed = this._removeNotesInRange(sel.start, sel.end);
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         PianoRoll.clearSelection();
         UIManager.showStatus(`Deleted ${removed} notes`, 'success');
         this._updateStatusLine();
@@ -652,6 +672,7 @@ export class MusicEditor {
         if (moved > 0) {
             this.song.metadata.dirty = true;
             PianoRoll.setSong(this.song);
+            Minimap.setSong(this.song);
             UIManager.showStatus(
                 `Transposed ${moved} notes by ${delta > 0 ? '+' : ''}${delta} semitone${Math.abs(delta) === 1 ? '' : 's'}`,
                 'success'
@@ -848,11 +869,14 @@ export class MusicEditor {
 
         // Show the cursor position on the piano-roll
         PianoRoll.setPlayhead(this.writeCursorTick);
+        Minimap.setPlayhead(this.writeCursorTick);
 
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
+        Minimap.setSong(this.song);
         // Restore playhead after setSong clears it
         PianoRoll.setPlayhead(this.writeCursorTick);
+        Minimap.setPlayhead(this.writeCursorTick);
         this._updateStatusLine();
     }
 

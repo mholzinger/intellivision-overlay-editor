@@ -2271,6 +2271,22 @@ details[open] .voice-dict-summary::before {
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Song minimap — full-width overview strip above the piano-roll */
+.music-minimap-container {
+    background: #0a0a14;
+    border: 1px solid #2a2a36;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+#music-minimap {
+    display: block;
+    width: 100%;
+    height: 50px;
+}
+
 #music-piano-roll {
     display: block;
     image-rendering: pixelated;
