@@ -9,14 +9,16 @@
  * Format-specific parsing/serializing lives in engines/*.js.
  */
 
-import { IntyBasicMusic } from './music/engines/intybasicMusic.js';
+import { IntyBasicMusic }    from './music/engines/intybasicMusic.js';
+import { ChevallierTracker } from './music/engines/chevallierTracker.js';
 import { PianoRoll }      from './music/pianoRoll.js';
 import { Minimap }        from './music/minimap.js';
 import { PsgSynth }       from './music/playback/psgSynth.js';
 
-// Registry of available engines. Phases 5/8/9 add ECS / JLP-zmus / raw-PSG here.
+// Registry of available engines. Phases 8/9 add JLP-zmus / raw-PSG here.
 const ENGINES = {
     intybasic: IntyBasicMusic,
+    'chevallier-tracker': ChevallierTracker,
 };
 
 export class MusicEditor {
