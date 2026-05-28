@@ -142,9 +142,10 @@ export class PsgSynth {
             this.activeNodes.push(lfo);
         }
 
-        // ADSR envelope via GainNode
+        // ADSR envelope via GainNode. MUSIC VOLUME (0-15) scales the peak.
         const env = this.ctx.createGain();
-        const peak = inst.gain;
+        const volScale = (ev.volume == null) ? 1 : ev.volume;
+        const peak = inst.gain * volScale;
         const sustainLevel = peak * inst.sustain;
         const releaseStart = startTime + noteDuration;
         env.gain.setValueAtTime(0, startTime);
@@ -180,7 +181,8 @@ export class PsgSynth {
             filter.Q.value = drum.filterQ;
 
             const env = this.ctx.createGain();
-            env.gain.setValueAtTime(drum.gain, hitTime);
+            const volScale = (ev.volume == null) ? 1 : ev.volume;
+            env.gain.setValueAtTime(drum.gain * volScale, hitTime);
             env.gain.exponentialRampToValueAtTime(0.001, hitTime + drum.decay);
 
             noise.connect(filter).connect(env).connect(this.masterGain);

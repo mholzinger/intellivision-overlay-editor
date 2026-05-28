@@ -82,7 +82,7 @@ export class IntyBasicMusic extends MusicEngine {
     static documentation = [
         'Native IntyBASIC music: 3 melody channels (square waves) + 1 drum channel.',
         'Each MUSIC statement is one tempo step.',
-        'Notes: C/D/E/F/G/A/B + octave 2-6 (or C7), optional # for sharp, optional W/X/Y/Z for instrument.',
+        'Notes: C/D/E/F/G/A/B + octave 2-6 (or C7/C7# only), optional # for sharp, optional W/X/Y/Z for instrument.',
         'Special tokens: S = sustain previous note, - = silence.',
         'Drums (4th argument): M1 strong, M2 tap, M3 roll, - none.',
         'Tempo: DATA <n> sets ticks-per-note (the MUSIC engine runs at a fixed 50 ticks/sec regardless of NTSC/PAL).',
@@ -133,6 +133,9 @@ export class IntyBasicMusic extends MusicEngine {
             { lastNote: null, instrument: 'W' },
             { lastNote: null, instrument: 'W' },
         ];
+        // Global volume (0-15). IntyBASIC's MUSIC VOLUME is a single _music_vol
+        // register applied as a multiplier to every channel. Baked into each note.
+        let currentVolume = 15;
 
         for (let i = blockStart; i < lines.length; i++) {
             const { text: line } = lines[i];
@@ -165,6 +168,10 @@ export class IntyBasicMusic extends MusicEngine {
                     const n = parseInt(arg, 10);
                     if (!isNaN(n)) song.ticksPerNote = n;
                 }
+                if (cmd === 'VOLUME') {
+                    const n = parseInt(arg, 10);
+                    if (!isNaN(n) && n >= 0 && n <= 15) currentVolume = n;
+                }
                 if (cmd === 'STOP' || cmd === 'REPEAT' || cmd === 'JUMP') {
                     // After STOP/REPEAT/JUMP the linear walk ends — nothing past
                     // this point will play in sequence with what came before.
@@ -188,10 +195,10 @@ export class IntyBasicMusic extends MusicEngine {
 
                 // First 3 args = melody channels
                 for (let ch = 0; ch < 3; ch++) {
-                    this._processChannelToken(args[ch], ch, song, channelState, currentTick);
+                    this._processChannelToken(args[ch], ch, song, channelState, currentTick, currentVolume);
                 }
                 // 4th arg = drum channel
-                this._processDrumToken(args[3], song, currentTick);
+                this._processDrumToken(args[3], song, currentTick, currentVolume);
 
                 currentTick += song.ticksPerNote;
                 continue;
@@ -205,7 +212,7 @@ export class IntyBasicMusic extends MusicEngine {
     }
 
     /** Process one melody channel token into a note (or sustain / silence). */
-    static _processChannelToken(token, channel, song, channelState, currentTick) {
+    static _processChannelToken(token, channel, song, channelState, currentTick, currentVolume = 15) {
         const state = channelState[channel];
 
         if (token === '-') {
@@ -227,6 +234,12 @@ export class IntyBasicMusic extends MusicEngine {
             state.lastNote = null;
             return;
         }
+        // IntyBASIC compiler restriction: octave 7 only allows C and C#
+        // (IntyBASIC.cpp:3315 — "if (note == 0)" gate). D7-B7 are illegal.
+        if (m[2] === '7' && m[1].toUpperCase() !== 'C') {
+            state.lastNote = null;
+            return;
+        }
         const [, letter, octaveStr, sharp, inst] = m;
         const semitone = NOTE_SEMITONE[letter.toUpperCase()] + (sharp ? 1 : 0);
         const octave = parseInt(octaveStr, 10);
@@ -242,6 +255,7 @@ export class IntyBasicMusic extends MusicEngine {
             channel:       channel,
             pitch:         midi,
             instrument:    state.instrument,
+            volume:        currentVolume,
             drum:          null,
         };
         song.notes.push(note);
@@ -249,7 +263,7 @@ export class IntyBasicMusic extends MusicEngine {
     }
 
     /** Process the drum (4th) channel token into a one-shot drum hit. */
-    static _processDrumToken(token, song, currentTick) {
+    static _processDrumToken(token, song, currentTick, currentVolume = 15) {
         if (token === '-') return;
         const m = token.match(DRUM_RE);
         if (!m) return;
@@ -259,6 +273,7 @@ export class IntyBasicMusic extends MusicEngine {
             channel:       3,                    // drum lane index
             pitch:         null,
             instrument:    null,
+            volume:        currentVolume,
             drum:          'M' + m[1],
         });
     }
@@ -322,7 +337,12 @@ export class IntyBasicMusic extends MusicEngine {
         if (!song) return '';
         const step    = song.ticksPerNote || 8;
         const label   = song.label || 'song';
-        const totalTicks = this.getTotalTicks(song);
+        // Walk must reach the latest control tick too, so a JUMP/STOP sitting
+        // past the last note's end (silent tail bars) doesn't get dropped.
+        let totalTicks = this.getTotalTicks(song);
+        for (const c of (song.controls || [])) {
+            if (c.tick > totalTicks) totalTicks = c.tick;
+        }
 
         // Build per-tick lookup tables for fast access during the walk.
         // noteMap[channel] = sorted array of notes on that channel.
@@ -511,12 +531,15 @@ export class IntyBasicMusic extends MusicEngine {
 
         const noteToEvent = (note, startTick) => {
             const timeSec = startTick * tickSec;
+            // Volume is a 0-15 IntyBASIC value; 15 (or undefined for older songs) = full.
+            const volume01 = (note.volume == null) ? 1 : Math.max(0, Math.min(15, note.volume)) / 15;
             if (note.drum) {
                 return {
                     timeSec,
                     type:     'drum',
                     channel:  note.channel,
                     drumType: note.drum,
+                    volume:   volume01,
                 };
             } else if (note.pitch !== null && note.pitch !== undefined) {
                 return {
@@ -526,6 +549,7 @@ export class IntyBasicMusic extends MusicEngine {
                     pitch:          note.pitch,
                     durationTicks:  note.durationTicks,
                     instrument:     note.instrument || 'W',
+                    volume:         volume01,
                 };
             }
             return null;
