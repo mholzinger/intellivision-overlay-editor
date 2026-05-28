@@ -36,7 +36,7 @@ export class MusicEditor {
         PianoRoll.init('music-piano-roll');
         PianoRoll.setSong(this.song);
         PianoRoll.setEditorCallbacks({
-            onCellClick: (tick, midi, isDrumLane) => this.handleCellClick(tick, midi, isDrumLane),
+            onCellClick: (tick, midi, isDrumLane, shiftKey) => this.handleCellClick(tick, midi, isDrumLane, shiftKey),
             onSeek:      (tick) => this.handleSeek(tick),
             onNoteHover: (info) => this._showHoverInfo(info),
         });
