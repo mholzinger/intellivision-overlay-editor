@@ -57,7 +57,13 @@ export class PsgSynth {
      */
     static play(events, totalTicks, onTick) {
         this._ensureContext();
-        this.stop();    // teardown any previous session
+        // Detach the previous session's callback BEFORE the teardown stop().
+        // Otherwise stop()'s onPlayheadTick(null) call would fire the OLD
+        // callback (which signals "playback ended" → reverts the piano-roll
+        // back to static scroll mode), undoing the follow-mode setup the
+        // caller just did. Only the new session should produce notifications.
+        this.onPlayheadTick = null;
+        this.stop();
         this._stopRequested = false;
         this.onPlayheadTick = onTick;
 
