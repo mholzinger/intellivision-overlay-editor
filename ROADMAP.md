@@ -21,6 +21,19 @@
 - **MOB layer preview** — Composite preview showing 2-3 MOBs stacked at the same X,Y with independent foreground colors, simulating multi-sprite layering technique used for multi-colored characters
 - **dump.mem binary import** — Drag-drop the jzIntv `d`-command output (full memory snapshot) and auto-populate BACKTAB cells + GRAM sprites + STIC mode in one shot. Text-paste from `m` command already supported; this would be the polished single-file UX.
 
+### Music Studio — Continued
+**Shipped so far:** IntyBASIC MUSIC parser, piano-roll visualization, Web Audio AY-3-8914 synth playback (50 Hz, 4 instruments, 3 drum types), demo song library (10 Space Intruders tracks), click-to-edit composing, player-piano tracking with loop support (JUMP/REPEAT), volume slider, note hover tooltip, INTV Audio Primer modal.
+
+**Next phases (per `~/.claude/plans/intellivision-music-studio.md`):**
+- **Phase 4: Export round-trip** — serialize SongIR back to IntyBASIC MUSIC .bas text, project save/load, Copy Source actually produces valid code. This is the "shippable to friends" milestone.
+- **Phase 5: ECS 8-channel** — second PSG, 8-arg MUSIC lines, wider piano-roll
+- **Phase 6: Music templates** — starter patterns (blank, drum loop, chord progressions, scale exercises)
+- **Phase 7: WASM jzIntv bit-perfect playback** — compile music into a stub ROM, run through the existing WASM emulator, A/B toggle vs Web Audio synth
+- **Phase 8: JLP/zmus engine** — support the shared assembly music engine format
+- **Phase 9: Raw PSG register writes** — direct AY-3-8914 register timeline for SFX design
+- **Software piano keyboard** — on-screen clickable/tappable keyboard at the bottom of the editor page. Click a key → note is placed at the playhead position on the active channel. Useful for users without a physical keyboard layout intuition (which key = which note).
+- **USB MIDI / HID keyboard input** — use the browser's Web MIDI API (`navigator.requestMIDIAccess()`) to accept note input from a USB MIDI keyboard. Web MIDI is a native browser API (Chrome, Edge, Opera — no plugin needed; Firefox requires a flag). For non-MIDI USB keyboards (HID), `navigator.hid` API or simpler keydown mapping could work. This would let musicians play notes in real time and have them recorded to the piano-roll — a proper "step record" or "live record" mode.
+
 ### Emulator — Landscape Mobile Layout
 **Goal:** On phones in landscape orientation, arrange the emulator as `[disc] | [canvas] | [keypad]`
 so the game fills the center and controls flank it on either side.
