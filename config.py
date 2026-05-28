@@ -105,6 +105,56 @@ class Config:
         val = os.environ.get('OVL_BIOS_ECS_PATH')
         return Path(val) if val else None
 
+    # IntyBASIC + as1600 compiler paths (optional — enables Music Studio's
+    # "▶ Play in jzIntv" button which compiles MUSIC source to a real ROM
+    # the WASM emulator can play bit-perfectly).
+    #
+    # Defaults look in PATH, then a few known install dirs. Set explicitly
+    # via OVL_INTYBASIC_PATH / OVL_AS1600_PATH for non-standard locations.
+    @classmethod
+    def get_intybasic_path(cls) -> Path | None:
+        return cls._find_binary('OVL_INTYBASIC_PATH', 'intybasic', [
+            '/usr/local/bin/intybasic',
+            '/Users/mikeholzinger/intybasic/intybasic',
+        ])
+
+    @classmethod
+    def get_as1600_path(cls) -> Path | None:
+        return cls._find_binary('OVL_AS1600_PATH', 'as1600', [
+            '/usr/local/bin/as1600',
+            '/Users/mikeholzinger/jzintv/bin/as1600',
+            '/Users/mikeholzinger/jzintv-20200712-osx-sdl2/bin/as1600',
+        ])
+
+    @classmethod
+    def get_intybasic_library_path(cls) -> Path | None:
+        """Directory containing intybasic_prologue.asm / epilogue (the as1600
+        include path passed as the optional 3rd intybasic argument)."""
+        val = os.environ.get('OVL_INTYBASIC_LIBRARY_PATH')
+        if val:
+            return Path(val)
+        # Try sibling of the binary
+        bin_path = cls.get_intybasic_path()
+        if bin_path and bin_path.parent.is_dir():
+            return bin_path.parent
+        return None
+
+    @staticmethod
+    def _find_binary(env_var: str, binary_name: str, defaults: list[str]) -> Path | None:
+        import shutil
+        explicit = os.environ.get(env_var)
+        if explicit:
+            p = Path(explicit)
+            return p if p.is_file() else None
+        on_path = shutil.which(binary_name)
+        if on_path:
+            return Path(on_path)
+        for d in defaults:
+            p = Path(d)
+            if p.is_file():
+                return p
+        return None
+
     # CORS settings
     CORS_ENABLED = _get_bool('OVL_CORS_ENABLED', True)
     CORS_ORIGINS = _get_list('OVL_CORS_ORIGINS', '*')

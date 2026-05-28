@@ -175,7 +175,8 @@
 
             <!-- Music Studio toolbar -->
             <div id="music-toolbar" class="editor-toolbar">
-                <button class="btn btn-success btn-sm" onclick="musicPlay()" data-tooltip="Play the current song (Web Audio synth — Phase 7 will add bit-perfect WASM jzIntv)">▶ Play</button>
+                <button class="btn btn-success btn-sm" onclick="musicPlay()" data-tooltip="Play the current song through the Web Audio synth (instant, low-latency, approximate).">▶ Play</button>
+                <button id="music-play-jzintv-btn" class="btn btn-info btn-sm" onclick="musicPlayJzintv()" style="display:none;" data-tooltip="Compile the song to a real ROM and play it bit-perfectly through the jzIntv WASM emulator. Opens the Emulator tab.">▶ jzIntv (bit-perfect)</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicStop()" data-tooltip="Stop playback">■ Stop</button>
                 <button id="music-loop-btn" class="btn btn-secondary btn-sm active" onclick="musicToggleLoop()" data-tooltip="Honor MUSIC JUMP / REPEAT during playback. On = song loops 4× per Play. Off = single pass.">🔁 Loop</button>
                 <span class="music-volume-control" data-tooltip="Master playback volume">

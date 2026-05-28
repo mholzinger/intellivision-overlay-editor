@@ -74,6 +74,7 @@ export class MusicEditor {
         this._syncEditControls();
         this._wireClipboardShortcuts();
         this._wireMixerShortcuts();
+        this._probeJzintvAvailability();
         this._renderKeyboard();
 
         // Close demos dropdown when clicking outside it
@@ -124,6 +125,73 @@ export class MusicEditor {
     static _pushMixerState() {
         this._syncEditControls();
         PianoRoll.setMixerState(this.mutedChannels, this.soloedChannels);
+    }
+
+    // ── jzIntv (bit-perfect) playback ───────────────────────────────────────
+
+    /** Probe the server for the compile pipeline (intybasic + as1600 + lib).
+     *  Hides the "▶ jzIntv" button when unavailable so the UI stays clean. */
+    static _probeJzintvAvailability() {
+        const btn = document.getElementById('music-play-jzintv-btn');
+        if (!btn) return;
+        fetch('/music/compile_rom/status')
+            .then(r => r.ok ? r.json() : null)
+            .then(s => {
+                if (s?.available && this.engine.formatSlug === 'intybasic') {
+                    btn.style.display = '';
+                }
+            })
+            .catch(() => { /* silent — keep button hidden on failure */ });
+    }
+
+    /** Compile the current song to a ROM and open it in the Emulator tab.
+     *  Only works with the IntyBASIC engine — Tracker round-trip is Phase-2. */
+    static async playJzintv() {
+        if (this.engine.formatSlug !== 'intybasic') {
+            UIManager.showStatus(
+                `jzIntv playback only supports IntyBASIC songs today (current: ${this.engine.formatName}).`,
+                'warning'
+            );
+            return;
+        }
+        if (!this.song?.notes?.length) {
+            UIManager.showStatus('Nothing to compile — add some notes first.', 'warning');
+            return;
+        }
+        const source = this.engine.serialize(this.song);
+        const songLabel = this.song.label || 'mysong';
+        const btn = document.getElementById('music-play-jzintv-btn');
+        const prevText = btn?.textContent;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Compiling…'; }
+        UIManager.showStatus('Compiling MUSIC source → ROM (intybasic + as1600)…', 'info');
+
+        try {
+            const r = await fetch('/music/compile_rom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    source,
+                    song_label: songLabel,
+                    title: songLabel,
+                }),
+            });
+            const result = await r.json();
+            if (!r.ok) throw new Error(result.error || `HTTP ${r.status}`);
+            UIManager.showStatus(
+                `Compiled ${result.rom_bytes} bytes — opening in jzIntv…`,
+                'success'
+            );
+            // Hand off to the existing Emulator tab via the shared rom_token URL.
+            // The shell loads the ROM and starts playback automatically.
+            window.switchEditorTab?.('emulator');
+            const iframe = document.getElementById('emulator-iframe');
+            if (iframe) iframe.src = `/emulator/shell/?rom_token=${result.token}`;
+        } catch (e) {
+            UIManager.showStatus(`Compile failed: ${e.message}`, 'error');
+            console.error('[musicPlayJzintv]', e);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = prevText; }
+        }
     }
 
     /** True if the channel's notes will be heard during playback right now. */
