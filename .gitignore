@@ -49,3 +49,8 @@ Thumbs.db
 
 .github/
 .claude/*
+
+# IntyBASIC + jzIntv toolchain for WASM playback (binary blobs — opt-in)
+# See docs/wasm-playback.md. Only the README is tracked.
+vendor/intellivision-toolchain/*
+!vendor/intellivision-toolchain/README.md

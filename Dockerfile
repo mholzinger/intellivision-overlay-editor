@@ -43,6 +43,18 @@ COPY boxart-templates/ boxart-templates/
 COPY static/ static/
 COPY sf_intellivised/ sf_intellivised/
 
+# ── Music Studio: WASM playback toolchain (optional) ────────────────────────
+# Uncomment the block below to enable bit-perfect MUSIC playback. Requires
+# Linux x86_64 builds of intybasic + as1600 in vendor/intellivision-toolchain/
+# in the repo. See docs/wasm-playback.md for setup details.
+#
+# COPY vendor/intellivision-toolchain/intybasic              /usr/local/bin/intybasic
+# COPY vendor/intellivision-toolchain/as1600                 /usr/local/bin/as1600
+# COPY vendor/intellivision-toolchain/intybasic_prologue.asm /usr/local/share/intybasic/intybasic_prologue.asm
+# COPY vendor/intellivision-toolchain/intybasic_epilogue.asm /usr/local/share/intybasic/intybasic_epilogue.asm
+# RUN chmod +x /usr/local/bin/intybasic /usr/local/bin/as1600
+# ENV OVL_INTYBASIC_LIBRARY_PATH=/usr/local/share/intybasic
+
 # Create directory for logs
 RUN mkdir -p /app/logs
 
