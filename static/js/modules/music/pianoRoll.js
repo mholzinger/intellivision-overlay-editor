@@ -83,22 +83,23 @@ export class PianoRoll {
     }
 
     /** Toggle between 'static' (full song visible, free-scroll) and 'follow'
-     *  (player-piano style — fixed playhead, score scrolls past). */
+     *  (player-piano style — fixed playhead, score scrolls past).
+     *  Always re-runs the sizing pass — callers can rely on this being a hard
+     *  reset, which prevents the "stale follow-mode after song change" bug. */
     static setFollowMode(enabled) {
-        const newMode = enabled ? 'follow' : 'static';
-        if (newMode === this.scrollMode) return;
-        this.scrollMode = newMode;
-        if (enabled) {
-            this._sizeForFollowMode();
-        } else {
-            this._sizeForStaticMode();
-        }
+        this.scrollMode = enabled ? 'follow' : 'static';
+        if (enabled) this._sizeForFollowMode();
+        else         this._sizeForStaticMode();
         this.render();
     }
 
-    /** Update the displayed song, resize, then re-render. */
+    /** Update the displayed song, resize, then re-render.
+     *  Loading a new song always clears the playhead — the old position has
+     *  no meaning for the new song. */
     static setSong(song) {
         this.song = song;
+        this.playheadTick = null;
+        this.hoverTick = null;
         if (this.scrollMode === 'follow') this._sizeForFollowMode();
         else                              this._sizeForStaticMode();
         this.render();

@@ -228,12 +228,37 @@ export class MusicEditor {
             const r = await fetch(`/music/demos/${encodeURIComponent(filename)}`);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const text = await r.text();
-            this.song = this.engine.parse(text);
-            PianoRoll.setSong(this.song);
-            this._updateStatusLine();
+            this._loadNewSong(this.engine.parse(text));
         } catch (e) {
             alert(`Failed to load demo: ${e.message}`);
         }
+    }
+
+    /**
+     * Centralized "song-change" path. Anything that replaces the current
+     * song (loadDemo, paste, newSong) goes through here so we always:
+     *   1. Kill any in-progress playback (synth + UI button state)
+     *   2. Reset the playhead and force the canvas back to static scroll mode
+     *   3. Hand the new song to the piano-roll (which clears playheadTick too)
+     *   4. Refresh the status line
+     *
+     * This fixes the bug where loading a second demo after playing the first
+     * left scrollMode/playheadTick in stale states, breaking the player-piano
+     * effect on subsequent plays.
+     */
+    static _loadNewSong(song) {
+        if (PsgSynth.isPlaying()) {
+            PsgSynth.stop();
+        }
+        this.isPlaying = false;
+        this._updatePlayButton();
+        // Force the piano-roll back to static / clean state BEFORE swapping
+        // in the new song — guarantees the next play() starts from a known
+        // baseline regardless of what the previous session left behind.
+        PianoRoll.setFollowMode(false);
+        this.song = song;
+        PianoRoll.setSong(this.song);
+        this._updateStatusLine();
     }
 
     // ── Engine selection ────────────────────────────────────────────────────
@@ -264,15 +289,11 @@ export class MusicEditor {
 
     static showPasteDialog() {
         const text = prompt(
-            `Paste ${this.engine.formatName} source.\n\n` +
-            `Phase 1: this will parse and render in the piano-roll.\n` +
-            `Phase 0: parser is a stub — pasting returns an empty song.`
+            `Paste ${this.engine.formatName} source. The piano-roll will parse and render it.`
         );
         if (text == null) return;
         try {
-            this.song = this.engine.parse(text);
-            PianoRoll.setSong(this.song);
-            this._updateStatusLine();
+            this._loadNewSong(this.engine.parse(text));
         } catch (e) {
             alert(`Parse error: ${e.message}`);
         }
@@ -290,9 +311,7 @@ export class MusicEditor {
         if (this.song?.notes?.length > 0) {
             if (!confirm('Discard current song and start over?')) return;
         }
-        this.song = this.engine.defaultSong();
-        PianoRoll.setSong(this.song);
-        this._updateStatusLine();
+        this._loadNewSong(this.engine.defaultSong());
     }
 
     static play() {
