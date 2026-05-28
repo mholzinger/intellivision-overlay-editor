@@ -152,6 +152,8 @@ export class MusicEditor {
         } else if (shiftKey) {
             this._extendNoteAt(tick, midi);
         } else {
+            // Preview the pitch so the user hears what they're adding or removing
+            this._previewNote(midi);
             this._toggleNoteAt(tick, midi);
         }
         this.song.metadata.dirty = true;
@@ -561,8 +563,9 @@ export class MusicEditor {
     }
 
     /**
-     * Wire Cmd/Ctrl+C/X/V and Delete to clipboard operations. Only fires when
-     * the Music tab is active and the user isn't typing in an input.
+     * Wire keyboard shortcuts for the Music tab: clipboard, transport, and
+     * selection transpose. All shortcuts skip when the user is typing in an
+     * input/textarea on the page.
      */
     static _wireClipboardShortcuts() {
         window.addEventListener('keydown', (e) => {
@@ -581,8 +584,47 @@ export class MusicEditor {
                 if (this.clipboard) { e.preventDefault(); this.pasteAtCursor(); }
             } else if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (PianoRoll.getSelection()) { e.preventDefault(); this.deleteSelection(); }
+            } else if (e.key === ' ' || e.code === 'Space') {
+                // Spacebar = Play/Pause (universal music-app shortcut)
+                e.preventDefault();
+                this.play();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                // Transpose the selection: ±1 semitone, or ±1 octave with Shift
+                if (PianoRoll.getSelection()) {
+                    e.preventDefault();
+                    const delta = (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 12 : 1);
+                    this.transposeSelection(delta);
+                }
             }
         });
+    }
+
+    /**
+     * Transpose every melody note that starts inside the selection by `delta`
+     * semitones, clamped to the Intellivision playable range (C2..C7). Drums
+     * are untouched.
+     */
+    static transposeSelection(delta) {
+        const sel = PianoRoll.getSelection();
+        if (!sel || !this.song || !delta) return;
+        const MIN = 36, MAX = 96;   // C2..C7
+        let moved = 0;
+        for (const n of this.song.notes) {
+            if (n.drum) continue;
+            if (n.pitch == null) continue;
+            if (n.startTick < sel.start || n.startTick >= sel.end) continue;
+            const next = Math.max(MIN, Math.min(MAX, n.pitch + delta));
+            if (next !== n.pitch) { n.pitch = next; moved++; }
+        }
+        if (moved > 0) {
+            this.song.metadata.dirty = true;
+            PianoRoll.setSong(this.song);
+            UIManager.showStatus(
+                `Transposed ${moved} notes by ${delta > 0 ? '+' : ''}${delta} semitone${Math.abs(delta) === 1 ? '' : 's'}`,
+                'success'
+            );
+            this._updateStatusLine();
+        }
     }
 
     /** Show note-under-cursor info at the end of the status line (or clear it). */
