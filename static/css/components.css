@@ -2358,7 +2358,8 @@ details[open] .voice-dict-summary::before {
 .music-keyboard {
     display: flex;
     position: relative;
-    height: 100px;
+    height: 110px;
+    width: 100%;
     user-select: none;
 }
 .music-key {
@@ -2379,8 +2380,9 @@ details[open] .voice-dict-summary::before {
     filter: brightness(0.75);
 }
 .music-key-white {
-    width: 36px;
-    height: 100px;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 110px;
     background: linear-gradient(to bottom, #eee, #fff);
     border: 1px solid #999;
     border-radius: 0 0 4px 4px;
@@ -2391,17 +2393,16 @@ details[open] .voice-dict-summary::before {
     background: linear-gradient(to bottom, #d8e8ff, #eef4ff);
 }
 .music-key-black {
-    width: 24px;
-    height: 62px;
+    width: 20px;
+    height: 68px;
     background: linear-gradient(to bottom, #333, #1a1a1a);
     border: 1px solid #000;
     border-radius: 0 0 3px 3px;
     color: #888;
-    margin-left: -12px;
-    margin-right: -12px;
     z-index: 2;
-    font-size: 8px;
+    font-size: 7px;
     padding-bottom: 4px;
+    /* Positioned absolutely by JS based on adjacent white key layout */
 }
 .music-key-black:hover {
     background: linear-gradient(to bottom, #4a4a6a, #2a2a3a);

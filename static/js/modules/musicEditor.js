@@ -31,8 +31,8 @@ export class MusicEditor {
     static LOOP_COUNT        = 4;     // how many iterations per Play press
 
     // ── Software keyboard state ─────────────────────────────────────────────
-    static keyboardBaseOctave = 3;    // lowest octave shown (C3–B4 by default)
-    static KEYBOARD_OCTAVES   = 2;    // how many octaves visible
+    static KEYBOARD_LOW_MIDI  = 36;   // C2 (Intellivision's lowest usable note)
+    static KEYBOARD_HIGH_MIDI = 96;   // C7 (highest usable note) — exclusive
     static writeCursorTick    = 0;    // where the next keyboard-entered note lands
 
     /** Called once when the user first switches to the Music tab. */
@@ -467,75 +467,81 @@ export class MusicEditor {
 
     static NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-    /** Build the software keyboard HTML inside #music-keyboard. */
+    /**
+     * Build the full-range software keyboard (C2–C7 = 5 octaves).
+     * White keys are flex items that share the container width evenly so
+     * the keyboard stretches edge-to-edge on widescreen monitors. Black
+     * keys are positioned absolutely between their neighbors.
+     */
     static _renderKeyboard() {
         const container = document.getElementById('music-keyboard');
         if (!container) return;
         container.innerHTML = '';
 
-        const baseMidi = (this.keyboardBaseOctave + 1) * 12;   // C of base octave
-        const totalKeys = this.KEYBOARD_OCTAVES * 12;
-
-        for (let i = 0; i < totalKeys; i++) {
-            const midi = baseMidi + i;
+        // First pass: create white keys as flex items (they define the layout grid)
+        const whiteKeys = [];
+        for (let midi = this.KEYBOARD_LOW_MIDI; midi < this.KEYBOARD_HIGH_MIDI; midi++) {
             const semi = midi % 12;
             const isBlack = [1, 3, 6, 8, 10].includes(semi);
+            if (isBlack) continue;
             const noteName = this.NOTE_NAMES[semi];
             const octave = Math.floor(midi / 12) - 1;
 
             const key = document.createElement('div');
-            key.className = `music-key ${isBlack ? 'music-key-black' : 'music-key-white'}`;
+            key.className = 'music-key music-key-white';
             key.dataset.midi = midi;
-
-            // Label: show note name on white keys, just the accidental on black
-            if (!isBlack) {
-                key.textContent = `${noteName}${octave}`;
-            } else {
-                key.textContent = noteName;
-            }
-
-            key.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                this._onKeyPress(midi);
-                key.classList.add('pressed');
-            });
-            key.addEventListener('mouseup', () => key.classList.remove('pressed'));
-            key.addEventListener('mouseleave', () => key.classList.remove('pressed'));
-
-            // Touch support
-            key.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this._onKeyPress(midi);
-                key.classList.add('pressed');
-            }, { passive: false });
-            key.addEventListener('touchend', () => key.classList.remove('pressed'));
-
+            key.textContent = `${noteName}${octave}`;
+            this._wireKeyEvents(key, midi);
             container.appendChild(key);
+            whiteKeys.push({ midi, el: key });
         }
 
-        this._updateKeyboardRangeLabel();
+        // Second pass: create black keys, position them between white keys
+        // using absolute positioning based on the white key positions.
+        // We defer positioning until the container has laid out (rAF).
+        requestAnimationFrame(() => {
+            for (let midi = this.KEYBOARD_LOW_MIDI; midi < this.KEYBOARD_HIGH_MIDI; midi++) {
+                const semi = midi % 12;
+                const isBlack = [1, 3, 6, 8, 10].includes(semi);
+                if (!isBlack) continue;
+
+                // Find the white key just below this black key
+                const leftWhite = whiteKeys.find(w => w.midi === midi - 1);
+                if (!leftWhite) continue;
+
+                const key = document.createElement('div');
+                key.className = 'music-key music-key-black';
+                key.dataset.midi = midi;
+                key.textContent = this.NOTE_NAMES[semi];
+                this._wireKeyEvents(key, midi);
+
+                // Position the black key straddling the boundary between
+                // its two adjacent white keys.
+                const leftRect = leftWhite.el.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const leftOffset = leftRect.right - containerRect.left;
+                key.style.position = 'absolute';
+                key.style.left = `${leftOffset - 10}px`;
+                container.appendChild(key);
+            }
+        });
     }
 
-    static _updateKeyboardRangeLabel() {
-        const label = document.getElementById('music-keyboard-range');
-        if (!label) return;
-        const lo = this.keyboardBaseOctave;
-        const hi = lo + this.KEYBOARD_OCTAVES - 1;
-        label.textContent = `C${lo}–B${hi}`;
-    }
-
-    static octaveDown() {
-        if (this.keyboardBaseOctave > 2) {
-            this.keyboardBaseOctave--;
-            this._renderKeyboard();
-        }
-    }
-
-    static octaveUp() {
-        if (this.keyboardBaseOctave + this.KEYBOARD_OCTAVES < 7) {
-            this.keyboardBaseOctave++;
-            this._renderKeyboard();
-        }
+    /** Attach mouse + touch event handlers to a keyboard key element. */
+    static _wireKeyEvents(key, midi) {
+        key.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            this._onKeyPress(midi);
+            key.classList.add('pressed');
+        });
+        key.addEventListener('mouseup', () => key.classList.remove('pressed'));
+        key.addEventListener('mouseleave', () => key.classList.remove('pressed'));
+        key.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this._onKeyPress(midi);
+            key.classList.add('pressed');
+        }, { passive: false });
+        key.addEventListener('touchend', () => key.classList.remove('pressed'));
     }
 
     /**
