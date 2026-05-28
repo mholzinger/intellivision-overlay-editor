@@ -99,15 +99,49 @@ export class IntyBasicMusic extends MusicEngine {
             throw new Error('No usable lines found (only comments and blank lines).');
         }
 
-        // Find the first music block: a label immediately followed (after any blank/comment)
-        // by a DATA statement. That label becomes the song's identifier.
-        const blockStart = this._findFirstMusicBlock(lines);
-        if (blockStart === -1) {
-            throw new Error('No music block found. Expected a label followed by DATA <n> then MUSIC statements.');
+        // Pre-scan: build labelName → line index AND identify subroutine labels
+        // (any label whose block ends with MUSIC RETURN before the next label).
+        // Subroutine labels are skipped during the main walk and only expanded
+        // when reached via MUSIC GOSUB.
+        const labelLine = {};
+        for (let i = 0; i < lines.length; i++) {
+            const m = lines[i].text.match(LABEL_RE);
+            if (m && labelLine[m[1]] == null) labelLine[m[1]] = i;
+        }
+        const subroutineEndLine = {};   // labelName → line index of MUSIC RETURN
+        for (const [name, labelIdx] of Object.entries(labelLine)) {
+            for (let i = labelIdx + 1; i < lines.length; i++) {
+                const txt = lines[i].text;
+                if (LABEL_RE.test(txt)) break;            // next label without RETURN
+                if (/^MUSIC\s+RETURN\b/i.test(txt)) {
+                    subroutineEndLine[name] = i;
+                    break;
+                }
+            }
         }
 
-        const labelMatch = lines[blockStart].text.match(LABEL_RE);
-        const songLabel = labelMatch[1];
+        // Find the first music block that is NOT a subroutine: a label followed
+        // by DATA. That label becomes the song's identifier.
+        let blockStart = -1;
+        let songLabel = null;
+        for (let i = 0; i < lines.length - 1; i++) {
+            const m = lines[i].text.match(LABEL_RE);
+            if (!m) continue;
+            if (subroutineEndLine[m[1]] != null) continue;   // skip subroutine labels
+            if (DATA_RE.test(lines[i + 1].text)) {
+                blockStart = i;
+                songLabel = m[1];
+                break;
+            }
+        }
+        if (blockStart === -1) {
+            // Fallback: any label + DATA (mirror old behavior for songs with no GOSUBs)
+            blockStart = this._findFirstMusicBlock(lines);
+            if (blockStart === -1) {
+                throw new Error('No music block found. Expected a label followed by DATA <n> then MUSIC statements.');
+            }
+            songLabel = lines[blockStart].text.match(LABEL_RE)[1];
+        }
 
         // Walk lines from blockStart, building the SongIR. Stop when we hit
         // something that isn't recognizably part of a music block (e.g. a new
@@ -125,32 +159,61 @@ export class IntyBasicMusic extends MusicEngine {
             },
         };
 
-        let currentTick = 0;
-        // Per-channel state: most recently added note (so 'S' can extend it) and
-        // the remembered instrument letter.
-        const channelState = [
-            { lastNote: null, instrument: 'W' },
-            { lastNote: null, instrument: 'W' },
-            { lastNote: null, instrument: 'W' },
-        ];
-        // Global volume (0-15). IntyBASIC's MUSIC VOLUME is a single _music_vol
-        // register applied as a multiplier to every channel. Baked into each note.
-        let currentVolume = 15;
+        // Shared processing context: mutated by _processBlock and any
+        // recursive GOSUB expansions. Keeping currentTick / channelState /
+        // currentVolume in one object lets the recursion share progress.
+        const ctx = {
+            song,
+            lines,
+            labelLine,
+            subroutineEndLine,
+            currentTick: 0,
+            currentVolume: 15,
+            channelState: [
+                { lastNote: null, instrument: 'W' },
+                { lastNote: null, instrument: 'W' },
+                { lastNote: null, instrument: 'W' },
+            ],
+        };
 
-        for (let i = blockStart; i < lines.length; i++) {
-            const { text: line } = lines[i];
+        this._processBlock(blockStart, lines.length, ctx);
+        return song;
+    }
 
-            // Label inside the block → record for JUMP/GOSUB resolution
+    /**
+     * Walk lines [startIdx, endIdx) processing MUSIC data. Recurses on
+     * MUSIC GOSUB <label> (which inlines the subroutine's notes at the
+     * caller's currentTick) and returns on MUSIC RETURN.
+     *
+     * Used for both the main song walk and each GOSUB expansion.
+     */
+    static _processBlock(startIdx, endIdx, ctx) {
+        for (let i = startIdx; i < endIdx; i++) {
+            const { text: line } = ctx.lines[i];
+
+            // Label inside the block → record for JUMP/GOSUB resolution.
+            // First occurrence wins (so a subroutine label keeps the tick of
+            // its definition, not the tick of a later GOSUB call site).
             const labelM = line.match(LABEL_RE);
             if (labelM) {
-                song.metadata.labels[labelM[1]] = currentTick;
+                if (ctx.song.metadata.labels[labelM[1]] == null) {
+                    ctx.song.metadata.labels[labelM[1]] = ctx.currentTick;
+                }
+                // If this label is the start of a subroutine and we're in the
+                // main walk, skip past its body so the subroutine notes only
+                // appear via GOSUB calls. (During a GOSUB expansion, we
+                // entered AT subStart+1, so the subroutine's own label is
+                // never re-encountered here.)
+                if (ctx.subroutineEndLine[labelM[1]] != null) {
+                    i = ctx.subroutineEndLine[labelM[1]];
+                }
                 continue;
             }
 
             // DATA line → tempo change at this tick
             const dataM = line.match(DATA_RE);
             if (dataM) {
-                song.ticksPerNote = parseInt(dataM[1], 10);
+                ctx.song.ticksPerNote = parseInt(dataM[1], 10);
                 continue;
             }
 
@@ -159,24 +222,34 @@ export class IntyBasicMusic extends MusicEngine {
             if (ctrlM) {
                 const cmd = ctrlM[1].toUpperCase();
                 const arg = ctrlM[2].trim();
-                song.controls.push({
-                    tick:   currentTick,
+                ctx.song.controls.push({
+                    tick:   ctx.currentTick,
                     type:   cmd,
                     target: arg || undefined,
                 });
                 if (cmd === 'SPEED') {
                     const n = parseInt(arg, 10);
-                    if (!isNaN(n)) song.ticksPerNote = n;
+                    if (!isNaN(n)) ctx.song.ticksPerNote = n;
                 }
                 if (cmd === 'VOLUME') {
                     const n = parseInt(arg, 10);
-                    if (!isNaN(n) && n >= 0 && n <= 15) currentVolume = n;
+                    if (!isNaN(n) && n >= 0 && n <= 15) ctx.currentVolume = n;
+                }
+                if (cmd === 'GOSUB') {
+                    // Inline the subroutine's notes at the current tick.
+                    const subStart = ctx.labelLine[arg];
+                    if (subStart != null) {
+                        this._processBlock(subStart + 1, ctx.lines.length, ctx);
+                    }
+                    continue;
+                }
+                if (cmd === 'RETURN') {
+                    // End of subroutine — unwind to caller.
+                    return;
                 }
                 if (cmd === 'STOP' || cmd === 'REPEAT' || cmd === 'JUMP') {
-                    // After STOP/REPEAT/JUMP the linear walk ends — nothing past
-                    // this point will play in sequence with what came before.
-                    // For visualization we stop processing further MUSIC lines.
-                    break;
+                    // Terminal control — nothing past this plays in sequence.
+                    return;
                 }
                 continue;
             }
@@ -195,20 +268,18 @@ export class IntyBasicMusic extends MusicEngine {
 
                 // First 3 args = melody channels
                 for (let ch = 0; ch < 3; ch++) {
-                    this._processChannelToken(args[ch], ch, song, channelState, currentTick, currentVolume);
+                    this._processChannelToken(args[ch], ch, ctx.song, ctx.channelState, ctx.currentTick, ctx.currentVolume);
                 }
                 // 4th arg = drum channel
-                this._processDrumToken(args[3], song, currentTick, currentVolume);
+                this._processDrumToken(args[3], ctx.song, ctx.currentTick, ctx.currentVolume);
 
-                currentTick += song.ticksPerNote;
+                ctx.currentTick += ctx.song.ticksPerNote;
                 continue;
             }
 
             // Anything else: we've left the music block. Stop.
-            break;
+            return;
         }
-
-        return song;
     }
 
     /** Process one melody channel token into a note (or sustain / silence). */
