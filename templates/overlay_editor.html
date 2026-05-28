@@ -2748,6 +2748,15 @@
                         <button class="music-channel-btn"        data-channel="1" onclick="musicSetChannel(1)" data-tooltip="Channel 2 — melody (green)" style="--ch-color:#5cb85c;">2</button>
                         <button class="music-channel-btn"        data-channel="2" onclick="musicSetChannel(2)" data-tooltip="Channel 3 — melody (orange) — typically bass when Z is used" style="--ch-color:#d97a4a;">3</button>
                         <button class="music-channel-btn"        data-channel="3" onclick="musicSetChannel(3)" data-tooltip="Drum channel (purple). Pitch is ignored — click anywhere in the drum strip." style="--ch-color:#c060c0;">Drums</button>
+                        <span id="music-ecs-channels" class="music-ecs-group" style="display:none;">
+                            <span class="music-edit-divider">|</span>
+                            <span class="music-edit-sublabel">ECS:</span>
+                            <button class="music-channel-btn" data-channel="4" onclick="musicSetChannel(4)" data-tooltip="ECS Channel 4 — melody (cyan)" style="--ch-color:#48b8c0;">4</button>
+                            <button class="music-channel-btn" data-channel="5" onclick="musicSetChannel(5)" data-tooltip="ECS Channel 5 — melody (yellow-green)" style="--ch-color:#bcc850;">5</button>
+                            <button class="music-channel-btn" data-channel="6" onclick="musicSetChannel(6)" data-tooltip="ECS Channel 6 — melody (tan)" style="--ch-color:#c08858;">6</button>
+                            <button class="music-channel-btn" data-channel="7" onclick="musicSetChannel(7)" data-tooltip="ECS Drum channel (deeper violet). Top drum strip in the piano-roll." style="--ch-color:#a050c8;">Drums-B</button>
+                        </span>
+                        <button id="music-ecs-toggle" class="music-btn music-btn-ghost" onclick="musicToggleEcs()" data-tooltip="Enable ECS expansion (8 channels: 3 melody + 1 drum per PSG). Adds a 2nd drum strip and channels 4–6.">+ ECS</button>
                     </div>
 
                     <div class="music-edit-group" id="music-instrument-group" data-tooltip="Instrument envelope for the active melody channel. Each letter selects a different ADSR shape and timbre.">
@@ -3096,7 +3105,7 @@ LOOP</pre>
                         <li><strong>3 melody channels</strong> — each produces a square wave at a programmable frequency. They're completely independent: different notes, different octaves, different instruments.</li>
                         <li><strong>1 noise channel</strong> — generates white noise for percussion. IntyBASIC maps drums (M1/M2/M3) to this channel automatically.</li>
                     </ul>
-                    <p>With the <strong>ECS expansion</strong>, a second PSG is available — doubling you to <strong>8 channels</strong> (6 melody + 2 drum). The Music Studio supports ECS in a future phase.</p>
+                    <p>With the <strong>ECS expansion</strong>, a second PSG is available — doubling you to <strong>8 channels</strong> (6 melody + 2 drum). Click <strong>+ ECS</strong> in the channel toolbar to enable it, or load an 8-arg <code>MUSIC</code> song and it auto-detects. The piano-roll grows a second drum strip (top = ECS) and channels 4–6 paint in cyan / yellow-green / tan.</p>
                 </section>
 
                 <section class="primer-section">

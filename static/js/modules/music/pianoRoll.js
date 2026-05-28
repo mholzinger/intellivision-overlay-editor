@@ -53,8 +53,13 @@ export class PianoRoll {
     static hoverTick        = null;
     static hoverMidi        = null;
     static hoverIsDrumLane  = false;
+    static hoverDrumChannel = null;   // 3 or 7 while hovering a drum strip, else null
     static scrollMode       = 'static';  // 'static' | 'follow'
     static framerate        = 50;        // IntyBASIC MUSIC ticks 50/sec (manual.txt:1228)
+
+    /** True when the loaded song uses ECS 8-channel mode. Triggers a second
+     *  drum strip and the channel-4-6 melody colors. */
+    static hasEcs           = false;
 
     // ── Range selection ─────────────────────────────────────────────────────
     // selectionStart / selectionEnd are ticks (inclusive start, exclusive end).
@@ -127,6 +132,7 @@ export class PianoRoll {
      *  no meaning for the new song. */
     static setSong(song) {
         this.song = song;
+        this.hasEcs = (song?.channelCount || 0) >= 8;
         this.playheadTick = null;
         this.hoverTick = null;
         if (this.scrollMode === 'follow') this._sizeForFollowMode();
@@ -214,7 +220,7 @@ export class PianoRoll {
         }
         const widthTicks = Math.max(64, maxTick + 8);
         this.canvas.width  = this.KEYBOARD_WIDTH + widthTicks * this.TICK_WIDTH;
-        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this.DRUM_HEIGHT;
+        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this._totalDrumHeight();
     }
 
     /** Follow mode: canvas = container viewport; we control scroll via drawing offset. */
@@ -225,7 +231,7 @@ export class PianoRoll {
         // Reset any external scroll — follow mode doesn't use container scrollLeft
         container.scrollLeft = 0;
         this.canvas.width  = Math.max(800, container.clientWidth - 20);
-        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this.DRUM_HEIGHT;
+        this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this._totalDrumHeight();
     }
 
     // ── Coordinate helpers ──────────────────────────────────────────────────
@@ -449,7 +455,7 @@ export class PianoRoll {
         const { width, height } = this.canvas;
 
         const gridTop = RULER_HEIGHT;
-        const gridBottom = height - this.DRUM_HEIGHT;
+        const gridBottom = height - this._totalDrumHeight();
 
         // Horizontal lines per semitone (slightly darker every C)
         ctx.lineWidth = 1;
@@ -483,48 +489,69 @@ export class PianoRoll {
             ctx.stroke();
         }
 
-        // Drum strip background + divider — stronger contrast so it's clear
-        // this is where drum hits land (not just another melody row).
-        ctx.fillStyle = 'rgba(180, 100, 180, 0.18)';
-        ctx.fillRect(KEYBOARD_WIDTH, gridBottom, width - KEYBOARD_WIDTH, this.DRUM_HEIGHT);
-        // Diagonal-stripe accent so the strip reads as a different surface
-        ctx.save();
-        ctx.fillStyle = 'rgba(180, 100, 180, 0.08)';
-        for (let sx = KEYBOARD_WIDTH; sx < width; sx += 12) {
+        // Drum strips. Layout (top-down) when ECS is active:
+        //   [ECS DRUMS]  (channel 7)  — at gridBottom
+        //   [BASE DRUMS] (channel 3)  — at gridBottom + DRUM_HEIGHT
+        // Without ECS, just the base strip at gridBottom.
+        const strips = this.hasEcs
+            ? [
+                { y: gridBottom,                    label: '🥁 ECS', tint: '#a050c8' },
+                { y: gridBottom + this.DRUM_HEIGHT, label: '🥁 DRUMS', tint: '#c060c0' },
+              ]
+            : [
+                { y: gridBottom,                    label: '🥁 DRUMS', tint: '#c060c0' },
+              ];
+        for (const strip of strips) {
+            // Solid wash
+            ctx.fillStyle = 'rgba(180, 100, 180, 0.18)';
+            ctx.fillRect(KEYBOARD_WIDTH, strip.y, width - KEYBOARD_WIDTH, this.DRUM_HEIGHT);
+            // Diagonal-stripe accent
+            ctx.save();
+            ctx.fillStyle = 'rgba(180, 100, 180, 0.08)';
+            for (let sx = KEYBOARD_WIDTH; sx < width; sx += 12) {
+                ctx.beginPath();
+                ctx.moveTo(sx, strip.y);
+                ctx.lineTo(sx + this.DRUM_HEIGHT, strip.y + this.DRUM_HEIGHT);
+                ctx.lineTo(sx + this.DRUM_HEIGHT - 4, strip.y + this.DRUM_HEIGHT);
+                ctx.lineTo(sx - 4, strip.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+            // Top divider
+            ctx.strokeStyle = 'rgba(220, 130, 220, 0.85)';
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(sx, gridBottom);
-            ctx.lineTo(sx + this.DRUM_HEIGHT, gridBottom + this.DRUM_HEIGHT);
-            ctx.lineTo(sx + this.DRUM_HEIGHT - 4, gridBottom + this.DRUM_HEIGHT);
-            ctx.lineTo(sx - 4, gridBottom);
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(KEYBOARD_WIDTH, strip.y + 1);
+            ctx.lineTo(width, strip.y + 1);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            // Gutter label
+            ctx.fillStyle = strip.tint;
+            ctx.font = 'bold 10px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(strip.label, KEYBOARD_WIDTH / 2, strip.y + this.DRUM_HEIGHT / 2);
         }
-        ctx.restore();
-        // Stronger divider above the drum strip
-        ctx.strokeStyle = 'rgba(220, 130, 220, 0.85)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(KEYBOARD_WIDTH, gridBottom + 1);
-        ctx.lineTo(width, gridBottom + 1);
-        ctx.stroke();
-        ctx.lineWidth = 1;
-        // "DRUMS" gutter label in the keyboard column so the drum strip is
-        // unmistakably labeled (mirrors how piano-key labels do for melody).
-        ctx.fillStyle = '#c060c0';
-        ctx.font = 'bold 10px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🥁 DRUMS', KEYBOARD_WIDTH / 2, gridBottom + this.DRUM_HEIGHT / 2);
     }
 
     // ── Notes ───────────────────────────────────────────────────────────────
 
     static CHANNEL_COLORS = {
-        0: { fill: '#4a90d9', stroke: '#7bb8ff' },   // ch1 — blue
-        1: { fill: '#5cb85c', stroke: '#8fdc8f' },   // ch2 — green
-        2: { fill: '#d97a4a', stroke: '#ffa67b' },   // ch3 — orange
-        3: { fill: '#c060c0', stroke: '#e896e8' },   // drums — purple
+        0: { fill: '#4a90d9', stroke: '#7bb8ff' },   // ch1   — blue   (base PSG)
+        1: { fill: '#5cb85c', stroke: '#8fdc8f' },   // ch2   — green
+        2: { fill: '#d97a4a', stroke: '#ffa67b' },   // ch3   — orange
+        3: { fill: '#c060c0', stroke: '#e896e8' },   // drums — purple (base drums)
+        4: { fill: '#48b8c0', stroke: '#7be0e8' },   // ch4   — cyan   (ECS PSG)
+        5: { fill: '#bcc850', stroke: '#e0ec80' },   // ch5   — yellow-green
+        6: { fill: '#c08858', stroke: '#e8b888' },   // ch6   — tan
+        7: { fill: '#a050c8', stroke: '#d088e8' },   // ECS drums — deeper violet
     };
+
+    /** Total height of all drum strips (one for base, two if ECS is active). */
+    static _totalDrumHeight() {
+        return this.DRUM_HEIGHT * (this.hasEcs ? 2 : 1);
+    }
 
     static _renderNotes() {
         if (!this.song || !this.song.notes || this.song.notes.length === 0) {
@@ -540,7 +567,9 @@ export class PianoRoll {
 
         const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, TICK_WIDTH, NUM_KEYS, LOWEST_MIDI, RULER_HEIGHT } = this;
         const { width, height } = this.canvas;
-        const drumStripY = height - this.DRUM_HEIGHT;
+        // Base-drum strip Y (always bottom). ECS-drum strip sits one DRUM_HEIGHT above it.
+        const baseDrumY = height - this.DRUM_HEIGHT;
+        const ecsDrumY  = baseDrumY - this.DRUM_HEIGHT;
         const gridTop = RULER_HEIGHT;
 
         for (const note of this.song.notes) {
@@ -553,9 +582,11 @@ export class PianoRoll {
             const color = this.CHANNEL_COLORS[note.channel] || this.CHANNEL_COLORS[0];
 
             if (isDrum) {
+                // Route drum to the correct strip by channel (ch 7 = ECS).
+                const stripY = (note.channel === 7) ? ecsDrumY : baseDrumY;
                 const drumX = Math.max(KEYBOARD_WIDTH, x);
                 const drumW = Math.min(w, this.DRUM_HEIGHT - 4);
-                const drumY = drumStripY + 4;
+                const drumY = stripY + 4;
                 ctx.fillStyle = color.fill;
                 ctx.fillRect(drumX, drumY, drumW, this.DRUM_HEIGHT - 8);
                 ctx.fillStyle = '#fff';
@@ -643,11 +674,15 @@ export class PianoRoll {
             const rawTick = this._xToTick(x);
             const tickStep = this.song?.ticksPerNote || 1;
             const tick = Math.max(0, Math.floor(rawTick / tickStep) * tickStep);
-            return { tick, midi: null, isDrumLane: false, isRuler: true };
+            return { tick, midi: null, isDrumLane: false, drumChannel: null, isRuler: true };
         }
 
-        const drumStripY = this.canvas.height - this.DRUM_HEIGHT;
-        const isDrumLane = y >= drumStripY;
+        const baseDrumY = this.canvas.height - this.DRUM_HEIGHT;
+        const ecsDrumY  = baseDrumY - this.DRUM_HEIGHT;
+        const isBaseDrum = y >= baseDrumY;
+        const isEcsDrum  = this.hasEcs && !isBaseDrum && y >= ecsDrumY;
+        const isDrumLane = isBaseDrum || isEcsDrum;
+        const drumChannel = isEcsDrum ? 7 : (isBaseDrum ? 3 : null);
 
         const tickStep = this.song?.ticksPerNote || 1;
         const rawTick = this._xToTick(x);
@@ -656,7 +691,7 @@ export class PianoRoll {
         const keyIdx = Math.floor((y - this.RULER_HEIGHT) / this.KEY_HEIGHT);
         const midi = this.LOWEST_MIDI + (this.NUM_KEYS - 1 - keyIdx);
 
-        return { tick, midi, isDrumLane, isRuler: false };
+        return { tick, midi, isDrumLane, drumChannel, isRuler: false };
     }
 
     static _onClick(e) {
@@ -676,7 +711,7 @@ export class PianoRoll {
         }
         const cb = this.editorCallbacks.onCellClick;
         if (typeof cb === 'function') {
-            cb(cell.tick, cell.midi, cell.isDrumLane, e.shiftKey);
+            cb(cell.tick, cell.midi, cell.isDrumLane, e.shiftKey, cell.drumChannel);
         }
     }
 
@@ -757,27 +792,30 @@ export class PianoRoll {
         }
         if (cell.tick !== this.hoverTick ||
             cell.midi !== this.hoverMidi ||
-            cell.isDrumLane !== this.hoverIsDrumLane) {
+            cell.isDrumLane !== this.hoverIsDrumLane ||
+            cell.drumChannel !== this.hoverDrumChannel) {
             this.hoverTick = cell.tick;
             this.hoverMidi = cell.midi;
             this.hoverIsDrumLane = cell.isDrumLane;
+            this.hoverDrumChannel = cell.drumChannel;
             this.render();
 
             // Check if hovering directly over an existing note
             if (this.song?.notes && this.editorCallbacks.onNoteHover) {
                 const hit = this.song.notes.find(n => {
                     if (n.startTick > cell.tick || n.startTick + (n.durationTicks || 1) <= cell.tick) return false;
-                    if (cell.isDrumLane) return n.channel === 3;
+                    if (cell.isDrumLane) return n.channel === cell.drumChannel;
                     return n.pitch === cell.midi;
                 });
+                const drumLabel = cell.drumChannel === 7 ? 'ECS drums' : 'drums';
                 if (hit) {
                     const info = hit.drum
-                        ? `${hit.drum} · drums · tick ${hit.startTick}`
+                        ? `${hit.drum} · ${hit.channel === 7 ? 'ECS drums' : 'drums'} · tick ${hit.startTick}`
                         : `${this._midiToName(hit.pitch)}${hit.instrument || ''} · ch${hit.channel + 1} · tick ${hit.startTick} · ${hit.durationTicks}t`;
                     this.editorCallbacks.onNoteHover(info);
                 } else {
                     const posInfo = cell.isDrumLane
-                        ? `tick ${cell.tick} · drums`
+                        ? `tick ${cell.tick} · ${drumLabel}`
                         : `${this._midiToName(cell.midi)} · tick ${cell.tick}`;
                     this.editorCallbacks.onNoteHover(posInfo);
                 }
@@ -793,9 +831,11 @@ export class PianoRoll {
         const w = Math.max(2, tickStep * TICK_WIDTH - 1);
 
         if (this.hoverIsDrumLane) {
-            const drumStripY = this.canvas.height - this.DRUM_HEIGHT;
+            const baseDrumY = this.canvas.height - this.DRUM_HEIGHT;
+            const ecsDrumY  = baseDrumY - this.DRUM_HEIGHT;
+            const stripY = (this.hoverDrumChannel === 7) ? ecsDrumY : baseDrumY;
             ctx.fillStyle = 'rgba(192, 96, 192, 0.35)';
-            ctx.fillRect(Math.max(KEYBOARD_WIDTH, x), drumStripY + 4, w, this.DRUM_HEIGHT - 8);
+            ctx.fillRect(Math.max(KEYBOARD_WIDTH, x), stripY + 4, w, this.DRUM_HEIGHT - 8);
             return;
         }
 

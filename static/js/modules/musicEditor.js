@@ -50,7 +50,7 @@ export class MusicEditor {
         PianoRoll.init('music-piano-roll');
         PianoRoll.setSong(this.song);
         PianoRoll.setEditorCallbacks({
-            onCellClick:        (tick, midi, isDrumLane, shiftKey) => this.handleCellClick(tick, midi, isDrumLane, shiftKey),
+            onCellClick:        (tick, midi, isDrumLane, shiftKey, drumChannel) => this.handleCellClick(tick, midi, isDrumLane, shiftKey, drumChannel),
             onSeek:             (tick) => this.handleSeek(tick),
             onNoteHover:        (info) => this._showHoverInfo(info),
             onSelectionChange:  (sel)  => this._updatePlayButton(sel),
@@ -121,11 +121,44 @@ export class MusicEditor {
         document.querySelectorAll('.music-drum-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.drum === this.currentDrum);
         });
-        const isDrumChannel = this.currentChannel === 3;
+        const isDrumChannel = this.currentChannel === 3 || this.currentChannel === 7;
         const instGroup = document.getElementById('music-instrument-group');
         const drumGroup = document.getElementById('music-drum-group');
         if (instGroup) instGroup.classList.toggle('disabled', isDrumChannel);
         if (drumGroup) drumGroup.classList.toggle('disabled', !isDrumChannel);
+        // ECS UI visibility — auto-show when the song uses 8-channel format
+        const isEcs = (this.song?.channelCount || 0) >= 8;
+        const ecsGroup = document.getElementById('music-ecs-channels');
+        if (ecsGroup) ecsGroup.style.display = isEcs ? 'inline-flex' : 'none';
+        const ecsBtn = document.getElementById('music-ecs-toggle');
+        if (ecsBtn) {
+            ecsBtn.textContent = isEcs ? '− ECS' : '+ ECS';
+            ecsBtn.classList.toggle('active', isEcs);
+        }
+    }
+
+    /** Promote a 4-channel song to 8 (ECS) or demote back. Demotion warns if
+     *  the song has any notes on ECS channels (4-7) so the user doesn't lose
+     *  work silently. */
+    static toggleEcs() {
+        if (!this.song) return;
+        const isEcs = (this.song.channelCount || 0) >= 8;
+        if (isEcs) {
+            const ecsNotes = this.song.notes.filter(n => n.channel >= 4).length;
+            if (ecsNotes > 0) {
+                const ok = confirm(`Disabling ECS will remove ${ecsNotes} notes on channels 4–7. Continue?`);
+                if (!ok) return;
+                this.song.notes = this.song.notes.filter(n => n.channel < 4);
+            }
+            this.song.channelCount = 3;
+            if (this.currentChannel >= 4) this.setChannel(0);
+        } else {
+            this.song.channelCount = 8;
+        }
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        this._syncEditControls();
+        this._updateStatusLine();
     }
 
     // ── Click handling: add or delete a note ────────────────────────────────
@@ -137,18 +170,19 @@ export class MusicEditor {
      * @param {boolean} isDrumLane - true if the click was in the drum strip
      * @param {boolean} shiftKey - true if shift was held (extend/sustain mode)
      */
-    static handleCellClick(tick, midi, isDrumLane, shiftKey = false) {
+    static handleCellClick(tick, midi, isDrumLane, shiftKey = false, drumChannel = null) {
         if (!this.song) return;
-        // Force the active channel to drums if user clicked the drum lane
-        if (isDrumLane && this.currentChannel !== 3) {
-            this.setChannel(3);
-        }
-        if (!isDrumLane && this.currentChannel === 3) {
+        // Force the active channel to drums (specific drum channel if ECS)
+        if (isDrumLane) {
+            const targetCh = drumChannel ?? 3;
+            if (this.currentChannel !== targetCh) this.setChannel(targetCh);
+        } else if (this.currentChannel === 3 || this.currentChannel === 7) {
+            // Click in melody area while drums were active → fall back to ch 1
             this.setChannel(0);
         }
 
-        if (this.currentChannel === 3) {
-            this._toggleDrumAt(tick);
+        if (isDrumLane) {
+            this._toggleDrumAt(tick, drumChannel ?? 3);
         } else if (shiftKey) {
             this._extendNoteAt(tick, midi);
         } else {
@@ -228,28 +262,26 @@ export class MusicEditor {
         this._toggleNoteAt(tick, midi);
     }
 
-    /** Cycle through drum types on repeated clicks: empty→M1→M2→M3→delete. */
-    static _toggleDrumAt(tick) {
+    /** Cycle through drum types on repeated clicks: empty→M1→M2→M3→delete.
+     *  @param channel - 3 for base PSG drums, 7 for ECS drums. */
+    static _toggleDrumAt(tick, channel = 3) {
         const CYCLE = ['M1', 'M2', 'M3'];
         const existing = this.song.notes.findIndex(n =>
-            n.channel === 3 && n.startTick === tick
+            n.channel === channel && n.startTick === tick
         );
         if (existing >= 0) {
             const cur = this.song.notes[existing].drum;
             const idx = CYCLE.indexOf(cur);
             if (idx >= 0 && idx < CYCLE.length - 1) {
-                // Advance to next drum type
                 this.song.notes[existing].drum = CYCLE[idx + 1];
             } else {
-                // Already M3 (or unknown) → delete
                 this.song.notes.splice(existing, 1);
             }
         } else {
-            // Empty cell → add M1 (first in cycle)
             this.song.notes.push({
                 startTick:     tick,
                 durationTicks: this.engine.tempoAt(this.song, tick),
-                channel:       3,
+                channel,
                 pitch:         null,
                 instrument:    null,
                 drum:          CYCLE[0],
@@ -348,6 +380,7 @@ export class MusicEditor {
         this.song = song;
         this.writeCursorTick = this.engine.getTotalTicks(song);  // cursor starts at end
         PianoRoll.setSong(this.song);
+        this._syncEditControls();  // pick up channelCount changes (ECS auto-show)
         this._updateStatusLine();
     }
 

@@ -2318,6 +2318,41 @@ details[open] .voice-dict-summary::before {
     color: #586069;
     margin-right: 4px;
 }
+.music-edit-sublabel {
+    font-weight: 600;
+    color: #8e9aa3;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-right: 2px;
+}
+.music-edit-divider {
+    color: #d1d5da;
+    margin: 0 4px;
+    user-select: none;
+}
+.music-ecs-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.music-btn-ghost {
+    background: transparent;
+    border: 1px dashed #b0b4ba;
+    color: #586069;
+    font-size: 11px;
+    padding: 3px 8px;
+    margin-left: 6px;
+}
+.music-btn-ghost.active {
+    background: #f0eef8;
+    border-color: #a050c8;
+    color: #6a2a8a;
+    border-style: solid;
+}
+.music-btn-ghost:hover {
+    background: #f6f8fa;
+}
 .music-channel-btn,
 .music-instrument-btn,
 .music-drum-btn {

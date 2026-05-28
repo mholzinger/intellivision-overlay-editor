@@ -163,6 +163,8 @@ export class IntyBasicMusic extends MusicEngine {
         // Shared processing context: mutated by _processBlock and any
         // recursive GOSUB expansions. Keeping currentTick / channelState /
         // currentVolume in one object lets the recursion share progress.
+        // Six melody channel slots cover both base PSG (0,1,2) and ECS (4,5,6);
+        // drum channels (3 and 7) don't need per-channel state.
         const ctx = {
             song,
             lines,
@@ -171,9 +173,14 @@ export class IntyBasicMusic extends MusicEngine {
             currentTick: 0,
             currentVolume: 15,
             channelState: [
-                { lastNote: null, instrument: 'W' },
-                { lastNote: null, instrument: 'W' },
-                { lastNote: null, instrument: 'W' },
+                { lastNote: null, instrument: 'W' },   // 0: base melody 1
+                { lastNote: null, instrument: 'W' },   // 1: base melody 2
+                { lastNote: null, instrument: 'W' },   // 2: base melody 3
+                null,                                  // 3: base drums (no melody state)
+                { lastNote: null, instrument: 'W' },   // 4: ECS melody 1
+                { lastNote: null, instrument: 'W' },   // 5: ECS melody 2
+                { lastNote: null, instrument: 'W' },   // 6: ECS melody 3
+                null,                                  // 7: ECS drums
             ],
         };
 
@@ -263,20 +270,32 @@ export class IntyBasicMusic extends MusicEngine {
             const musicM = line.match(MUSIC_DATA_RE);
             if (musicM) {
                 const args = musicM[1].split(',').map(s => s.trim());
-                // 4 args = base PSG (3 melody + drum). 8 args = ECS variant.
-                // For Phase 1 we handle the first 4 (we'll widen in Phase 5).
+                // 4 args = base PSG (3 melody + drum). 8 args = ECS variant
+                // (3 melody + drum on each of the two PSGs).
                 if (args.length !== 4 && args.length !== 8) {
                     // Bad MUSIC line — skip silently. Real IntyBASIC would error;
                     // we'd rather show what we can than refuse to import.
                     continue;
                 }
+                if (args.length === 8 && ctx.song.channelCount < 8) {
+                    ctx.song.channelCount = 8;
+                }
 
-                // First 3 args = melody channels
+                // Args 0-2 = base PSG melody → channels 0,1,2
+                // Arg 3   = base PSG drum   → channel 3
+                // Args 4-6 = ECS PSG melody → channels 4,5,6
+                // Arg 7   = ECS PSG drum   → channel 7
                 for (let ch = 0; ch < 3; ch++) {
                     this._processChannelToken(args[ch], ch, ctx.song, ctx.channelState, ctx.currentTick, ctx.currentVolume);
                 }
-                // 4th arg = drum channel
-                this._processDrumToken(args[3], ctx.song, ctx.currentTick, ctx.currentVolume);
+                this._processDrumToken(args[3], ctx.song, ctx.currentTick, ctx.currentVolume, 3);
+
+                if (args.length === 8) {
+                    for (let ch = 4; ch < 7; ch++) {
+                        this._processChannelToken(args[ch], ch, ctx.song, ctx.channelState, ctx.currentTick, ctx.currentVolume);
+                    }
+                    this._processDrumToken(args[7], ctx.song, ctx.currentTick, ctx.currentVolume, 7);
+                }
 
                 ctx.currentTick += ctx.song.ticksPerNote;
                 continue;
@@ -338,15 +357,18 @@ export class IntyBasicMusic extends MusicEngine {
         state.lastNote = note;
     }
 
-    /** Process the drum (4th) channel token into a one-shot drum hit. */
-    static _processDrumToken(token, song, currentTick, currentVolume = 15) {
+    /**
+     * Process a drum-lane token into a one-shot drum hit.
+     * @param {number} channel - 3 for base PSG drums, 7 for ECS drums
+     */
+    static _processDrumToken(token, song, currentTick, currentVolume = 15, channel = 3) {
         if (token === '-') return;
         const m = token.match(DRUM_RE);
         if (!m) return;
         song.notes.push({
             startTick:     currentTick,
-            durationTicks: song.ticksPerNote,   // visual width only
-            channel:       3,                    // drum lane index
+            durationTicks: song.ticksPerNote,
+            channel,
             pitch:         null,
             instrument:    null,
             volume:        currentVolume,
@@ -422,12 +444,15 @@ export class IntyBasicMusic extends MusicEngine {
 
         // Build per-tick lookup tables for fast access during the walk.
         // noteMap[channel] = sorted array of notes on that channel.
-        const noteMap = [[], [], [], []];   // ch 0-2 = melody, ch 3 = drums
+        // Channels 0-3 = base PSG (3 melody + drum). 4-7 = ECS PSG (3 + drum).
+        const isEcs = (song.channelCount || 3) >= 8;
+        const slotCount = isEcs ? 8 : 4;
+        const noteMap = Array.from({ length: slotCount }, () => []);
         for (const n of (song.notes || [])) {
-            const ch = Math.min(n.channel, 3);
-            noteMap[ch].push(n);
+            if (n.channel < 0 || n.channel >= slotCount) continue;
+            noteMap[n.channel].push(n);
         }
-        for (let ch = 0; ch < 4; ch++) {
+        for (let ch = 0; ch < slotCount; ch++) {
             noteMap[ch].sort((a, b) => a.startTick - b.startTick);
         }
 
@@ -447,10 +472,10 @@ export class IntyBasicMusic extends MusicEngine {
         }
 
         // Per-channel state: which note is currently sounding (for sustain detection)
-        const activeNote = [null, null, null, null];
+        const activeNote = Array.from({ length: slotCount }, () => null);
         // Per-channel last-emitted instrument (for carry-over: only emit the
         // instrument letter when it changes).
-        const lastInst = ['', '', '', ''];
+        const lastInst = Array.from({ length: slotCount }, () => '');
 
         let out = '';
 
@@ -492,13 +517,20 @@ export class IntyBasicMusic extends MusicEngine {
                 break;
             }
 
-            // Build the 4 tokens for this MUSIC line
+            // Build the 4 (or 8) tokens for this MUSIC line.
+            // Base PSG: channels 0-2 melody + 3 drum.
+            // ECS PSG: channels 4-6 melody + 7 drum (only when channelCount === 8).
             const tokens = [];
             for (let ch = 0; ch < 3; ch++) {
                 tokens.push(this._channelTokenAt(tick, step, ch, noteMap[ch], activeNote, lastInst));
             }
-            // Drum channel
             tokens.push(this._drumTokenAt(tick, noteMap[3]));
+            if (isEcs) {
+                for (let ch = 4; ch < 7; ch++) {
+                    tokens.push(this._channelTokenAt(tick, step, ch, noteMap[ch], activeNote, lastInst));
+                }
+                tokens.push(this._drumTokenAt(tick, noteMap[7]));
+            }
 
             out += `  MUSIC ${tokens.join(', ')}\n`;
         }

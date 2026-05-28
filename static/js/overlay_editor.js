@@ -710,6 +710,7 @@ window.musicSetChannel        = (ch) => MusicEditor.setChannel(ch);
 window.musicSetInstrument     = (letter) => MusicEditor.setInstrument(letter);
 window.musicSetDrum           = (label) => MusicEditor.setDrum(label);
 window.musicToggleLoop        = () => MusicEditor.toggleLoop();
+window.musicToggleEcs         = () => MusicEditor.toggleEcs();
 window.musicToggleKeyboardMode = () => MusicEditor.toggleKeyboardMode();
 window.musicOctaveDown        = () => MusicEditor.octaveDown();
 window.musicOctaveUp          = () => MusicEditor.octaveUp();
