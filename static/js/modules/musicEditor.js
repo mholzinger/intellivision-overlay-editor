@@ -40,6 +40,10 @@ export class MusicEditor {
     static COMPACT_OCTAVES    = 2;
     static compactBaseOctave  = 4;    // C4 by default (middle C)
 
+    // Clipboard: notes from the last copy/cut. Note startTicks are rebased to 0
+    // so paste can offset them by the destination (writeCursorTick).
+    static clipboard          = null;   // { notes: [...], lengthTicks: number } | null
+
     /** Called once when the user first switches to the Music tab. */
     static init() {
         this.song = this.engine.defaultSong();
@@ -55,6 +59,7 @@ export class MusicEditor {
         this._updateStatusLine();
         this._loadDemosManifest();
         this._syncEditControls();
+        this._wireClipboardShortcuts();
         this._renderKeyboard();
 
         // Close demos dropdown when clicking outside it
@@ -490,6 +495,94 @@ export class MusicEditor {
         } else {
             btn.textContent = '▶ Play';
         }
+    }
+
+    // ── Clipboard: copy / cut / paste / delete on the range selection ───────
+
+    /** Snapshot every note that starts inside the selection, rebased to tick 0. */
+    static copySelection() {
+        const sel = PianoRoll.getSelection();
+        if (!sel || !this.song) return;
+        const inRange = this.song.notes.filter(n =>
+            n.startTick >= sel.start && n.startTick < sel.end
+        );
+        this.clipboard = {
+            notes: inRange.map(n => ({ ...n, startTick: n.startTick - sel.start })),
+            lengthTicks: sel.end - sel.start,
+        };
+        UIManager.showStatus(`Copied ${inRange.length} notes (${sel.end - sel.start} ticks)`, 'success');
+    }
+
+    /** Copy the selection then delete its notes from the song. Keeps selection bars. */
+    static cutSelection() {
+        const sel = PianoRoll.getSelection();
+        if (!sel || !this.song) return;
+        this.copySelection();
+        this._removeNotesInRange(sel.start, sel.end);
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        this._updateStatusLine();
+    }
+
+    /** Paste the clipboard at the write cursor (advancing it past the paste). */
+    static pasteAtCursor() {
+        if (!this.clipboard || !this.song) return;
+        const dest = this.writeCursorTick;
+        for (const n of this.clipboard.notes) {
+            this.song.notes.push({ ...n, startTick: n.startTick + dest });
+        }
+        this.writeCursorTick = dest + this.clipboard.lengthTicks;
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        PianoRoll.setPlayhead(this.writeCursorTick);
+        UIManager.showStatus(`Pasted ${this.clipboard.notes.length} notes at tick ${dest}`, 'success');
+        this._updateStatusLine();
+    }
+
+    /** Delete notes inside the selection (no clipboard change). Clears selection. */
+    static deleteSelection() {
+        const sel = PianoRoll.getSelection();
+        if (!sel || !this.song) return;
+        const removed = this._removeNotesInRange(sel.start, sel.end);
+        this.song.metadata.dirty = true;
+        PianoRoll.setSong(this.song);
+        PianoRoll.clearSelection();
+        UIManager.showStatus(`Deleted ${removed} notes`, 'success');
+        this._updateStatusLine();
+    }
+
+    /** Returns number removed. */
+    static _removeNotesInRange(startTick, endTick) {
+        const before = this.song.notes.length;
+        this.song.notes = this.song.notes.filter(n =>
+            !(n.startTick >= startTick && n.startTick < endTick)
+        );
+        return before - this.song.notes.length;
+    }
+
+    /**
+     * Wire Cmd/Ctrl+C/X/V and Delete to clipboard operations. Only fires when
+     * the Music tab is active and the user isn't typing in an input.
+     */
+    static _wireClipboardShortcuts() {
+        window.addEventListener('keydown', (e) => {
+            const musicTab = document.getElementById('music-editor-content');
+            if (!musicTab || !musicTab.classList.contains('active')) return;
+            const ae = document.activeElement;
+            const tag = ae?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || ae?.isContentEditable) return;
+
+            const mod = e.metaKey || e.ctrlKey;
+            if (mod && e.key === 'c') {
+                if (PianoRoll.getSelection()) { e.preventDefault(); this.copySelection(); }
+            } else if (mod && e.key === 'x') {
+                if (PianoRoll.getSelection()) { e.preventDefault(); this.cutSelection(); }
+            } else if (mod && e.key === 'v') {
+                if (this.clipboard) { e.preventDefault(); this.pasteAtCursor(); }
+            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (PianoRoll.getSelection()) { e.preventDefault(); this.deleteSelection(); }
+            }
+        });
     }
 
     /** Show note-under-cursor info at the end of the status line (or clear it). */
