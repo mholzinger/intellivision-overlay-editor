@@ -473,10 +473,53 @@ export class MusicEditor {
             const r = await fetch(`/music/demos/${encodeURIComponent(filename)}`);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const text = await r.text();
-            this._loadNewSong(this.engine.parse(text));
+            this._parseWithDetect(text, `demo "${filename}"`);
         } catch (e) {
             alert(`Failed to load demo: ${e.message}`);
         }
+    }
+
+    /**
+     * Parse source with auto-engine-detection. If the source looks like a
+     * different engine than the dropdown's current selection, switch engines
+     * transparently and show a status hint instead of erroring. This makes
+     * loading mismatched demos and pastes "just work".
+     */
+    static _parseWithDetect(text, sourceLabel = 'source') {
+        const detectedSlug = this._detectEngineSlug(text);
+        const targetEngine = (detectedSlug && ENGINES[detectedSlug]) || this.engine;
+        const switched = targetEngine !== this.engine;
+        if (switched) {
+            this.engine = targetEngine;
+            this._renderEngineSelector();
+        }
+        try {
+            this._loadNewSong(targetEngine.parse(text));
+            if (switched) {
+                UIManager.showStatus(
+                    `Switched to ${targetEngine.formatName} — ${sourceLabel} is in that format.`,
+                    'info'
+                );
+            }
+        } catch (e) {
+            alert(`Failed to load ${sourceLabel}: ${e.message}`);
+        }
+    }
+
+    /**
+     * Quick content-sniff to pick the right engine. Both formats have distinctive
+     * surface markers — IntyBASIC has "DATA <n>" then "MUSIC <args>" lines,
+     * while Chevallier Tracker has "NAME PROC" + "NOTES(" macro calls. Returns
+     * the engine slug or null when undecided (defer to the current engine).
+     */
+    static _detectEngineSlug(text) {
+        const looksLikeTracker = /^\s*[A-Z_][A-Z0-9_]*\s+PROC\b/im.test(text)
+                              && /NOTES\(/i.test(text);
+        const looksLikeIntyBasic = /^\s*MUSIC\b/im.test(text)
+                                && /^\s*DATA\s+\d/im.test(text);
+        if (looksLikeTracker && !looksLikeIntyBasic) return 'chevallier-tracker';
+        if (looksLikeIntyBasic && !looksLikeTracker) return 'intybasic';
+        return null;
     }
 
     /**
@@ -542,14 +585,11 @@ export class MusicEditor {
 
     static showPasteDialog() {
         const text = prompt(
-            `Paste ${this.engine.formatName} source. The piano-roll will parse and render it.`
+            `Paste source for any supported engine — the editor will detect and parse it. ` +
+            `(Current engine: ${this.engine.formatName}, but a mismatch will auto-switch.)`
         );
         if (text == null) return;
-        try {
-            this._loadNewSong(this.engine.parse(text));
-        } catch (e) {
-            alert(`Parse error: ${e.message}`);
-        }
+        this._parseWithDetect(text, 'pasted source');
     }
 
     static copyToClipboard() {
