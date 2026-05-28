@@ -61,6 +61,12 @@
             "title": "Grid Runner — Tempo Stubs",
             "tag":   "Reference",
             "blurb": "Tempo reference / scaffolding file. Mostly silent — useful as a structural template."
+        },
+        {
+            "file":  "ecs_hex_choir.bas",
+            "title": "ECS Hex Choir",
+            "tag":   "ECS",
+            "blurb": "8-channel ECS showcase: 6-voice chord pad (C–Am–F–G) with stacked drum strips. Demonstrates the IntyBASIC 8-arg MUSIC syntax — written for this editor, not derived from any existing track."
         }
     ]
 }
