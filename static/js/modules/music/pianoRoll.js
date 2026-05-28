@@ -39,7 +39,16 @@ export class PianoRoll {
     static canvas           = null;
     static ctx              = null;
     static song             = null;
+    /**
+     * playheadTick is the VISUAL position on the rendered piano-roll.
+     * For looping playback, this wraps back to loopInfo.introEnd whenever
+     * the raw playback tick crosses a loop boundary, so the line returns
+     * to the start of the loop body instead of running off the right edge.
+     */
     static playheadTick     = null;
+    /** Raw playback tick from the synth (monotonically increasing). */
+    static playheadTickRaw  = null;
+    static loopInfo         = null;     // { introEnd, loopEnd, loopDuration } or null
     static editorCallbacks  = {};   // { onCellClick(tick, midi, isDrumLane) }
     static hoverTick        = null;
     static hoverMidi        = null;
@@ -105,16 +114,40 @@ export class PianoRoll {
         this.render();
     }
 
-    /** Set/clear the playhead position (in ticks). Called from PsgSynth. */
+    /**
+     * Set the loop structure that maps raw playback ticks → visual ticks.
+     * Pass null to clear (non-looping playback or stopped state).
+     * Caller (MusicEditor) sets this before play() and clears on stop().
+     */
+    static setLoopInfo(loopInfo) {
+        this.loopInfo = loopInfo;
+    }
+
+    /**
+     * Set/clear the playhead position (in raw playback ticks).
+     * The raw tick is stored as playheadTickRaw; the visual tick (used
+     * for rendering) is derived by mapping raw → visual through loopInfo
+     * so that during loop iterations 2+ the playhead jumps back to the
+     * loop start position instead of scrolling off into empty space.
+     */
     static setPlayhead(tick) {
-        this.playheadTick = tick;
+        this.playheadTickRaw = tick;
+        this.playheadTick    = this._mapRawTickToVisual(tick);
         this.render();
-        // In static mode, programmatically scroll the container so the
-        // playhead stays visible. In follow mode the canvas itself handles
-        // the illusion of scrolling.
         if (tick !== null && this.scrollMode === 'static') {
             this._scrollPlayheadIntoView();
         }
+    }
+
+    /** Map a raw playback tick to its position on the visually-rendered song. */
+    static _mapRawTickToVisual(rawTick) {
+        if (rawTick == null) return null;
+        const loop = this.loopInfo;
+        if (!loop || loop.loopDuration <= 0) return rawTick;
+        if (rawTick < loop.introEnd) return rawTick;           // still in intro
+        // Position within the current loop iteration:
+        const intoBody = (rawTick - loop.introEnd) % loop.loopDuration;
+        return loop.introEnd + intoBody;
     }
 
     // ── Sizing ──────────────────────────────────────────────────────────────

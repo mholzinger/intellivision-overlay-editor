@@ -269,6 +269,9 @@ export class MusicEditor {
         // in the new song — guarantees the next play() starts from a known
         // baseline regardless of what the previous session left behind.
         PianoRoll.setFollowMode(false);
+        // Drop the previous song's loop info — the new song will register
+        // its own (if any) when Play is pressed.
+        PianoRoll.setLoopInfo(null);
         this.song = song;
         PianoRoll.setSong(this.song);
         this._updateStatusLine();
@@ -346,6 +349,16 @@ export class MusicEditor {
             ? this.engine.getPlaybackTicks(this.song, loops)
             : this.engine.getTotalTicks(this.song);
 
+        // Tell the piano-roll about the loop boundaries so it can wrap the
+        // playhead back to the loop start visually on each iteration —
+        // otherwise the line would scroll off the right edge into empty
+        // space during iterations 2..N. Pass null if loop is disabled so
+        // raw=visual identity mapping applies.
+        const loopForVisual = this.loopEnabled
+            ? this.engine.getLoopInfo?.(this.song) ?? null
+            : null;
+        PianoRoll.setLoopInfo(loopForVisual);
+
         // Switch to player-piano scroll mode for tracking
         PianoRoll.setFollowMode(true);
 
@@ -369,6 +382,10 @@ export class MusicEditor {
         // Switch back to static view but KEEP the playhead at its last
         // position so users see where they stopped (and can resume from there).
         PianoRoll.setFollowMode(false);
+        // Clear loop wrap so the preserved playhead reflects the actual
+        // (raw) tick position rather than a wrapped one — once stopped,
+        // there's no looping context to map through.
+        PianoRoll.setLoopInfo(null);
         this._updatePlayButton();
         this._updateStatusLine();
     }
@@ -410,7 +427,10 @@ export class MusicEditor {
         }
 
         let position = '';
-        const tick = currentTick ?? PianoRoll.playheadTick;
+        // Status reads the RAW (unwrapped) tick so the time display reflects
+        // actual playback time even mid-loop. PianoRoll's visual playhead
+        // is the wrapped one.
+        const tick = currentTick ?? PianoRoll.playheadTickRaw ?? PianoRoll.playheadTick;
         if (tick != null) {
             const curSec = tick / framerate;
             position = ` · ⏱ ${fmt(curSec)} / ${fmt(totalSec)}`;
