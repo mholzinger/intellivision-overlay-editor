@@ -35,6 +35,11 @@ export class MusicEditor {
     static KEYBOARD_HIGH_MIDI = 96;   // C7 (highest usable note) — exclusive
     static writeCursorTick    = 0;    // where the next keyboard-entered note lands
 
+    // 'wide' = full C2-C7 edge-to-edge. 'compact' = 2-octave window with ◀▶ shift.
+    static keyboardMode       = 'wide';
+    static COMPACT_OCTAVES    = 2;
+    static compactBaseOctave  = 4;    // C4 by default (middle C)
+
     /** Called once when the user first switches to the Music tab. */
     static init() {
         this.song = this.engine.defaultSong();
@@ -468,44 +473,54 @@ export class MusicEditor {
     static NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
     /**
-     * Build the full-range software keyboard (C2–C7 = 5 octaves).
-     * White keys are flex items that share the container width evenly so
-     * the keyboard stretches edge-to-edge on widescreen monitors. Black
-     * keys are positioned absolutely between their neighbors.
+     * Build the software keyboard. Two modes:
+     *   - 'wide':    full C2-C7 (5 octaves), edge-to-edge widescreen layout
+     *   - 'compact': 2-octave window starting at compactBaseOctave, with
+     *                ◀ / ▶ shift buttons to move the window
+     * White keys flex (wide) or have a fixed width (compact); black keys
+     * are absolutely positioned between their neighbors in both modes.
      */
     static _renderKeyboard() {
         const container = document.getElementById('music-keyboard');
         if (!container) return;
         container.innerHTML = '';
 
-        // First pass: create white keys as flex items (they define the layout grid)
+        const isCompact = this.keyboardMode === 'compact';
+        let lowMidi, highMidi;
+        if (isCompact) {
+            lowMidi  = (this.compactBaseOctave + 1) * 12;            // e.g. octave 4 → MIDI 60 (C4)
+            highMidi = lowMidi + this.COMPACT_OCTAVES * 12;          // exclusive upper bound
+        } else {
+            lowMidi  = this.KEYBOARD_LOW_MIDI;
+            highMidi = this.KEYBOARD_HIGH_MIDI;
+        }
+
+        // Switch container class so CSS can pick the right layout
+        container.classList.toggle('music-keyboard-compact', isCompact);
+        container.classList.toggle('music-keyboard-wide',   !isCompact);
+
+        // First pass: white keys define the layout grid
         const whiteKeys = [];
-        for (let midi = this.KEYBOARD_LOW_MIDI; midi < this.KEYBOARD_HIGH_MIDI; midi++) {
+        for (let midi = lowMidi; midi < highMidi; midi++) {
             const semi = midi % 12;
-            const isBlack = [1, 3, 6, 8, 10].includes(semi);
-            if (isBlack) continue;
-            const noteName = this.NOTE_NAMES[semi];
+            if ([1, 3, 6, 8, 10].includes(semi)) continue;
             const octave = Math.floor(midi / 12) - 1;
 
             const key = document.createElement('div');
             key.className = 'music-key music-key-white';
             key.dataset.midi = midi;
-            key.textContent = `${noteName}${octave}`;
+            key.textContent = `${this.NOTE_NAMES[semi]}${octave}`;
             this._wireKeyEvents(key, midi);
             container.appendChild(key);
             whiteKeys.push({ midi, el: key });
         }
 
-        // Second pass: create black keys, position them between white keys
-        // using absolute positioning based on the white key positions.
-        // We defer positioning until the container has laid out (rAF).
+        // Second pass: position black keys absolutely between adjacent whites.
+        // Deferred until layout settles so getBoundingClientRect is accurate.
         requestAnimationFrame(() => {
-            for (let midi = this.KEYBOARD_LOW_MIDI; midi < this.KEYBOARD_HIGH_MIDI; midi++) {
+            for (let midi = lowMidi; midi < highMidi; midi++) {
                 const semi = midi % 12;
-                const isBlack = [1, 3, 6, 8, 10].includes(semi);
-                if (!isBlack) continue;
-
-                // Find the white key just below this black key
+                if (![1, 3, 6, 8, 10].includes(semi)) continue;
                 const leftWhite = whiteKeys.find(w => w.midi === midi - 1);
                 if (!leftWhite) continue;
 
@@ -515,16 +530,73 @@ export class MusicEditor {
                 key.textContent = this.NOTE_NAMES[semi];
                 this._wireKeyEvents(key, midi);
 
-                // Position the black key straddling the boundary between
-                // its two adjacent white keys.
-                const leftRect = leftWhite.el.getBoundingClientRect();
+                const leftRect      = leftWhite.el.getBoundingClientRect();
                 const containerRect = container.getBoundingClientRect();
-                const leftOffset = leftRect.right - containerRect.left;
+                const leftOffset    = leftRect.right - containerRect.left;
+                const blackWidth    = isCompact ? 26 : 20;
                 key.style.position = 'absolute';
-                key.style.left = `${leftOffset - 10}px`;
+                key.style.left     = `${leftOffset - blackWidth / 2}px`;
+                key.style.width    = `${blackWidth}px`;
                 container.appendChild(key);
             }
         });
+
+        this._updateKeyboardModeUI();
+    }
+
+    /** Toggle between 'wide' (full C2–C7) and 'compact' (2-octave + shift) modes. */
+    static toggleKeyboardMode() {
+        this.keyboardMode = (this.keyboardMode === 'wide') ? 'compact' : 'wide';
+        this._renderKeyboard();
+    }
+
+    /** Compact-mode only: shift the 2-octave window down one octave. */
+    static octaveDown() {
+        if (this.keyboardMode !== 'compact') return;
+        if (this.compactBaseOctave > 1) {
+            this.compactBaseOctave--;
+            this._renderKeyboard();
+        }
+    }
+
+    /** Compact-mode only: shift the 2-octave window up one octave. */
+    static octaveUp() {
+        if (this.keyboardMode !== 'compact') return;
+        // Top of compact window must stay <= KEYBOARD_HIGH_MIDI
+        const topMidi = (this.compactBaseOctave + 1 + this.COMPACT_OCTAVES) * 12;
+        if (topMidi < this.KEYBOARD_HIGH_MIDI) {
+            this.compactBaseOctave++;
+            this._renderKeyboard();
+        }
+    }
+
+    /** Sync the toggle button label, octave-shift visibility, range label, and hint. */
+    static _updateKeyboardModeUI() {
+        const isCompact = this.keyboardMode === 'compact';
+
+        const toggleBtn = document.getElementById('music-keyboard-mode-btn');
+        if (toggleBtn) toggleBtn.textContent = isCompact ? 'Wide' : 'Compact';
+
+        const shiftWrap = document.getElementById('music-keyboard-shift');
+        if (shiftWrap) shiftWrap.style.display = isCompact ? 'flex' : 'none';
+
+        const rangeLabel = document.getElementById('music-keyboard-range');
+        if (rangeLabel) {
+            if (isCompact) {
+                const lowOct  = this.compactBaseOctave;
+                const highOct = lowOct + this.COMPACT_OCTAVES - 1;
+                rangeLabel.textContent = `C${lowOct}–B${highOct}`;
+            } else {
+                rangeLabel.textContent = 'C2–C7';
+            }
+        }
+
+        const hint = document.getElementById('music-keyboard-hint');
+        if (hint) {
+            hint.textContent = isCompact
+                ? 'Compact 2-octave window. Use ◀ / ▶ to shift octave. Click a key to preview + place a note at the write cursor.'
+                : 'Full range C2–C7. Click a key to preview + place a note at the write cursor. Click the ruler to move the cursor.';
+        }
     }
 
     /** Attach mouse + touch event handlers to a keyboard key element. */

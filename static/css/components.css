@@ -2359,8 +2359,20 @@ details[open] .voice-dict-summary::before {
     display: flex;
     position: relative;
     height: 110px;
-    width: 100%;
     user-select: none;
+}
+.music-keyboard-wide {
+    width: 100%;
+}
+.music-keyboard-compact {
+    width: auto;
+    justify-content: center;
+    margin: 0 auto;
+}
+.music-keyboard-shift {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 .music-key {
     position: relative;
@@ -2380,14 +2392,23 @@ details[open] .voice-dict-summary::before {
     filter: brightness(0.75);
 }
 .music-key-white {
-    flex: 1 1 0;
-    min-width: 0;
     height: 110px;
     background: linear-gradient(to bottom, #eee, #fff);
     border: 1px solid #999;
     border-radius: 0 0 4px 4px;
     color: #666;
     z-index: 1;
+}
+/* Wide mode: white keys flex to fill container */
+.music-keyboard-wide .music-key-white {
+    flex: 1 1 0;
+    min-width: 0;
+}
+/* Compact mode: fixed-width white keys for piano-realistic proportions */
+.music-keyboard-compact .music-key-white {
+    flex: 0 0 auto;
+    width: 40px;
+    font-size: 11px;
 }
 .music-key-white:hover {
     background: linear-gradient(to bottom, #d8e8ff, #eef4ff);
