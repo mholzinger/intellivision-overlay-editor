@@ -48,6 +48,10 @@ export class PianoRoll {
     static playheadTick     = null;
     /** Raw playback tick from the synth (monotonically increasing). */
     static playheadTickRaw  = null;
+    /** Write cursor: where the next typed/clicked note will land. Always
+     *  visible (green dashed line). Distinct from playhead so the user can
+     *  see at a glance "I'll add notes HERE, playback is at THERE". */
+    static writeCursorTick  = null;
     static loopInfo         = null;     // { introEnd, loopEnd, loopDuration } or null
     static editorCallbacks  = {};   // { onCellClick(tick, midi, isDrumLane) }
     static hoverTick        = null;
@@ -198,6 +202,18 @@ export class PianoRoll {
         }
     }
 
+    /** Set/clear the green write-cursor marker (where the next note lands).
+     *  In static mode this also warps the visible viewport to that tick so
+     *  minimap clicks (and ruler seeks) feel like "jump there" — not just
+     *  "move the marker off-screen". */
+    static setWriteCursor(tick) {
+        this.writeCursorTick = tick;
+        this.render();
+        if (tick != null && this.scrollMode === 'static') {
+            this._scrollTickIntoView(tick);
+        }
+    }
+
     /** Map a raw playback tick to its position on the visually-rendered song. */
     static _mapRawTickToVisual(rawTick) {
         if (rawTick == null) return null;
@@ -264,10 +280,12 @@ export class PianoRoll {
 
         this._renderRuler();
         this._renderGrid();
+        this._renderLoopRegion();  // translucent band over the loop body
         this._renderSelection();   // shaded between selection bars + bar markers
         this._renderNotes();
         this._renderHover();
-        this._renderPlayhead();
+        this._renderWriteCursor();   // green dashed — where the NEXT note lands
+        this._renderPlayhead();      // red — current playback position
         // Keyboard drawn LAST so it's always on top — important for follow mode
         // where notes might otherwise overlap into the keyboard area.
         this._renderKeyboard();
@@ -279,6 +297,34 @@ export class PianoRoll {
      * boundaries. Drag-in-progress uses a slightly different tint so the user
      * sees feedback before mouseup commits.
      */
+    /**
+     * Translucent blue band over the loop body (introEnd → loopEnd) so the
+     * user can see at a glance which bars will repeat when playback loops.
+     * Mirrors the minimap's loop indicator.
+     */
+    static _renderLoopRegion() {
+        const loop = this.loopInfo;
+        if (!loop || loop.loopDuration <= 0) return;
+        const { ctx, KEYBOARD_WIDTH, RULER_HEIGHT } = this;
+        const { width, height } = this.canvas;
+        const xStart = Math.max(KEYBOARD_WIDTH, this._tickToX(loop.introEnd));
+        const xEnd   = Math.max(KEYBOARD_WIDTH, this._tickToX(loop.loopEnd));
+        if (xEnd <= KEYBOARD_WIDTH || xStart >= width) return;
+        ctx.fillStyle = 'rgba(80, 110, 220, 0.08)';
+        const yTop = RULER_HEIGHT;
+        const yBot = height - this._totalDrumHeight();
+        ctx.fillRect(xStart, yTop, xEnd - xStart, yBot - yTop);
+        // Subtle dashed boundary markers
+        ctx.strokeStyle = 'rgba(130, 160, 230, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(xStart + 0.5, yTop); ctx.lineTo(xStart + 0.5, yBot);
+        ctx.moveTo(xEnd   - 0.5, yTop); ctx.lineTo(xEnd   - 0.5, yBot);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
     static _renderSelection() {
         let start, end, isPreview = false;
         if (this._drag && this._drag.isDrag) {
@@ -413,25 +459,48 @@ export class PianoRoll {
         const minTick = Math.max(0, Math.floor(this._xToTick(minVisibleX) / tickStep) * tickStep);
         const maxTick = Math.ceil(this._xToTick(maxVisibleX) / tickStep) * tickStep;
 
-        // Tick marks (every step) and labels (every 4 steps = ~1 beat)
-        ctx.strokeStyle = 'rgba(180, 180, 200, 0.4)';
-        ctx.fillStyle = '#a0a0c0';
-        ctx.font = '10px monospace';
+        // Tick marks at three weights:
+        //   subdivisions — short, every tickStep
+        //   beats        — medium, every 4 subdivisions, dim label
+        //   bars         — full-height, bold bright bar number
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         for (let t = minTick; t <= maxTick; t += tickStep) {
             const x = this._tickToX(t);
             if (x < KEYBOARD_WIDTH || x > width) continue;
-            const isMajor = (t % (tickStep * 4)) === 0;
-            const tickHeight = isMajor ? 8 : 4;
+            const subIdx = t / tickStep;
+            const isBar  = (subIdx % 16) === 0;
+            const isBeat = !isBar && (subIdx % 4) === 0;
+
+            const tickHeight = isBar ? RULER_HEIGHT - 2 : (isBeat ? 8 : 4);
+            ctx.strokeStyle = isBar
+                ? 'rgba(200, 210, 240, 0.85)'
+                : 'rgba(180, 180, 200, 0.4)';
+            ctx.lineWidth = isBar ? 1.5 : 1;
             ctx.beginPath();
             ctx.moveTo(x + 0.5, RULER_HEIGHT - tickHeight);
             ctx.lineTo(x + 0.5, RULER_HEIGHT - 1);
             ctx.stroke();
-            if (isMajor) {
-                ctx.fillText(this._tickLabel(t), x, RULER_HEIGHT / 2 - 1);
+
+            if (isBar) {
+                // Bold bar number, right of the line, large.
+                const beatTicks = tickStep * 4;
+                const bar = Math.floor(t / (beatTicks * 4)) + 1;
+                ctx.fillStyle = '#e6e8f0';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(String(bar), x + 4, RULER_HEIGHT / 2);
+                ctx.textAlign = 'center';
+            } else if (isBeat) {
+                // Dim small beat number (just the beat digit, no bar prefix)
+                const beatTicks = tickStep * 4;
+                const beat = (Math.floor(t / beatTicks) % 4) + 1;
+                ctx.fillStyle = 'rgba(140, 145, 165, 0.7)';
+                ctx.font = '9px monospace';
+                ctx.fillText(String(beat), x, RULER_HEIGHT / 2);
             }
         }
+        ctx.lineWidth = 1;
     }
 
     /** Render the tick number as "1.1", "1.2", ... where the dot separates
@@ -472,22 +541,31 @@ export class PianoRoll {
             ctx.stroke();
         }
 
-        // Vertical lines per tick step (darker every 4 steps = beat)
+        // Vertical lines per tick step. Three weights:
+        //   subdivisions (every tickStep) — thinnest
+        //   beats (every 4 subdivisions)  — medium
+        //   bars  (every 4 beats)         — heavy, used by musicians to scan structure
         const tickStep = this.song?.ticksPerNote || 4;
         const minTick = Math.max(0, Math.floor(this._xToTick(KEYBOARD_WIDTH) / tickStep) * tickStep);
         const maxTick = Math.ceil(this._xToTick(width) / tickStep) * tickStep;
         for (let t = minTick; t <= maxTick; t += tickStep) {
             const x = this._tickToX(t);
             if (x < KEYBOARD_WIDTH || x > width) continue;
-            const isBeat = ((t / tickStep) % 4) === 0;
-            ctx.strokeStyle = isBeat
-                ? 'rgba(80, 80, 110, 0.6)'
-                : 'rgba(50, 50, 70, 0.3)';
+            const subIdx = t / tickStep;
+            const isBar  = (subIdx % 16) === 0;
+            const isBeat = !isBar && (subIdx % 4) === 0;
+            ctx.strokeStyle = isBar
+                ? 'rgba(160, 165, 200, 0.9)'
+                : isBeat
+                    ? 'rgba(80, 80, 110, 0.6)'
+                    : 'rgba(50, 50, 70, 0.3)';
+            ctx.lineWidth = isBar ? 1.5 : 1;
             ctx.beginPath();
             ctx.moveTo(x + 0.5, gridTop);
             ctx.lineTo(x + 0.5, gridBottom);
             ctx.stroke();
         }
+        ctx.lineWidth = 1;
 
         // Drum strips. Layout (top-down) when ECS is active:
         //   [ECS DRUMS]  (channel 7)  — at gridBottom
@@ -622,6 +700,39 @@ export class PianoRoll {
 
     // ── Playhead ────────────────────────────────────────────────────────────
 
+    /**
+     * Draw the write cursor — thin green dashed line showing where the next
+     * typed/clicked note will land. Always visible (independent of playback),
+     * so the user can see at a glance "playback is THERE, my next edit goes
+     * HERE". Suppressed at tick 0 / null to avoid sticking a marker on the
+     * keyboard column for fresh songs.
+     */
+    static _renderWriteCursor() {
+        if (this.writeCursorTick == null) return;
+        const { ctx, RULER_HEIGHT } = this;
+        const x = this._tickToX(this.writeCursorTick);
+        if (x < this.KEYBOARD_WIDTH || x > this.canvas.width) return;
+
+        ctx.strokeStyle = 'rgba(80, 200, 120, 0.85)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, RULER_HEIGHT);
+        ctx.lineTo(x + 0.5, this.canvas.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+
+        // Small green flag in the ruler so the cursor is also visible up there
+        ctx.fillStyle = 'rgba(80, 200, 120, 0.85)';
+        ctx.beginPath();
+        ctx.moveTo(x,     RULER_HEIGHT - 6);
+        ctx.lineTo(x + 8, RULER_HEIGHT - 3);
+        ctx.lineTo(x,     RULER_HEIGHT);
+        ctx.closePath();
+        ctx.fill();
+    }
+
     /** Draw the playhead — thick red line + triangle marker at the top. */
     static _renderPlayhead() {
         if (this.playheadTick == null) return;
@@ -645,10 +756,17 @@ export class PianoRoll {
 
     /** In static mode, scroll the container so the playhead stays in view. */
     static _scrollPlayheadIntoView() {
-        if (!this.canvas || this.playheadTick == null) return;
+        if (this.playheadTick != null) this._scrollTickIntoView(this.playheadTick);
+    }
+
+    /** Scroll the container (in static mode) so the given tick is on-screen.
+     *  Used by both the playhead and the write cursor so that minimap-clicks
+     *  and ruler-clicks warp the visible viewport, not just the markers. */
+    static _scrollTickIntoView(tick) {
+        if (!this.canvas || tick == null) return;
         const container = this.canvas.parentElement;
         if (!container) return;
-        const x = this.KEYBOARD_WIDTH + this.playheadTick * this.TICK_WIDTH;
+        const x = this.KEYBOARD_WIDTH + tick * this.TICK_WIDTH;
         const ratio = container.clientWidth / this.canvas.clientWidth;
         const displayedX = x * ratio;
         const margin = 100;

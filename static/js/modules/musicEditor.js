@@ -84,7 +84,10 @@ export class MusicEditor {
             this._updatePlayButton();
         }
         this.writeCursorTick = tick;
-        PianoRoll.setPlayhead(tick);
+        // Seeking is an EDIT action, not playback — clear the red playhead and
+        // show only the green write cursor.
+        PianoRoll.setPlayhead(null);
+        PianoRoll.setWriteCursor(tick);
         Minimap.setPlayhead(tick);
         this._updateStatusLine(tick);
     }
@@ -413,6 +416,11 @@ export class MusicEditor {
         this.writeCursorTick = this.engine.getTotalTicks(song);  // cursor starts at end
         PianoRoll.setSong(this.song);
         Minimap.setSong(this.song);
+        // Clear any stale red playback marker, place the green write cursor
+        // at the new song's end so the user immediately sees where typing goes
+        PianoRoll.setPlayhead(null);
+        PianoRoll.setWriteCursor(this.writeCursorTick);
+        Minimap.setPlayhead(this.writeCursorTick);
         this._syncEditControls();  // pick up channelCount changes (ECS auto-show)
         this._updateStatusLine();
     }
@@ -899,15 +907,16 @@ export class MusicEditor {
         // Advance write cursor
         this.writeCursorTick += step;
 
-        // Show the cursor position on the piano-roll
-        PianoRoll.setPlayhead(this.writeCursorTick);
+        // Show the cursor position — green write cursor on roll, red marker
+        // on the minimap (which only has one indicator).
+        PianoRoll.setWriteCursor(this.writeCursorTick);
         Minimap.setPlayhead(this.writeCursorTick);
 
         this.song.metadata.dirty = true;
         PianoRoll.setSong(this.song);
         Minimap.setSong(this.song);
-        // Restore playhead after setSong clears it
-        PianoRoll.setPlayhead(this.writeCursorTick);
+        // Restore cursor after setSong clears it
+        PianoRoll.setWriteCursor(this.writeCursorTick);
         Minimap.setPlayhead(this.writeCursorTick);
         this._updateStatusLine();
     }
@@ -972,9 +981,14 @@ export class MusicEditor {
             position = ` · ⏱ ${fmt(totalSec)} total`;
         }
 
+        // BPM: 50 ticks/sec on hardware. A "beat" in this editor is 4
+        // subdivisions = 4 ticks-per-note × ticksPerNote. So:
+        //   beats/sec = 50 / (tempo * 4)   →   bpm = beats/sec * 60
+        const bpm = Math.round((framerate * 60) / (tempo * 4));
+
         status.textContent =
             `${label}  ·  ${melody} notes, ${drums} drums  ·  ` +
-            `tempo: ${tempo} ticks/note  ·  ` +
+            `tempo: ${tempo} ticks/note (~${bpm} BPM)  ·  ` +
             `${this.engine.formatName}${position}${loopBadge}`;
     }
 }
