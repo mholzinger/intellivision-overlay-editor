@@ -65,6 +65,11 @@ export class PianoRoll {
      *  drum strip and the channel-4-6 melody colors. */
     static hasEcs           = false;
 
+    /** Mixer state (mirrors MusicEditor). Muted/non-soloed channels are
+     *  rendered at lower opacity so the user sees what's been silenced. */
+    static mutedChannels    = new Set();
+    static soloedChannels   = new Set();
+
     // ── Range selection ─────────────────────────────────────────────────────
     // selectionStart / selectionEnd are ticks (inclusive start, exclusive end).
     // Both null = no selection. _drag is the live drag state while the user is
@@ -214,6 +219,18 @@ export class PianoRoll {
             const cb = this.editorCallbacks.onSelectionChange;
             if (typeof cb === 'function') cb(null);
         }
+    }
+
+    /** Editor pushes mute/solo state here so dim rendering stays in sync. */
+    static setMixerState(muted, soloed) {
+        this.mutedChannels  = new Set(muted || []);
+        this.soloedChannels = new Set(soloed || []);
+        this.render();
+    }
+
+    static _isChannelAudible(ch) {
+        if (this.soloedChannels.size > 0) return this.soloedChannels.has(ch);
+        return !this.mutedChannels.has(ch);
     }
 
     /** Set/clear the green write-cursor marker (where the next note lands).
@@ -683,6 +700,8 @@ export class PianoRoll {
 
             const isDrum = note.drum !== null && note.drum !== undefined;
             const color = this.CHANNEL_COLORS[note.channel] || this.CHANNEL_COLORS[0];
+            // Dim muted / non-soloed channels so the mixer state is visible
+            ctx.globalAlpha = this._isChannelAudible(note.channel) ? 1 : 0.25;
 
             if (isDrum) {
                 // Route drum to the correct strip by channel (ch 7 = ECS).
@@ -721,6 +740,7 @@ export class PianoRoll {
                 ctx.fillText(note.instrument, x + 2, y + KEY_HEIGHT / 2);
             }
         }
+        ctx.globalAlpha = 1;   // reset after dim loop
     }
 
     // ── Playhead ────────────────────────────────────────────────────────────

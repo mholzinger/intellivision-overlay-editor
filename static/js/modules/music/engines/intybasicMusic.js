@@ -633,6 +633,28 @@ export class IntyBasicMusic extends MusicEngine {
      *   type 'drum' has { drumType, channel }
      */
     /**
+     * Estimate how many bytes this song will occupy in ROM when compiled by
+     * IntyBASIC. The compiler emits 16-bit DECLEs per statement:
+     *   MUSIC line (4-arg, base PSG):  2 DECLEs = 4 bytes
+     *   MUSIC line (8-arg, ECS):       4 DECLEs = 8 bytes
+     *   SPEED / VOLUME / JUMP / GOSUB / STOP / REPEAT / RETURN:
+     *                                  2 DECLEs = 4 bytes each
+     *   DATA at song top — not emitted as bytes; SPEED control handles tempo.
+     *
+     * Useful in the status line so composers know whether they're within
+     * their game's ROM budget for music.
+     */
+    static estimateRomBytes(song) {
+        if (!song) return 0;
+        const step = song.initialTicksPerNote || song.ticksPerNote || 8;
+        const totalTicks = this.getTotalTicks(song);
+        const dataLineCount = totalTicks > 0 ? Math.floor(totalTicks / step) + 1 : 0;
+        const bytesPerLine  = (song.channelCount || 0) >= 8 ? 8 : 4;
+        const ctrlBytes     = (song.controls?.length || 0) * 4;
+        return dataLineCount * bytesPerLine + ctrlBytes;
+    }
+
+    /**
      * Return the ticksPerNote tempo active at the given tick, accounting for
      * mid-song MUSIC SPEED changes. Used by the editor when placing new notes
      * so they get the right duration for where in the timeline they land.

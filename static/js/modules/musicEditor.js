@@ -45,6 +45,11 @@ export class MusicEditor {
     // so paste can offset them by the destination (writeCursorTick).
     static clipboard          = null;   // { notes: [...], lengthTicks: number } | null
 
+    // Mixer: channels the user has muted or soloed. If solo is non-empty,
+    // ONLY soloed channels play. Otherwise all channels except muted play.
+    static mutedChannels      = new Set();
+    static soloedChannels     = new Set();
+
     /** Called once when the user first switches to the Music tab. */
     static init() {
         this.song = this.engine.defaultSong();
@@ -66,6 +71,7 @@ export class MusicEditor {
         this._loadDemosManifest();
         this._syncEditControls();
         this._wireClipboardShortcuts();
+        this._wireMixerShortcuts();
         this._renderKeyboard();
 
         // Close demos dropdown when clicking outside it
@@ -99,6 +105,48 @@ export class MusicEditor {
         this._syncEditControls();
     }
 
+    /** Toggle mute on a channel. Independent of solo (a channel can be both
+     *  muted and soloed; solo wins for playback). */
+    static toggleMuteChannel(channel) {
+        if (this.mutedChannels.has(channel)) this.mutedChannels.delete(channel);
+        else                                 this.mutedChannels.add(channel);
+        this._pushMixerState();
+    }
+
+    static toggleSoloChannel(channel) {
+        if (this.soloedChannels.has(channel)) this.soloedChannels.delete(channel);
+        else                                  this.soloedChannels.add(channel);
+        this._pushMixerState();
+    }
+
+    static _pushMixerState() {
+        this._syncEditControls();
+        PianoRoll.setMixerState(this.mutedChannels, this.soloedChannels);
+    }
+
+    /** True if the channel's notes will be heard during playback right now. */
+    static isChannelAudible(channel) {
+        if (this.soloedChannels.size > 0) return this.soloedChannels.has(channel);
+        return !this.mutedChannels.has(channel);
+    }
+
+    /** Capture-phase listener: Cmd/Ctrl+click a channel button mutes, Shift+
+     *  click solos. Plain click falls through to the inline onclick (select).
+     *  Stops propagation only when a modifier is present so we don't break
+     *  the existing setChannel UX. */
+    static _wireMixerShortcuts() {
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.music-channel-btn');
+            if (!btn) return;
+            if (!(e.metaKey || e.ctrlKey || e.shiftKey)) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const ch = parseInt(btn.dataset.channel);
+            if (e.metaKey || e.ctrlKey) this.toggleMuteChannel(ch);
+            else if (e.shiftKey)         this.toggleSoloChannel(ch);
+        }, true);
+    }
+
     static setInstrument(letter) {
         this.currentInstrument = letter;
         this._syncEditControls();
@@ -123,7 +171,10 @@ export class MusicEditor {
     /** Refresh active-state on the channel/instrument/drum buttons + enable/disable groups. */
     static _syncEditControls() {
         document.querySelectorAll('.music-channel-btn').forEach(btn => {
-            btn.classList.toggle('active', parseInt(btn.dataset.channel) === this.currentChannel);
+            const ch = parseInt(btn.dataset.channel);
+            btn.classList.toggle('active', ch === this.currentChannel);
+            btn.classList.toggle('muted', this.mutedChannels.has(ch));
+            btn.classList.toggle('soloed', this.soloedChannels.has(ch));
         });
         document.querySelectorAll('.music-instrument-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.instrument === this.currentInstrument);
@@ -232,6 +283,10 @@ export class MusicEditor {
                 );
             }
         } else {
+            // No collision at this tick. But before adding, trim any earlier
+            // sustained note on this channel whose duration overlaps tick —
+            // real hardware retriggers when a new note token arrives.
+            this._trimPriorNoteAt(ch, tick);
             this.song.notes.push({
                 startTick:     tick,
                 durationTicks: this.engine.tempoAt(this.song, tick),
@@ -240,6 +295,19 @@ export class MusicEditor {
                 instrument:    this.currentInstrument,
                 drum:          null,
             });
+        }
+    }
+
+    /** If an earlier melody note on `channel` extends past `tick`, trim its
+     *  duration so it ends exactly at `tick`. Mirrors real-hardware behavior:
+     *  a new MUSIC token retriggers the channel, ending any sustain. */
+    static _trimPriorNoteAt(channel, tick) {
+        for (const n of this.song.notes) {
+            if (n.channel !== channel) continue;
+            if (n.pitch == null) continue;
+            if (n.startTick >= tick) continue;
+            const end = n.startTick + (n.durationTicks || 0);
+            if (end > tick) n.durationTicks = tick - n.startTick;
         }
     }
 
@@ -262,12 +330,26 @@ export class MusicEditor {
         const ch = this.currentChannel;
         const step = this.engine.tempoAt(this.song, tick);
 
+        // Cap an extend at the next note on the same channel — otherwise the
+        // visual sustain would overlap a later retrigger on the channel,
+        // which doesn't match real hardware playback.
+        const capAt = (startTick) => {
+            const next = this.song.notes
+                .filter(n => n.channel === ch && n.pitch != null && n.startTick > startTick)
+                .reduce((acc, n) => (acc == null || n.startTick < acc) ? n.startTick : acc, null);
+            return next;
+        };
+
         // Case 1: shift+click directly ON a note's start tick → extend it
         const onNote = this.song.notes.find(n =>
             n.channel === ch && n.pitch === midi && n.startTick === tick
         );
         if (onNote) {
-            onNote.durationTicks += step;
+            const cap = capAt(onNote.startTick);
+            const requested = onNote.durationTicks + step;
+            onNote.durationTicks = cap != null
+                ? Math.min(requested, cap - onNote.startTick)
+                : requested;
             return;
         }
 
@@ -277,7 +359,11 @@ export class MusicEditor {
             n.startTick + n.durationTicks === tick
         );
         if (adjacent) {
-            adjacent.durationTicks += step;
+            const cap = capAt(adjacent.startTick);
+            const requested = adjacent.durationTicks + step;
+            adjacent.durationTicks = cap != null
+                ? Math.min(requested, cap - adjacent.startTick)
+                : requested;
             return;
         }
 
@@ -505,6 +591,7 @@ export class MusicEditor {
             const endSec   = selection.end   * tickSec;
             events = all
                 .filter(e => e.timeSec >= startSec && e.timeSec < endSec)
+                .filter(e => this.isChannelAudible(e.channel))
                 .map(e => ({ ...e, timeSec: e.timeSec - startSec }));
             totalTicks     = selection.end - selection.start;
             playheadOffset = selection.start;
@@ -514,7 +601,8 @@ export class MusicEditor {
         } else {
             // ── Full-song playback (with loop expansion if enabled) ────────
             const loops = this.loopEnabled ? this.LOOP_COUNT : 1;
-            events     = this.engine.toPlaybackEvents(this.song, 50, loops);
+            events     = this.engine.toPlaybackEvents(this.song, 50, loops)
+                            .filter(e => this.isChannelAudible(e.channel));
             totalTicks = this.engine.getPlaybackTicks
                 ? this.engine.getPlaybackTicks(this.song, loops)
                 : this.engine.getTotalTicks(this.song);
@@ -894,6 +982,8 @@ export class MusicEditor {
             existing.pitch      = midi;
             existing.instrument = this.currentInstrument;
         } else {
+            // Trim any earlier sustained note that would have overlapped
+            this._trimPriorNoteAt(ch, this.writeCursorTick);
             this.song.notes.push({
                 startTick:     this.writeCursorTick,
                 durationTicks: step,
@@ -986,9 +1076,18 @@ export class MusicEditor {
         //   beats/sec = 50 / (tempo * 4)   →   bpm = beats/sec * 60
         const bpm = Math.round((framerate * 60) / (tempo * 4));
 
+        // Estimated ROM bytes — composers need this to stay within their
+        // game's allocated music budget. Formatted as "Nb" up to 1KB,
+        // "N.NkB" above that.
+        const romBytes = this.engine.estimateRomBytes?.(this.song) ?? 0;
+        const romStr = romBytes < 1024
+            ? `${romBytes} B`
+            : `${(romBytes / 1024).toFixed(1)} kB`;
+
         status.textContent =
             `${label}  ·  ${melody} notes, ${drums} drums  ·  ` +
             `tempo: ${tempo} ticks/note (~${bpm} BPM)  ·  ` +
+            `ROM: ~${romStr}  ·  ` +
             `${this.engine.formatName}${position}${loopBadge}`;
     }
 }

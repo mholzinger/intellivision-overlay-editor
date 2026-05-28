@@ -2742,7 +2742,7 @@
 
                 <!-- Edit-mode controls: which channel, which instrument, which drum -->
                 <div class="music-edit-controls">
-                    <div class="music-edit-group" data-tooltip="Which channel future clicks paint into. Ch1/Ch2/Ch3 = melody square waves. Drums = M1/M2/M3 noise hits.">
+                    <div class="music-edit-group" data-tooltip="Which channel future clicks paint into. Ch1/Ch2/Ch3 = melody square waves. Drums = M1/M2/M3 noise hits. Cmd/Ctrl-click a channel to mute, Shift-click to solo.">
                         <span class="music-edit-label">Channel:</span>
                         <button class="music-channel-btn active" data-channel="0" onclick="musicSetChannel(0)" data-tooltip="Channel 1 — melody (blue)" style="--ch-color:#4a90d9;">1</button>
                         <button class="music-channel-btn"        data-channel="1" onclick="musicSetChannel(1)" data-tooltip="Channel 2 — melody (green)" style="--ch-color:#5cb85c;">2</button>
@@ -3233,6 +3233,10 @@ MySong_loop:
                             <tr><td>Click cell</td><td>Add or remove a note (plays a preview blip)</td></tr>
                             <tr><td><code>Shift</code>+click</td><td>Extend / shrink an existing note (sustain)</td></tr>
                             <tr><td>Click drum strip</td><td>Cycle through M1 → M2 → M3 → empty</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Mixer</td></tr>
+                            <tr><td><code>Cmd/Ctrl</code>+click channel</td><td>Toggle mute (notes dim on the roll, silenced in playback)</td></tr>
+                            <tr><td><code>Shift</code>+click channel</td><td>Toggle solo (only soloed channels play)</td></tr>
 
                             <tr><td colspan="2" class="primer-shortcut-group">Software keyboard</td></tr>
                             <tr><td>Click any key</td><td>Place a note at the write cursor and advance it</td></tr>
