@@ -3173,7 +3173,21 @@ MySong_loop:
                 </section>
 
                 <section class="primer-section">
-                    <h3 class="primer-section-title">⑦ Quick Start — Your First Song</h3>
+                    <h3 class="primer-section-title">⑦ Hardware Hazard — DOSOUND clobbers <code>$011E</code></h3>
+                    <p><em>Tip from <strong>Steve Ettinger</strong>, legendary Intellivision developer:</em></p>
+                    <blockquote style="border-left:3px solid #d4af37; background:#1a1a2e; color:#e0e0e8; padding:10px 14px; border-radius:0 6px 6px 0; font-style:italic;">
+                        If you (or anyone) is using the Exec DOSOUND routine, there is a RAM address (<code>$011E</code>) in user RAM that gets overwritten indiscriminately by the DOSOUND — BEWARE when coding your own game to be SURE that you burn that location with a dummy RAM variable so that your game won't be effed up by DOSOUND!
+                    </blockquote>
+                    <p><strong>What this means for you:</strong></p>
+                    <ul class="primer-list">
+                        <li><strong>The Music Studio is unaffected.</strong> IntyBASIC's <code>MUSIC</code> engine writes the PSG registers directly — it does not route through DOSOUND. Songs exported from this editor are safe.</li>
+                        <li><strong>If your game also uses <code>SOUND</code> statements</strong> (which compile down to DOSOUND-style PSG writes), reserve <code>$011E</code> with a dummy variable so the EXEC's sound routine doesn't silently corrupt whatever else you stored there.</li>
+                        <li>Watch out for this if you ever see a variable mysteriously changing during gameplay while sound effects play — <code>$011E</code> is the prime suspect.</li>
+                    </ul>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑧ Quick Start — Your First Song</h3>
                     <ol class="primer-numbered-list">
                         <li><strong>Click ➕ New Song</strong> to start with a blank canvas.</li>
                         <li><strong>Select Channel 1</strong> and <strong>Instrument X</strong> (clarinet) in the edit controls.</li>
