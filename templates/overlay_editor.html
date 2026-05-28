@@ -2794,8 +2794,8 @@
                 <!-- Helper hint — updated as phases ship -->
                 <p class="music-helper-text">
                     🎼 <strong>Compose:</strong> pick a channel + instrument above, then click the piano-roll to add notes. Click again to delete. Drum channel paints into the bottom strip with the selected M1/M2/M3 type.<br>
-                    🎬 <strong>Track:</strong> press ▶ Play or hit <code>Space</code> — the playhead stays put and the music scrolls past it (player-piano style). Bar.beat numbers on the top ruler. Click the ruler to set the playhead position.<br>
-                    ✂️ <strong>Select &amp; clip:</strong> drag horizontally on the ruler to mark a yellow selection range. <code>Cmd/Ctrl+C</code> copy, <code>Cmd/Ctrl+X</code> cut, <code>Cmd/Ctrl+V</code> paste at write cursor, <code>Delete</code> remove. Use <code>↑</code>/<code>↓</code> to transpose the selection by a semitone (<code>Shift+↑/↓</code> for an octave). ▶ Play becomes ▶ Play Selection while a range is active.<br>
+                    🎬 <strong>Track:</strong> press ▶ Play or <code>Space</code> — the playhead stays put and the music scrolls past it (player-piano style). Click the ruler to seek.<br>
+                    ✂️ <strong>Select &amp; clip:</strong> drag on the ruler for a yellow range; cut / copy / paste / delete / transpose all work on the selection. ▶ Play becomes ▶ Play Selection while a range is active. Full shortcut list in <strong>📖 Audio Primer</strong>.<br>
                     🎶 <strong>Try a demo:</strong> click the <strong>Demos</strong> button to load any of 10 real Space Intruders tracks from <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">paisleyboxers.itch.io</a>.
                 </p>
 
@@ -3188,7 +3188,49 @@ MySong_loop:
                 </section>
 
                 <section class="primer-section">
-                    <h3 class="primer-section-title">⑧ Quick Start — Your First Song</h3>
+                    <h3 class="primer-section-title">⑧ Shortcuts &amp; Gestures</h3>
+                    <p>Everything you can do without leaving the keyboard:</p>
+                    <table class="primer-shortcut-table">
+                        <thead>
+                            <tr><th>Shortcut</th><th>What it does</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="2" class="primer-shortcut-group">Transport</td></tr>
+                            <tr><td><code>Space</code></td><td>Play / Pause</td></tr>
+                            <tr><td>Click ruler</td><td>Move the write cursor (seek)</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Selection</td></tr>
+                            <tr><td>Drag on ruler</td><td>Create a yellow selection range</td></tr>
+                            <tr><td>Click ✕ inside selection</td><td>Clear the selection</td></tr>
+                            <tr><td><code>Esc</code></td><td>Clear the selection</td></tr>
+                            <tr><td>▶ Play with selection</td><td>Plays only the events in the range</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Clipboard</td></tr>
+                            <tr><td><code>Cmd/Ctrl+C</code></td><td>Copy notes in selection</td></tr>
+                            <tr><td><code>Cmd/Ctrl+X</code></td><td>Cut notes in selection</td></tr>
+                            <tr><td><code>Cmd/Ctrl+V</code></td><td>Paste at the write cursor</td></tr>
+                            <tr><td><code>Delete</code> / <code>Backspace</code></td><td>Delete selected notes (no clipboard change)</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Transpose (selection only)</td></tr>
+                            <tr><td><code>↑</code> / <code>↓</code></td><td>Move every melody note ±1 semitone</td></tr>
+                            <tr><td><code>Shift+↑</code> / <code>Shift+↓</code></td><td>Move every melody note ±1 octave</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Piano-roll mouse</td></tr>
+                            <tr><td>Click cell</td><td>Add or remove a note (plays a preview blip)</td></tr>
+                            <tr><td><code>Shift</code>+click</td><td>Extend / shrink an existing note (sustain)</td></tr>
+                            <tr><td>Click drum strip</td><td>Cycle through M1 → M2 → M3 → empty</td></tr>
+
+                            <tr><td colspan="2" class="primer-shortcut-group">Software keyboard</td></tr>
+                            <tr><td>Click any key</td><td>Place a note at the write cursor and advance it</td></tr>
+                            <tr><td>Wide / Compact toggle</td><td>Switch between full C2–C7 and 2-octave window</td></tr>
+                            <tr><td>◀ Oct / Oct ▶ (compact)</td><td>Shift the 2-octave window up/down</td></tr>
+                        </tbody>
+                    </table>
+                    <p style="font-size:11px; color:#7a8390; margin-top:8px;">All keyboard shortcuts only fire while the Music tab is active and you're not typing in a text field.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑨ Quick Start — Your First Song</h3>
                     <ol class="primer-numbered-list">
                         <li><strong>Click ➕ New Song</strong> to start with a blank canvas.</li>
                         <li><strong>Select Channel 1</strong> and <strong>Instrument X</strong> (clarinet) in the edit controls.</li>

@@ -1450,6 +1450,59 @@
     margin-bottom: 6px;
 }
 
+/* Audio Primer — Shortcuts table */
+.primer-shortcut-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 13px;
+    color: var(--gray-700);
+}
+.primer-shortcut-table thead th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #95a5a6;
+    border-bottom: 1px solid #ecf0f1;
+    padding: 6px 10px;
+    font-weight: 600;
+}
+.primer-shortcut-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f4f6f8;
+    vertical-align: top;
+}
+.primer-shortcut-table tbody td:first-child {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--gray-800);
+    white-space: nowrap;
+    width: 38%;
+}
+.primer-shortcut-table tbody tr:hover td {
+    background: #fafbfc;
+}
+.primer-shortcut-table .primer-shortcut-group {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #95a5a6;
+    background: #f8f9fa;
+    padding: 8px 10px 4px;
+    font-weight: 700;
+    border-bottom: 1px solid #ecf0f1;
+}
+.primer-shortcut-table code {
+    background: #f1f3f5;
+    border: 1px solid #e1e5e9;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: #2c3e50;
+}
+
 /* Code blocks */
 .primer-code-block {
     background: #1e1e1e;
