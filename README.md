@@ -405,7 +405,7 @@ Tribal knowledge for game devs writing IntyBASIC / assembly games that consume o
 
 > Tip from **Steve Ettinger** (legendary Intellivision developer):
 >
-> If you (or anyone) is using the Exec `DOSOUND` routine, there is a RAM address (`$011E`) in user RAM that gets overwritten indiscriminately by the DOSOUND — BEWARE when coding your own game to be SURE that you burn that location with a dummy RAM variable so that your game won't be effed up by `DOSOUND`!
+> If you (or anyone) is using the Exec `DOSOUND` routine, there is a RAM address (`$011E`) in user RAM that gets overwritten indiscriminately by the DOSOUND — BEWARE when coding your own game to be SURE that you burn that location with a dummy RAM variable so that your game won't be tanked by `DOSOUND`!
 
 - **The Music Studio's exports are safe.** IntyBASIC's `MUSIC` engine writes PSG registers directly and does not touch `$011E`.
 - **If your game uses IntyBASIC `SOUND` statements** (which compile to `DOSOUND`-style code), reserve `$011E` with a dummy variable so the EXEC's sound routine doesn't silently corrupt whatever else lived there.
