@@ -162,20 +162,31 @@ export class MusicEditor {
         }
     }
 
+    /** Cycle through drum types on repeated clicks: empty→M1→M2→M3→delete. */
     static _toggleDrumAt(tick) {
+        const CYCLE = ['M1', 'M2', 'M3'];
         const existing = this.song.notes.findIndex(n =>
             n.channel === 3 && n.startTick === tick
         );
         if (existing >= 0) {
-            this.song.notes.splice(existing, 1);
+            const cur = this.song.notes[existing].drum;
+            const idx = CYCLE.indexOf(cur);
+            if (idx >= 0 && idx < CYCLE.length - 1) {
+                // Advance to next drum type
+                this.song.notes[existing].drum = CYCLE[idx + 1];
+            } else {
+                // Already M3 (or unknown) → delete
+                this.song.notes.splice(existing, 1);
+            }
         } else {
+            // Empty cell → add M1 (first in cycle)
             this.song.notes.push({
                 startTick:     tick,
                 durationTicks: this.song.ticksPerNote,
                 channel:       3,
                 pitch:         null,
                 instrument:    null,
-                drum:          this.currentDrum,
+                drum:          CYCLE[0],
             });
         }
     }
