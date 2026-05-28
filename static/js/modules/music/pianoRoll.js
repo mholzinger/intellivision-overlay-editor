@@ -111,6 +111,20 @@ export class PianoRoll {
             }
         });
 
+        // Re-render on horizontal scroll so the sticky keyboard column tracks
+        // the visible left edge. Throttled via rAF to avoid event-storm thrash.
+        const container = this.canvas.parentElement;
+        if (container) {
+            let scrollRAF = null;
+            container.addEventListener('scroll', () => {
+                if (scrollRAF != null) return;
+                scrollRAF = requestAnimationFrame(() => {
+                    scrollRAF = null;
+                    this.render();
+                });
+            });
+        }
+
         this._sizeForStaticMode();
         this.render();
     }
@@ -414,12 +428,21 @@ export class PianoRoll {
 
     // ── Keyboard column ─────────────────────────────────────────────────────
 
+    /** Horizontal offset at which the keyboard column should be drawn so it
+     *  stays visually pinned to the visible left edge of the container as the
+     *  user scrolls horizontally. Zero in follow mode (canvas doesn't scroll). */
+    static _stickyKeyboardLeft() {
+        if (this.scrollMode !== 'static') return 0;
+        return this.canvas?.parentElement?.scrollLeft || 0;
+    }
+
     static _renderKeyboard() {
         const { ctx, KEYBOARD_WIDTH, KEY_HEIGHT, NUM_KEYS, LOWEST_MIDI, RULER_HEIGHT } = this;
         const { height } = this.canvas;
-        // Mask any music that would have leaked under the keyboard area
+        const stickyLeft = this._stickyKeyboardLeft();
+        // Mask the visible keyboard area (over any music that scrolled under it)
         ctx.fillStyle = '#1a1a24';
-        ctx.fillRect(0, 0, KEYBOARD_WIDTH, height);
+        ctx.fillRect(stickyLeft, 0, KEYBOARD_WIDTH, height);
 
         for (let i = 0; i < NUM_KEYS; i++) {
             const midi = LOWEST_MIDI + (NUM_KEYS - 1 - i);
@@ -427,7 +450,7 @@ export class PianoRoll {
             const noteInOctave = midi % 12;
             const isBlack = [1, 3, 6, 8, 10].includes(noteInOctave);
             ctx.fillStyle = isBlack ? '#16161e' : '#2a2a36';
-            ctx.fillRect(0, y, KEYBOARD_WIDTH - 1, KEY_HEIGHT - 1);
+            ctx.fillRect(stickyLeft, y, KEYBOARD_WIDTH - 1, KEY_HEIGHT - 1);
 
             if (noteInOctave === 0) {
                 const octave = Math.floor(midi / 12) - 1;
@@ -435,7 +458,7 @@ export class PianoRoll {
                 ctx.font = `${Math.max(8, KEY_HEIGHT - 2)}px monospace`;
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(`C${octave}`, KEYBOARD_WIDTH - 4, y + KEY_HEIGHT / 2);
+                ctx.fillText(`C${octave}`, stickyLeft + KEYBOARD_WIDTH - 4, y + KEY_HEIGHT / 2);
             }
         }
     }
@@ -604,12 +627,14 @@ export class PianoRoll {
             ctx.lineTo(width, strip.y + 1);
             ctx.stroke();
             ctx.lineWidth = 1;
-            // Gutter label
+            // Gutter label — render at sticky keyboard position so it stays
+            // visible when the user scrolls horizontally.
+            const stickyLeft = this._stickyKeyboardLeft();
             ctx.fillStyle = strip.tint;
             ctx.font = 'bold 10px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(strip.label, KEYBOARD_WIDTH / 2, strip.y + this.DRUM_HEIGHT / 2);
+            ctx.fillText(strip.label, stickyLeft + KEYBOARD_WIDTH / 2, strip.y + this.DRUM_HEIGHT / 2);
         }
     }
 
@@ -761,20 +786,26 @@ export class PianoRoll {
 
     /** Scroll the container (in static mode) so the given tick is on-screen.
      *  Used by both the playhead and the write cursor so that minimap-clicks
-     *  and ruler-clicks warp the visible viewport, not just the markers. */
+     *  and ruler-clicks warp the visible viewport, not just the markers.
+     *
+     *  Important: the canvas isn't CSS-scaled (canvas.clientWidth ==
+     *  canvas.width), so container.scrollLeft maps 1:1 to canvas pixels. The
+     *  previous "ratio" math was wrong and produced near-zero scroll deltas
+     *  on long songs. */
     static _scrollTickIntoView(tick) {
         if (!this.canvas || tick == null) return;
         const container = this.canvas.parentElement;
         if (!container) return;
         const x = this.KEYBOARD_WIDTH + tick * this.TICK_WIDTH;
-        const ratio = container.clientWidth / this.canvas.clientWidth;
-        const displayedX = x * ratio;
-        const margin = 100;
-        if (displayedX > container.scrollLeft + container.clientWidth - margin) {
-            container.scrollLeft = displayedX - container.clientWidth + margin;
-        }
-        if (displayedX < container.scrollLeft + margin) {
-            container.scrollLeft = Math.max(0, displayedX - margin);
+        const visible = container.clientWidth;
+        const margin = Math.min(120, visible / 4);
+        // Leave room for the sticky keyboard column on the left
+        const leftEdge = container.scrollLeft + this.KEYBOARD_WIDTH + margin;
+        const rightEdge = container.scrollLeft + visible - margin;
+        if (x > rightEdge) {
+            container.scrollLeft = x - visible + margin;
+        } else if (x < leftEdge) {
+            container.scrollLeft = Math.max(0, x - this.KEYBOARD_WIDTH - margin);
         }
     }
 
@@ -786,7 +817,10 @@ export class PianoRoll {
         const scaleY = this.canvas.height / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
-        if (x < this.KEYBOARD_WIDTH) return null;
+        // The keyboard column is "sticky" — it's drawn at scrollLeft so it
+        // stays visible. Clicks under it are keyboard clicks, not music.
+        const stickyLeft = this._stickyKeyboardLeft();
+        if (x < stickyLeft + this.KEYBOARD_WIDTH) return null;
         if (y < this.RULER_HEIGHT) {
             // Click in ruler area — interpret as seek request
             const rawTick = this._xToTick(x);
