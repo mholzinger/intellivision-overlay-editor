@@ -49,8 +49,21 @@ export class Minimap {
     }
 
     static setPlayhead(tick) {
-        this.playheadTick = tick;
+        // Wrap the raw playback tick back to the loop body on iterations 2+
+        // (mirrors what PianoRoll does). Without this the marker keeps marching
+        // past the song's end during a 4-iteration loop play.
+        this.playheadTick = this._mapRawTickToVisual(tick);
         this.render();
+    }
+
+    /** Map raw playback tick → visual tick using loopInfo. */
+    static _mapRawTickToVisual(rawTick) {
+        if (rawTick == null) return null;
+        const loop = this.loopInfo;
+        if (!loop || loop.loopDuration <= 0) return rawTick;
+        if (rawTick < loop.introEnd) return rawTick;
+        const intoBody = (rawTick - loop.introEnd) % loop.loopDuration;
+        return loop.introEnd + intoBody;
     }
 
     static setLoopInfo(loopInfo) {

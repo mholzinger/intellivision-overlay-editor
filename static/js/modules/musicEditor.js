@@ -206,11 +206,28 @@ export class MusicEditor {
 
     static _toggleNoteAt(tick, midi) {
         const ch = this.currentChannel;
-        const existing = this.song.notes.findIndex(n =>
-            n.channel === ch && n.startTick === tick && n.pitch === midi
+        // PSG channels are MONO: at any tick, each channel holds at most one
+        // pitched note. Real IntyBASIC MUSIC stores exactly one token per
+        // channel slot per line, so stacking notes on the same channel at the
+        // same tick would silently drop all but the first at export. Enforce
+        // that here: same pitch toggles off, different pitch REPLACES.
+        const existingIdx = this.song.notes.findIndex(n =>
+            n.channel === ch && n.startTick === tick && n.pitch != null
         );
-        if (existing >= 0) {
-            this.song.notes.splice(existing, 1);
+        if (existingIdx >= 0) {
+            const existing = this.song.notes[existingIdx];
+            if (existing.pitch === midi) {
+                this.song.notes.splice(existingIdx, 1);
+            } else {
+                const oldName = this._midiToName(existing.pitch);
+                const newName = this._midiToName(midi);
+                existing.pitch      = midi;
+                existing.instrument = this.currentInstrument;
+                UIManager.showStatus(
+                    `Ch${ch + 1}: replaced ${oldName} with ${newName} (1 note per channel per tick — PSG is mono)`,
+                    'info'
+                );
+            }
         } else {
             this.song.notes.push({
                 startTick:     tick,
@@ -221,6 +238,11 @@ export class MusicEditor {
                 drum:          null,
             });
         }
+    }
+
+    static _NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    static _midiToName(midi) {
+        return this._NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
     }
 
     /**
@@ -848,21 +870,31 @@ export class MusicEditor {
         const step = this.engine.tempoAt(this.song, this.writeCursorTick) || 8;
         const ch   = this.currentChannel;
 
-        // Don't add melody notes if drum channel is selected
-        if (ch === 3) return;
+        // Don't add melody notes if a drum channel is selected (3 or 7)
+        if (ch === 3 || ch === 7) return;
 
         // Preview: play a short blip so the user hears the note
         this._previewNote(midi);
 
-        // Add the note at the write cursor
-        this.song.notes.push({
-            startTick:     this.writeCursorTick,
-            durationTicks: step,
-            channel:       ch,
-            pitch:         midi,
-            instrument:    this.currentInstrument,
-            drum:          null,
-        });
+        // Honor PSG mono-per-channel: replace any existing pitched note on
+        // this channel at the cursor tick instead of stacking on top.
+        const existingIdx = this.song.notes.findIndex(n =>
+            n.channel === ch && n.startTick === this.writeCursorTick && n.pitch != null
+        );
+        if (existingIdx >= 0) {
+            const existing = this.song.notes[existingIdx];
+            existing.pitch      = midi;
+            existing.instrument = this.currentInstrument;
+        } else {
+            this.song.notes.push({
+                startTick:     this.writeCursorTick,
+                durationTicks: step,
+                channel:       ch,
+                pitch:         midi,
+                instrument:    this.currentInstrument,
+                drum:          null,
+            });
+        }
 
         // Advance write cursor
         this.writeCursorTick += step;
