@@ -164,7 +164,7 @@ export class MusicEditor {
         } else {
             this.song.notes.push({
                 startTick:     tick,
-                durationTicks: this.song.ticksPerNote,
+                durationTicks: this.engine.tempoAt(this.song, tick),
                 channel:       ch,
                 pitch:         midi,
                 instrument:    this.currentInstrument,
@@ -185,7 +185,7 @@ export class MusicEditor {
      */
     static _extendNoteAt(tick, midi) {
         const ch = this.currentChannel;
-        const step = this.song.ticksPerNote;
+        const step = this.engine.tempoAt(this.song, tick);
 
         // Case 1: shift+click directly ON a note's start tick → extend it
         const onNote = this.song.notes.find(n =>
@@ -241,7 +241,7 @@ export class MusicEditor {
             // Empty cell → add M1 (first in cycle)
             this.song.notes.push({
                 startTick:     tick,
-                durationTicks: this.song.ticksPerNote,
+                durationTicks: this.engine.tempoAt(this.song, tick),
                 channel:       3,
                 pitch:         null,
                 instrument:    null,
@@ -656,7 +656,7 @@ export class MusicEditor {
      */
     static _onKeyPress(midi) {
         if (!this.song) return;
-        const step = this.song.ticksPerNote || 8;
+        const step = this.engine.tempoAt(this.song, this.writeCursorTick) || 8;
         const ch   = this.currentChannel;
 
         // Don't add melody notes if drum channel is selected

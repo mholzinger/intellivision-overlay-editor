@@ -149,7 +149,8 @@ export class IntyBasicMusic extends MusicEngine {
         const song = {
             engine:       this.formatSlug,
             label:        songLabel,
-            ticksPerNote: 8,
+            ticksPerNote: 8,             // mutated through parse; ends up as the FINAL tempo
+            initialTicksPerNote: null,   // captured at the song's first DATA line
             channelCount: 3,
             notes:        [],
             controls:     [],
@@ -213,7 +214,11 @@ export class IntyBasicMusic extends MusicEngine {
             // DATA line → tempo change at this tick
             const dataM = line.match(DATA_RE);
             if (dataM) {
-                ctx.song.ticksPerNote = parseInt(dataM[1], 10);
+                const v = parseInt(dataM[1], 10);
+                ctx.song.ticksPerNote = v;
+                if (ctx.song.initialTicksPerNote == null) {
+                    ctx.song.initialTicksPerNote = v;
+                }
                 continue;
             }
 
@@ -595,6 +600,22 @@ export class IntyBasicMusic extends MusicEngine {
      *   type 'note' has { pitch, durationTicks, instrument, channel }
      *   type 'drum' has { drumType, channel }
      */
+    /**
+     * Return the ticksPerNote tempo active at the given tick, accounting for
+     * mid-song MUSIC SPEED changes. Used by the editor when placing new notes
+     * so they get the right duration for where in the timeline they land.
+     */
+    static tempoAt(song, tick) {
+        let tempo = song.initialTicksPerNote ?? song.ticksPerNote ?? 8;
+        for (const c of (song.controls || [])) {
+            if (c.type !== 'SPEED') continue;
+            if (c.tick > tick) break;   // controls are pushed in tick order
+            const v = parseInt(c.target, 10);
+            if (!isNaN(v) && v > 0) tempo = v;
+        }
+        return tempo;
+    }
+
     static toPlaybackEvents(song, framerate = 50, loopCount = 4) {
         const events = [];
         const tickSec = 1 / framerate;
