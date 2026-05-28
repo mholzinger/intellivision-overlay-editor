@@ -69,21 +69,24 @@ export const INSTRUMENTS = {
 export const DRUMS = {
     // M1 = strong: low thudding kick — lowpass with steep decay
     M1: {
-        gain: 0.55, duration: 0.18,
+        gain: 0.55, duration: 0.16,
         filterType: 'lowpass', filterHz: 220, filterQ: 0.7,
         decay: 0.10, repeats: 1,
     },
-    // M2 = tap: short snap — highpass click
+    // M2 = tap: short snap — highpass click (snare-ish in busy patterns)
     M2: {
         gain: 0.40, duration: 0.06,
         filterType: 'highpass', filterHz: 1500, filterQ: 0.5,
         decay: 0.035, repeats: 1,
     },
-    // M3 = roll: longer noise with multiple re-triggers
+    // M3 = roll: single shimmering noise burst (typically hi-hat). Was
+    // previously firing 4 sub-hits per MUSIC line which made hat-heavy
+    // patterns sound 4× too fast. The "roll" character comes from the
+    // bandpass-filtered noise's natural shimmer, not from re-triggering.
     M3: {
-        gain: 0.45, duration: 0.20,
-        filterType: 'bandpass', filterHz: 800, filterQ: 1.5,
-        decay: 0.08, repeats: 4,
+        gain: 0.38, duration: 0.10,
+        filterType: 'bandpass', filterHz: 4500, filterQ: 0.9,
+        decay: 0.06, repeats: 1,
     },
 };
 

@@ -45,7 +45,7 @@ export class PianoRoll {
     static hoverMidi        = null;
     static hoverIsDrumLane  = false;
     static scrollMode       = 'static';  // 'static' | 'follow'
-    static framerate        = 60;        // for tick→seconds (NTSC default)
+    static framerate        = 50;        // IntyBASIC MUSIC ticks 50/sec (manual.txt:1228)
 
     /** Wire the piano-roll to its host canvas. Called once on tab init. */
     static init(canvasId = 'music-piano-roll') {

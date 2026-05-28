@@ -6,7 +6,7 @@
  * Format summary
  * --------------
  *   label:                       ' Routine name (also doubles as a JUMP/GOSUB target)
- *     DATA <ticks_per_note>      ' Initial tempo (50 Hz NTSC, 60 Hz PAL)
+ *     DATA <ticks_per_note>      ' Initial tempo (50 ticks/sec on both NTSC and PAL)
  *     MUSIC ch1, ch2, ch3, drum  ' One tempo step (4 args = base PSG)
  *     MUSIC ch1, ch2, ch3, drum, ch5, ch6, ch7, drum2  ' ECS variant (8 args)
  *     MUSIC REPEAT               ' Loop back to start of song
@@ -85,7 +85,7 @@ export class IntyBasicMusic extends MusicEngine {
         'Notes: C/D/E/F/G/A/B + octave 2-6 (or C7), optional # for sharp, optional W/X/Y/Z for instrument.',
         'Special tokens: S = sustain previous note, - = silence.',
         'Drums (4th argument): M1 strong, M2 tap, M3 roll, - none.',
-        'Tempo: DATA <n> sets ticks-per-note (50 Hz NTSC, 60 Hz PAL).',
+        'Tempo: DATA <n> sets ticks-per-note (the MUSIC engine runs at a fixed 50 ticks/sec regardless of NTSC/PAL).',
     ].join('\n');
 
     /**
@@ -301,14 +301,16 @@ export class IntyBasicMusic extends MusicEngine {
     /**
      * Convert SongIR into a flat list of timed playback events for psgSynth.
      *
-     * IntyBASIC NTSC ticks at 60 Hz (PAL = 50 Hz; we default to NTSC for now).
-     * Each tick = 1/60 second of song time.
+     * IntyBASIC's MUSIC engine ticks at a fixed 50 Hz on both NTSC and PAL
+     * (manual.txt:1228 — "there are 50 ticks per second"). On NTSC it skips
+     * the 6th video frame to maintain the cadence.
+     * So each tick = 1/50 = 0.02 seconds of song time.
      *
      * @returns {Array<{ timeSec, type, ... }>}
      *   type 'note' has { pitch, durationTicks, instrument, channel }
      *   type 'drum' has { drumType, channel }
      */
-    static toPlaybackEvents(song, framerate = 60) {
+    static toPlaybackEvents(song, framerate = 50) {
         const events = [];
         const tickSec = 1 / framerate;
 

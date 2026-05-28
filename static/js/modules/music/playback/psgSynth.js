@@ -13,10 +13,13 @@
  *   - onPlayheadTick callback so the UI can animate a playhead during playback
  *
  * Timing model:
- *   IntyBASIC's player updates the sound chip every video frame.
- *   NTSC = 60 Hz (default), PAL = 50 Hz (toggle for Phase 6+).
- *   "ticks per note" in the song = frames per note step.
- *   So one tick = 1/framerate seconds.
+ *   IntyBASIC's MUSIC player ticks at a FIXED 50 Hz regardless of whether
+ *   the host Intellivision is NTSC (60 fps video) or PAL (50 fps video) —
+ *   the manual is explicit: "there are 50 ticks per second" (manual.txt
+ *   line 1228). On NTSC the engine skips every 6th frame to maintain that
+ *   50 Hz cadence. We match it so playback timing here matches what users
+ *   hear on real hardware / in jzIntv.
+ *   So one tick = 1/50 = 0.02 seconds.
  */
 
 import { INSTRUMENTS, DRUMS, midiToFreq, buildNoiseBuffer } from './instrumentVoices.js';
@@ -26,7 +29,7 @@ export class PsgSynth {
     static masterGain    = null;
     static noiseBuffer   = null;
     static activeNodes   = [];          // [{ stop(), }, ...] for cleanup on stop()
-    static framerate     = 60;          // NTSC default; PAL would be 50
+    static framerate     = 50;          // IntyBASIC MUSIC ticks 50/sec on both NTSC and PAL
     static onPlayheadTick = null;       // callback(currentTick) — UI playhead
     static _rafId        = null;
     static _startedAt    = 0;           // AudioContext time when playback began

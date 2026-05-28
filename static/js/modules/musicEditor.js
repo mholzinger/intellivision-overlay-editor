@@ -372,7 +372,7 @@ export class MusicEditor {
         const label  = this.song?.label || '(unnamed)';
         const totalTicks = this.engine.getTotalTicks?.(this.song) ?? 0;
 
-        const framerate = 60;   // NTSC; PAL toggle later
+        const framerate = 50;   // IntyBASIC MUSIC = 50 ticks/sec (manual.txt:1228)
         const totalSec  = totalTicks / framerate;
         const fmt = (sec) => {
             const m = Math.floor(sec / 60);
