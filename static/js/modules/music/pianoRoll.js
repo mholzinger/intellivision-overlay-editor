@@ -502,10 +502,20 @@ export class PianoRoll {
         }
     }
 
+    // Note names for MIDI → display (e.g. MIDI 60 → "C4")
+    static NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+    static _midiToName(midi) {
+        const octave = Math.floor(midi / 12) - 1;
+        return this.NOTE_NAMES[midi % 12] + octave;
+    }
+
     static _onMouseMove(e) {
         const cell = this._eventToCell(e);
         if (!cell || cell.isRuler) {
             if (this.hoverTick !== null) { this.hoverTick = null; this.render(); }
+            // Clear note-under-cursor info
+            if (this.editorCallbacks.onNoteHover) this.editorCallbacks.onNoteHover(null);
             return;
         }
         if (cell.tick !== this.hoverTick ||
@@ -515,6 +525,26 @@ export class PianoRoll {
             this.hoverMidi = cell.midi;
             this.hoverIsDrumLane = cell.isDrumLane;
             this.render();
+
+            // Check if hovering directly over an existing note
+            if (this.song?.notes && this.editorCallbacks.onNoteHover) {
+                const hit = this.song.notes.find(n => {
+                    if (n.startTick > cell.tick || n.startTick + (n.durationTicks || 1) <= cell.tick) return false;
+                    if (cell.isDrumLane) return n.channel === 3;
+                    return n.pitch === cell.midi;
+                });
+                if (hit) {
+                    const info = hit.drum
+                        ? `${hit.drum} · drums · tick ${hit.startTick}`
+                        : `${this._midiToName(hit.pitch)}${hit.instrument || ''} · ch${hit.channel + 1} · tick ${hit.startTick} · ${hit.durationTicks}t`;
+                    this.editorCallbacks.onNoteHover(info);
+                } else {
+                    const posInfo = cell.isDrumLane
+                        ? `tick ${cell.tick} · drums`
+                        : `${this._midiToName(cell.midi)} · tick ${cell.tick}`;
+                    this.editorCallbacks.onNoteHover(posInfo);
+                }
+            }
         }
     }
 

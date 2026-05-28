@@ -38,6 +38,7 @@ export class MusicEditor {
         PianoRoll.setEditorCallbacks({
             onCellClick: (tick, midi, isDrumLane) => this.handleCellClick(tick, midi, isDrumLane),
             onSeek:      (tick) => this.handleSeek(tick),
+            onNoteHover: (info) => this._showHoverInfo(info),
         });
         this._renderEngineSelector();
         this._updateStatusLine();
@@ -393,6 +394,13 @@ export class MusicEditor {
     static _updatePlayButton() {
         const btn = document.querySelector('#music-toolbar button[onclick="musicPlay()"]');
         if (btn) btn.textContent = this.isPlaying ? '⏸ Pause' : '▶ Play';
+    }
+
+    /** Show note-under-cursor info at the end of the status line (or clear it). */
+    static _showHoverInfo(info) {
+        const el = document.getElementById('music-hover-info');
+        if (!el) return;
+        el.textContent = info ? `🎵 ${info}` : '';
     }
 
     // ── Status line ─────────────────────────────────────────────────────────

@@ -2319,3 +2319,14 @@ details[open] .voice-dict-summary::before {
     color: #fff;
     border-color: #28a745;
 }
+
+.music-volume-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+}
+.music-volume-control input[type="range"] {
+    accent-color: #28a745;
+    cursor: pointer;
+}

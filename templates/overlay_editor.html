@@ -178,9 +178,14 @@
                 <button class="btn btn-success btn-sm" onclick="musicPlay()" data-tooltip="Play the current song (Web Audio synth — Phase 7 will add bit-perfect WASM jzIntv)">▶ Play</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicStop()" data-tooltip="Stop playback">■ Stop</button>
                 <button id="music-loop-btn" class="btn btn-secondary btn-sm active" onclick="musicToggleLoop()" data-tooltip="Honor MUSIC JUMP / REPEAT during playback. On = song loops 4× per Play. Off = single pass.">🔁 Loop</button>
+                <span class="music-volume-control" data-tooltip="Master playback volume">
+                    <span class="music-edit-label">🔊</span>
+                    <input type="range" id="music-volume" min="0" max="100" value="70" oninput="musicSetVolume(this.value)" style="width:80px; vertical-align:middle;">
+                </span>
                 <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source — it will be parsed and rendered on the piano-roll">📋 Paste</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>
+                <button class="btn btn-info btn-sm" onclick="openAudioPrimer()" data-tooltip="Intellivision audio concepts for beginners — PSG channels, instruments, drums, tempo, looping">📖 Audio Primer</button>
                 <div class="music-demos-dropdown" style="position:relative; display:inline-block;">
                     <button class="btn btn-info btn-sm" onclick="musicToggleDemosDropdown()" data-tooltip="Load a bundled demo song to hear what's possible — all tracks from the Space Intruders homebrew project">🎶 Demos ▾</button>
                     <div id="music-demos-dropdown-menu" style="display:none; position:absolute; top:100%; left:0; min-width:340px; background:#ffffff; border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; margin-top:4px; max-height:400px; overflow-y:auto;">
@@ -2727,9 +2732,12 @@
         <div id="music-editor-content" class="editor-content">
             <div class="music-editor-layout">
 
-                <!-- Status line: current engine, song stats -->
-                <div id="music-status-line" class="music-status-line">
-                    IntyBASIC MUSIC · 3 channels · tempo: 8 ticks/note · 0 notes
+                <!-- Status line: current engine, song stats + hover info -->
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <div id="music-status-line" class="music-status-line" style="flex:1;">
+                        IntyBASIC MUSIC · 3 channels · tempo: 8 ticks/note · 0 notes
+                    </div>
+                    <div id="music-hover-info" class="music-status-line" style="flex:0 0 auto; text-align:right; color:#888; min-width:0;"></div>
                 </div>
 
                 <!-- Edit-mode controls: which channel, which instrument, which drum -->
@@ -3052,6 +3060,127 @@ LOOP</pre>
         </div><!-- /.intv-primer-dialog -->
     </div><!-- /#intv-primer-modal -->
 
+    <!-- INTV Audio Primer Modal -->
+    <div id="audio-primer-modal" class="intv-primer-overlay" style="display:none;" onclick="closeAudioPrimer(event)">
+        <div class="intv-primer-dialog" role="dialog" aria-modal="true" aria-labelledby="audio-primer-title">
+
+            <div class="intv-primer-header">
+                <h2 id="audio-primer-title">INTV Audio Primer</h2>
+                <p class="primer-subtitle">Everything you need to know to compose your first Intellivision song</p>
+                <button class="primer-close-btn" onclick="closeAudioPrimer()" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="intv-primer-body">
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">① The Sound Chip — AY-3-8914 PSG</h3>
+                    <p>The Intellivision uses a <strong>Programmable Sound Generator</strong> (PSG) chip that provides:</p>
+                    <ul class="primer-list">
+                        <li><strong>3 melody channels</strong> — each produces a square wave at a programmable frequency. They're completely independent: different notes, different octaves, different instruments.</li>
+                        <li><strong>1 noise channel</strong> — generates white noise for percussion. IntyBASIC maps drums (M1/M2/M3) to this channel automatically.</li>
+                    </ul>
+                    <p>With the <strong>ECS expansion</strong>, a second PSG is available — doubling you to <strong>8 channels</strong> (6 melody + 2 drum). The Music Studio supports ECS in a future phase.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">② The 4 Instruments — W, X, Y, Z</h3>
+                    <p>IntyBASIC shapes each note with an <strong>envelope</strong> — how the volume rises, holds, and fades. The four letters select different shapes:</p>
+                    <div class="primer-two-col">
+                        <div class="primer-card primer-card-blue">
+                            <h4>W — Piano</h4>
+                            <p>Sharp attack, quick decay, minimal sustain. Notes are short and percussive. Good for staccato melodies and rhythm accents.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>X — Clarinet</h4>
+                            <p>Medium attack, strong sustain. The most common melody voice — warm, held, woody. Best for lead lines and counter-melodies.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Y — Flute</h4>
+                            <p>Soft attack with gentle vibrato (pitch wobble). Airy and ethereal. Works for atmospheric pads or slow melodic lines.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Z — Bass</h4>
+                            <p>Same square wave, but <strong>dropped one octave</strong> from the written note. Long sustain. Put it on channel 3 and write bass lines — the octave drop gives the low end real weight.</p>
+                        </div>
+                    </div>
+                    <p>Once you set an instrument on a channel (e.g. <code>C4X</code>), it <strong>carries over</strong> for all subsequent notes on that channel until you change it.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">③ Drums — M1, M2, M3</h3>
+                    <p>The 4th argument of each <code>MUSIC</code> statement controls the noise/percussion channel:</p>
+                    <ul class="primer-list">
+                        <li><strong>M1 — Strong:</strong> Low-frequency noise burst filtered through a lowpass → a "kick drum" thud. Use on beats 1 and 3.</li>
+                        <li><strong>M2 — Tap:</strong> Short high-frequency noise snap → a "snare" click. Use on beats 2 and 4 (backbeat).</li>
+                        <li><strong>M3 — Roll:</strong> Medium-frequency shimmering noise → a "hi-hat" sizzle. Use on every tick for a steady rhythm pulse.</li>
+                        <li><strong>-</strong> — Silence. No drum this tick.</li>
+                    </ul>
+                    <p>A basic rock beat at 16 ticks per bar: <code>M1 M3 M3 M3 | M2 M3 M3 M3 | M1 M3 M3 M3 | M2 M3 M3 M3</code></p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">④ Tempo — DATA &amp; Ticks</h3>
+                    <p>IntyBASIC's music engine runs at <strong>50 ticks per second</strong> (on both NTSC and PAL). The <code>DATA</code> value at the top of your song sets how many ticks each <code>MUSIC</code> line lasts:</p>
+                    <ul class="primer-list">
+                        <li><code>DATA 6</code> → 50/6 ≈ 8.3 notes/sec → ~125 BPM (fast, driving)</li>
+                        <li><code>DATA 8</code> → 50/8 = 6.25 notes/sec → ~94 BPM (moderate)</li>
+                        <li><code>DATA 10</code> → 50/10 = 5 notes/sec → ~75 BPM (slow, atmospheric)</li>
+                    </ul>
+                    <p>You can change tempo mid-song with <code>MUSIC SPEED &lt;n&gt;</code>.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑤ Notes &amp; Octave Range</h3>
+                    <p>Notes are written as <strong>letter + octave</strong>, optionally with <code>#</code> for sharp and an instrument letter:</p>
+                    <p style="font-family:monospace; background:#1a1a2e; color:#a0c0ff; padding:10px; border-radius:6px; font-size:13px;">
+                        C4 &nbsp; D4# &nbsp; E3Z &nbsp; A5X &nbsp; G2 &nbsp; B4#Y &nbsp; F4W
+                    </p>
+                    <p>The PSG's usable range is <strong>C2 (low rumble) to C7 (thin squeak)</strong>. The sweet spot for melodies is C3–C6. Bass lines with Z instrument work best at C2–C3 (they'll sound an octave lower due to the Z drop).</p>
+                    <p><strong>S</strong> (sustain) = hold the previous note. <strong>-</strong> = silence.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑥ Song Structure — Looping</h3>
+                    <p>Most Intellivision songs use the <strong>intro + loop</strong> pattern:</p>
+                    <pre style="background:#1a1a2e; color:#a0c0ff; padding:12px; border-radius:6px; font-size:12px; line-height:1.6;">MySong:
+  DATA 6
+  MUSIC E4X, E2Z, -, M1     ' intro bar
+  MUSIC G4X, S,   -, M3
+  ...
+
+MySong_loop:
+  MUSIC C4X, C3Z, -, M1     ' main body starts here
+  MUSIC E4X, S,   -, M3
+  ...
+  MUSIC JUMP MySong_loop     ' loops back forever</pre>
+                    <p><code>MUSIC JUMP &lt;label&gt;</code> loops back to a label. <code>MUSIC REPEAT</code> loops the entire song. <code>MUSIC STOP</code> ends playback. The Music Studio's <strong>🔁 Loop</strong> button plays the loop body multiple times so you can listen continuously.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑦ Quick Start — Your First Song</h3>
+                    <ol class="primer-numbered-list">
+                        <li><strong>Click ➕ New Song</strong> to start with a blank canvas.</li>
+                        <li><strong>Select Channel 1</strong> and <strong>Instrument X</strong> (clarinet) in the edit controls.</li>
+                        <li><strong>Click notes on the piano-roll</strong> to place a melody. Start simple — C4, E4, G4, C5 is a C major arpeggio.</li>
+                        <li><strong>Switch to Channel 2</strong>, select <strong>Instrument Z</strong> (bass). Click lower notes (C2, G2) to add a bass line.</li>
+                        <li><strong>Switch to Drums</strong>. Click in the bottom purple strip to add M1 kicks and M3 hats.</li>
+                        <li><strong>Press ▶ Play</strong> to hear it. Adjust volume with the 🔊 slider.</li>
+                        <li><strong>📄 Copy Source</strong> gives you the IntyBASIC <code>MUSIC</code> statements to paste into your game's <code>.bas</code> file.</li>
+                    </ol>
+                </section>
+
+            </div><!-- /.intv-primer-body -->
+
+            <div class="intv-primer-footer">
+                <button class="btn btn-primary" onclick="closeAudioPrimer()">Got it — start composing!</button>
+                <a href="https://nanochess.org/intybasic.html" target="_blank" rel="noopener" class="primer-external-link">
+                    IntyBASIC documentation ↗
+                </a>
+            </div>
+
+        </div><!-- /.intv-primer-dialog -->
+    </div><!-- /#audio-primer-modal -->
+
     <!-- JSZip for project export/import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/static/js/overlay_editor.js"></script>
@@ -3097,8 +3226,17 @@ LOOP</pre>
             document.getElementById('intv-primer-modal').style.display = 'none';
             document.body.style.overflow = '';
         }
+        function openAudioPrimer() {
+            document.getElementById('audio-primer-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function closeAudioPrimer(e) {
+            if (e && e.target !== document.getElementById('audio-primer-modal')) return;
+            document.getElementById('audio-primer-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeIntvPrimer();
+            if (e.key === 'Escape') { closeIntvPrimer(); closeAudioPrimer(); }
         });
     </script>
 </body>

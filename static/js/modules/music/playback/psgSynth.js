@@ -108,6 +108,13 @@ export class PsgSynth {
         return this._rafId !== null;
     }
 
+    /** Set master volume (0-1). Safe to call before context exists. */
+    static setVolume(level) {
+        if (this.masterGain) {
+            this.masterGain.gain.value = Math.max(0, Math.min(1, level));
+        }
+    }
+
     // ── Internals ───────────────────────────────────────────────────────────
 
     /** Schedule one melody note at the given AudioContext time. */
