@@ -94,6 +94,70 @@ never enable ECS, while a JLP game needs JLP every time. Settings should travel 
 
 ---
 
+### [MAJOR] Browser-Native IntyBASIC IDE — The Long Game
+
+**Goal:** Turn the editor into a complete in-browser IntyBASIC development
+environment. Write code, build the ROM, run it in jzIntv WASM, debug —
+without ever leaving the browser or installing native toolchain.
+
+**Current bridge:** The Music Studio's `/music/compile_rom` endpoint already
+demonstrates the loop (source → ROM → jzIntv WASM playback). It works on
+local dev where the toolchain is installed. For production, the button is
+visible-but-disabled with a tooltip pointing at setup docs. That's the
+honest "we aren't shipping a compiler yet" stance — see
+`docs/wasm-playback.md` for the three install paths.
+
+**What "yet" means — the WASM-compiler dream:**
+The natural symmetry breaker is that jzIntv ships as WASM (precompiled
+static artifact) while `intybasic` + `as1600` are native `gcc` binaries
+that have to execute on a server. The clean answer is to compile the
+*compiler* to WASM too:
+
+1. **intybasic.wasm** — emscripten port of Oscar Toledo's IntyBASIC C++
+   source. Source is at github.com/nanochess/IntyBASIC. Real work:
+   file I/O needs to go through emscripten's virtual FS, stdout/stderr
+   captured to JS callbacks.
+2. **as1600.wasm** — emscripten port of jzIntv's assembler. Smaller,
+   simpler C. Should be a weekend project given the existing jzIntv WASM
+   build experience.
+3. Browser pipeline: `editor source → intybasic.wasm → .asm → as1600.wasm
+   → .rom → jzintv.wasm → audio + video`. Zero server involvement after
+   page load.
+
+**Beyond the compiler — what makes it an "IDE":**
+- **Code editor** — Monaco or CodeMirror with IntyBASIC syntax highlighting,
+  on-the-fly error squigglies (run the WASM compiler in a worker on edit)
+- **Multi-file projects** — virtual file tree, INCLUDE resolution, assets
+  (`.bmp`, `.bas` chunks, music files) bundled as a project save
+- **Build + Run** — one click goes from source to running ROM
+- **Asset pipeline** — every existing tab (Overlay, Box Art, Sprite,
+  Layout Designer, Music Studio, IntelliVoice) becomes an asset editor
+  whose output flows into the project's `INCLUDE` graph
+- **Debugger glue** — surface jzIntv's `-d` debugger via the existing
+  Emulator tab plumbing (memory inspector, breakpoints, register watch)
+- **Project share** — URL-encoded or token-stored project state so a
+  composer can paste a link and have someone hear/play their game
+
+**Strategic note:** every editor tab we've built so far already produces
+IntyBASIC source. The IDE is the natural unification — the missing piece
+is the compiler-in-browser. Once that's WASM, the editor stops being
+"several tools that each emit BASIC source" and becomes "a place to build
+homebrew Intellivision games."
+
+**Order of operations when we go:**
+1. Stand up an `as1600.wasm` proof of concept (smaller, gives us the
+   emscripten template)
+2. Stand up `intybasic.wasm` (the harder port)
+3. Replace `/music/compile_rom` with a client-side call to the same
+   pipeline — server endpoint deprecated, runs identically
+4. Build the code editor surface and wire the asset tabs into a project
+   model
+5. Add the debugger glue
+
+This is months of work, not a sprint. But it's the right north star.
+
+---
+
 ### Intellivision ROM File Validator (standalone tool)
 **Goal:** A small standalone utility (separate project or CLI) that inspects an Intellivision
 ROM file, detects its true format, and reports whether the file extension is correct.
