@@ -192,6 +192,57 @@ export class PsgSynth {
         }
     }
 
+    /**
+     * Render the given playback events to an offline AudioBuffer (mono, 44.1 kHz).
+     * Uses the same _scheduleNote / _scheduleDrum scheduling as live playback,
+     * so the WAV matches what you hear in the preview. Swap pattern: we
+     * temporarily redirect ctx/masterGain/noiseBuffer to an OfflineAudioContext,
+     * run the scheduler, then restore. Returns the rendered AudioBuffer.
+     */
+    static async renderToBuffer(events, totalTicks) {
+        const sampleRate = 44100;
+        const tickSec = 1 / this.framerate;
+        const totalDur = (totalTicks * tickSec) + 0.5;  // pad for tails / releases
+
+        const offlineCtx = new OfflineAudioContext(
+            1,                                          // mono
+            Math.max(1, Math.ceil(totalDur * sampleRate)),
+            sampleRate
+        );
+        const offlineGain = offlineCtx.createGain();
+        offlineGain.gain.value = 0.55;                   // matches live default
+        offlineGain.connect(offlineCtx.destination);
+        const offlineNoise = buildNoiseBuffer(offlineCtx);
+
+        const realCtx   = this.ctx;
+        const realGain  = this.masterGain;
+        const realNoise = this.noiseBuffer;
+        const realNodes = this.activeNodes;
+
+        this.ctx          = offlineCtx;
+        this.masterGain   = offlineGain;
+        this.noiseBuffer  = offlineNoise;
+        this.activeNodes  = [];
+
+        try {
+            const startTime = 0.05;
+            for (const ev of events) {
+                const evTime = startTime + ev.timeSec;
+                if (ev.type === 'note') {
+                    this._scheduleNote(ev, evTime, tickSec);
+                } else if (ev.type === 'drum') {
+                    this._scheduleDrum(ev, evTime);
+                }
+            }
+            return await offlineCtx.startRendering();
+        } finally {
+            this.ctx          = realCtx;
+            this.masterGain   = realGain;
+            this.noiseBuffer  = realNoise;
+            this.activeNodes  = realNodes;
+        }
+    }
+
     /** Animation loop — calls onPlayheadTick with the current tick position. */
     static _tick(totalTicks) {
         const step = () => {

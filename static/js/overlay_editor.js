@@ -723,6 +723,7 @@ window.musicToggleKeyboardMode = () => MusicEditor.toggleKeyboardMode();
 window.musicOctaveDown        = () => MusicEditor.octaveDown();
 window.musicOctaveUp          = () => MusicEditor.octaveUp();
 window.musicSetVolume         = (v) => { import('./modules/music/playback/psgSynth.js').then(m => m.PsgSynth.setVolume(v / 100)); };
+window.musicDownloadWav       = () => MusicEditor.downloadWav();
 
 // SFX Lab wiring
 window.sfxPlay        = () => SfxEditor.play();
@@ -731,6 +732,7 @@ window.sfxCopy        = () => SfxEditor.copyOutput();
 window.sfxLoadPreset  = (id) => SfxEditor.loadPreset(id);
 window.sfxUpdate      = (field, val) => SfxEditor.updateField(field, val);
 window.sfxSetExec     = (key) => SfxEditor.setExec(key);
+window.sfxDownloadWav = () => SfxEditor.downloadWav();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

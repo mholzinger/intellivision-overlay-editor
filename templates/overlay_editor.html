@@ -189,12 +189,13 @@
                 <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source — it will be parsed and rendered on the piano-roll">📋 Paste</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicDownloadWav()" data-tooltip="Render the full song (one iteration, mute/solo honored) to a 16-bit PCM WAV file and download. Plays through the same Web Audio synth as the preview.">💾 WAV</button>
                 <button class="btn btn-info btn-sm" onclick="openAudioPrimer()" data-tooltip="Intellivision audio concepts for beginners — PSG channels, instruments, drums, tempo, looping">📖 Audio Primer</button>
                 <div class="music-demos-dropdown" style="position:relative; display:inline-block;">
                     <button class="btn btn-info btn-sm" onclick="musicToggleDemosDropdown()" data-tooltip="Load a bundled demo song to hear what's possible — all tracks from the Space Intruders homebrew project">🎶 Demos ▾</button>
                     <div id="music-demos-dropdown-menu" style="display:none; position:absolute; top:100%; left:0; min-width:340px; background:#ffffff; border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:1000; margin-top:4px; max-height:400px; overflow-y:auto;">
                         <div style="padding:10px 14px; border-bottom:1px solid #eee; font-size:11px; color:#586069; line-height:1.5;">
-                            Music by <strong>paisleyboxers</strong> — used as Music Studio demo content. Click any track to load it.
+                            Music from the Space Intruders soundtrack — demo content from the intv-game-builder collection. Click any track to load it.
                         </div>
                         <div id="music-demos-list">
                             <div style="padding:12px 14px; color:#666; font-size:12px;">Loading…</div>
@@ -214,6 +215,8 @@
                 <button class="btn btn-success btn-sm" id="sfx-play-btn" onclick="sfxPlay()" data-tooltip="Preview the current SFX patch through Web Audio (instant, approximate).">▶ Play</button>
                 <button class="btn btn-secondary btn-sm" id="sfx-stop-btn" onclick="sfxStop()" disabled data-tooltip="Stop playback immediately">■ Stop</button>
                 <button class="btn btn-secondary btn-sm" onclick="sfxCopy()" data-tooltip="Copy the generated IntyBASIC SOUND statements to your clipboard, ready to paste into your .bas file">📋 Copy SOUND</button>
+                <button class="btn btn-secondary btn-sm" onclick="sfxDownloadWav()" data-tooltip="Render one iteration of the current SFX to a 16-bit PCM WAV file and download. Loops + EXEC tails are captured; the WAV plays a single pass.">💾 WAV</button>
+                <button class="btn btn-info btn-sm" onclick="openSfxPrimer()" data-tooltip="Intellivision sound-effect concepts — PSG, SOUND vs MUSIC vs EXEC, sweeps, noise, envelopes, multi-phase, $011E hazard, full source credits">📖 SFX Primer</button>
                 <span id="sfx-status" class="voice-status-msg" style="margin-left:12px;"></span>
             </div>
         </div>
@@ -2822,7 +2825,7 @@
                     🎼 <strong>Compose:</strong> pick a channel + instrument above, then click the piano-roll to add notes. Click again to delete. Drum channel paints into the bottom strip with the selected M1/M2/M3 type.<br>
                     🎬 <strong>Track:</strong> press ▶ Play or <code>Space</code> — the playhead stays put and the music scrolls past it (player-piano style). Click the ruler to seek.<br>
                     ✂️ <strong>Select &amp; clip:</strong> drag on the ruler for a yellow range; cut / copy / paste / delete / transpose all work on the selection. ▶ Play becomes ▶ Play Selection while a range is active. Full shortcut list in <strong>📖 Audio Primer</strong>.<br>
-                    🎶 <strong>Try a demo:</strong> click the <strong>Demos</strong> button to load any of 10 real Space Intruders tracks from <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">paisleyboxers.itch.io</a>.
+                    🎶 <strong>Try a demo:</strong> click the <strong>Demos</strong> button to load any of 10 real Space Intruders tracks — source bundled in the <a href="https://gitlab.com/mholzinger/intybasic-workbench" target="_blank" rel="noopener">intv-game-builder collection ↗</a>.
                 </p>
 
             </div><!-- end music-editor-layout -->
@@ -3334,11 +3337,11 @@ MySong_loop:
                         <li>
                             <strong>ZMUS</strong> — by <strong>Joe Zbiciak</strong>.
                             A microprogrammed bytecode music engine that lives at <code>$D000</code>; well-suited to JLP-equipped cartridges.
-                            See <code>lib/zmus_engine.bas</code> in the intv-game-builder distribution.
+                            See <code>lib/zmus_engine.bas</code> in the <a href="https://gitlab.com/mholzinger/intybasic-workbench" target="_blank" rel="noopener">intv-game-builder collection ↗</a>.
                         </li>
                     </ul>
                     <p style="font-size:12px; color:#7a8390; margin-top:10px;">
-                        Demo songs in the editor: <strong>paisleyboxers</strong>' <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">Space Intruders</a> soundtrack (IntyBASIC) and the ECS Hex Choir showcase composed for this editor.
+                        Demo songs in the editor: the Space Intruders soundtrack (IntyBASIC) and the ECS Hex Choir showcase composed for this editor. Both source files are bundled in the <a href="https://gitlab.com/mholzinger/intybasic-workbench" target="_blank" rel="noopener">intv-game-builder collection ↗</a>.
                     </p>
                 </section>
 
@@ -3353,6 +3356,229 @@ MySong_loop:
 
         </div><!-- /.intv-primer-dialog -->
     </div><!-- /#audio-primer-modal -->
+
+    <!-- ====================================================== -->
+    <!-- SFX Primer Modal                                        -->
+    <!-- ====================================================== -->
+    <div id="sfx-primer-modal" class="intv-primer-overlay" style="display:none;" onclick="closeSfxPrimer(event)">
+        <div class="intv-primer-dialog" role="dialog" aria-modal="true" aria-labelledby="sfx-primer-title">
+
+            <div class="intv-primer-header">
+                <h2 id="sfx-primer-title">INTV SFX Primer</h2>
+                <p class="primer-subtitle">How to think about Intellivision sound effects, how to use the SFX Lab, and where every preset came from</p>
+                <button class="primer-close-btn" onclick="closeSfxPrimer()" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="intv-primer-body">
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">① The Sound Chip — A Quick Recap</h3>
+                    <p>The Intellivision's <strong>AY-3-8914 PSG</strong> (Programmable Sound Generator) is the same chip that drives music — see the <strong>📖 Audio Primer</strong> on the Music Studio tab for the full architecture. The fast recap:</p>
+                    <ul class="primer-list">
+                        <li><strong>3 tone channels (A, B, C)</strong> — each plays a square wave at a programmable period (12-bit, 1–4095). Frequency ≈ <code>894886 / (16 × period)</code> Hz.</li>
+                        <li><strong>1 noise generator</strong> — white noise at a 5-bit period (0–31). Lower period = brighter / hissier; higher period = deeper rumble.</li>
+                        <li><strong>1 hardware envelope generator</strong> — shapes the volume of any channel routed through it. 16 selectable shapes, settable cycle period.</li>
+                        <li><strong>1 mixer register</strong> — chooses, per channel, whether tone, noise, or both reach the output.</li>
+                    </ul>
+                    <p>Music uses the same chip, the same channels, the same registers. SFX has to <em>coexist</em> with music — so dedicating one channel to SFX (conventionally <strong>channel C</strong>) lets the music engine keep A and B for melody.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">② Three Ways to Make Noise in IntyBASIC</h3>
+                    <div class="primer-two-col">
+                        <div class="primer-card primer-card-blue">
+                            <h4>MUSIC — the song engine</h4>
+                            <p>High-level note streams (<code>MUSIC C4X, E4X, G4X, M1</code>). Best for melodies, drums, loops. Covered by the <strong>Music Studio</strong> tab.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>SOUND — direct PSG writes</h4>
+                            <p><code>SOUND register, value</code> writes one byte to one PSG register. This is the <strong>SFX Lab's</strong> currency: short bursts of register writes that produce a single effect. Total control, total responsibility.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>EXEC ROM routines</h4>
+                            <p>Mattel's system ROM ships pre-baked sound effects you can call via <code>ASM CALL $XXXX</code> — Crowd, Razz, Whistle, etc. Sample-quality, free CPU, and identical on every Intellivision. See section ⑧.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>DOSOUND — the EXEC's SOUND interpreter</h4>
+                            <p>A bytecode interpreter for sound sequences. Convenient, but it <strong>clobbers RAM <code>$011E</code></strong> (see section ⑨). The SFX Lab emits direct <code>SOUND</code> writes instead.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">③ The Four Ingredients of a PSG Sound Effect</h3>
+                    <p>Every preset in the SFX Lab is built from four ingredients. Tweaking them in combination is the whole game:</p>
+                    <ul class="primer-list">
+                        <li><strong>Channel</strong> (A / B / C) — which tone generator owns this effect. Channel C is the conventional SFX slot because it leaves A and B free for music.</li>
+                        <li><strong>Frequency</strong> + how it changes (the <em>sweep</em>). A held tone is rare; most effects sweep from one pitch to another. Sweep shape (step / linear / exp / quadratic) is the defining "character" knob.</li>
+                        <li><strong>Noise</strong> — on or off, plus a period that controls timbre. Noise without tone = explosions, wind, percussion. Tone <em>with</em> noise mixed in = raspy lasers, missile thrusters.</li>
+                        <li><strong>Envelope</strong> — how the volume changes over time. <em>Manual</em> = linear fade per step. <em>HW envelope</em> = the AY's built-in shape generator (16 options).</li>
+                    </ul>
+                    <p>Six of the SFX Lab's presets are <strong>multi-phase</strong> — they chain several different "ingredient settings" end-to-end (see section ⑦). Most one-shot SFX work fine with a single phase.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">④ Sweep Shapes — The Character of an Effect</h3>
+                    <p>The <strong>Sweep</strong> dropdown in the Designer chooses how the tone moves from <code>Freq start</code> to <code>Freq end</code> across the segment's steps:</p>
+                    <div class="primer-two-col">
+                        <div class="primer-card primer-card-blue">
+                            <h4>Step</h4>
+                            <p>Discrete pitch jumps with held values between them. The classic <strong>arcade coin pickup</strong> pattern (three rising notes). Also right for stepped fanfares and chirp sequences.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Linear</h4>
+                            <p>Straight-line interpolation. Workhorse for explosions, descending death cries, alien kills. Predictable, easy to dial in.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Exponential</h4>
+                            <p>Slow at first, then fast — like a laser snapping down to silence. Great for sci-fi blasts and "wow" effects where the start matters more than the end.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Quadratic (Toledo state²)</h4>
+                            <p>Accelerating in the opposite curve — <code>200 - state*state</code> from the Pumpkin Master cookbook. Distinct character; perfect for slingshot-style rising shots.</p>
+                        </div>
+                    </div>
+                    <p><strong>Steps</strong> controls how many sample points the sweep lands on. More steps = smoother sweep, more <code>SOUND</code> writes, more bytes. 5–12 covers most SFX; 20+ is reserved for long held effects.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑤ The Noise Channel — Texture &amp; Period</h3>
+                    <p>The PSG noise generator outputs pseudo-random white noise. <strong>One 5-bit period register (<code>SOUND 6</code>, range 0–31)</strong> controls timbre — and only timbre. Volume is set per-channel via the volume register, and what reaches the output is governed by the mixer.</p>
+                    <ul class="primer-list">
+                        <li><strong>Period 1–4</strong> — bright crackle, almost TV-static. Glass shatter, electric fizzle, snare snap.</li>
+                        <li><strong>Period 6–12</strong> — general-purpose explosion / boom. Most arcade explosions land here.</li>
+                        <li><strong>Period 14–22</strong> — mid-deep, broadband texture. Whoosh, wind, distant thunder.</li>
+                        <li><strong>Period 24–31</strong> — sub-bass rumble. Earthquakes, big-bomb shockwaves.</li>
+                    </ul>
+                    <p>The <strong>Noise Period</strong> slider in the Designer sets the starting period. Multi-phase presets sweep period across phases — Astrosmash's classic boom sweeps 14 → 24 over 22 frames, giving the texture-deepening signature.</p>
+                    <p><strong>Mixing tone + noise</strong> (turn on Noise <em>and</em> have non-zero freq) is how you get raspy lasers, throaty missile thrusters, gravelly hurts. Pure noise = percussion. Pure tone = clean pitch effects. Mix = textured.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑥ Envelopes — Manual vs Hardware</h3>
+                    <p>The volume curve over time is what separates a "tweet" from a "splat." The SFX Lab supports two modes via the <strong>Envelope Mode</strong> dropdown:</p>
+                    <div class="primer-two-col">
+                        <div class="primer-card primer-card-blue">
+                            <h4>Manual</h4>
+                            <p>The Designer writes one <code>SOUND 8/9/10, n</code> per step, tapering volume linearly from peak to zero. <strong>Costs CPU</strong> — every frame the SFX code writes a register. <strong>Total flexibility</strong> — any curve you want, just by precomputing steps.</p>
+                            <p>Best for one-shot effects under ~300ms. The default for all v1 presets.</p>
+                        </div>
+                        <div class="primer-card primer-card-blue">
+                            <h4>Hardware Envelope</h4>
+                            <p>The AY chip has a built-in envelope generator with <strong>16 selectable shapes</strong> and a 16-bit cycle period. Set it up once (<code>SOUND 11, 12, 13</code>), then write volume = <strong>16</strong> (bit 4 = "use envelope") to any channel. The chip drives the volume curve. <strong>Zero CPU after setup.</strong></p>
+                            <p>The musically interesting shapes are <strong>8</strong> &amp; <strong>12</strong> (sawtooth loops) and <strong>10</strong> &amp; <strong>14</strong> (triangle loops). Shape 0/1/2/3/9 are equivalent single-decays. Shape 11/13 hold high after the initial ramp.</p>
+                        </div>
+                    </div>
+                    <p>The four <strong>Ambience</strong> presets (Helicopter, Siren, Seawaves, Saucer Drone) all use HW envelope to loop a shaped volume curve without burning CPU per frame. Open one and inspect the IntyBASIC output to see the <code>SOUND 11/12/13</code> setup pattern.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑦ Multi-Phase Effects — Chaining Configurations</h3>
+                    <p>Complex SFX (Plasma Cannon, Boss Reactor Meltdown, Belt-Buckle Powerup) can't be expressed as a single freq sweep — they chain <strong>multiple PSG configurations</strong> end-to-end. The SFX Lab represents this as a <code>segments</code> array where each segment has its own freq, noise, volume, and duration fraction.</p>
+                    <p>Examples in the library:</p>
+                    <ul class="primer-list">
+                        <li><strong>Belt-Buckle Powerup</strong> (2 phases): metallic noise snap → descending tonal ring.</li>
+                        <li><strong>Plasma Cannon</strong> (3 phases): bass thrum → mid arc → deep rumble tail.</li>
+                        <li><strong>Boss Reactor Meltdown</strong> (4 phases): rising alarm → noise chaos → bass+noise sustain → aftershock pulses.</li>
+                        <li><strong>Stepped Fanfare</strong> (4 phases): four ascending tones (each a held pitch for a quarter of the total duration) — the level-up sting pattern.</li>
+                        <li><strong>Saucer Drone</strong> (looping, 2 phases): alternating two-tone hum that loops until stopped.</li>
+                    </ul>
+                    <p>Multi-phase presets show a JSON view in the Designer instead of flat sliders — per-phase slider editing is on the v2 roadmap. The preview and the IntyBASIC output both fully reflect the design; only the in-place editing is deferred.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑧ EXEC ROM Sound Routines — Mattel's Pre-Baked SFX</h3>
+                    <p>Every Intellivision boots from Mattel's <strong>4KB EXEC ROM</strong> — the same binary on every console, every cartridge. It contains a set of canonical sound routines you can call from IntyBASIC via <code>ASM CALL $XXXX</code>:</p>
+                    <table class="primer-shortcut-table">
+                        <thead><tr><th>Address</th><th>EXEC label</th><th>What it sounds like</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>$1ED5</code></td><td>X_PLAY_CHEER1</td><td>Crowd cheer / applause</td></tr>
+                            <tr><td><code>$1EBA</code></td><td>X_PLAY_RAZZ1</td><td>Raspberry / Bronx-cheer "groan"</td></tr>
+                            <tr><td><code>$1EBD</code></td><td>X_PLAY_RAZZ2</td><td>Longer raspberry / "boo"</td></tr>
+                            <tr><td><code>$1F1B</code></td><td>X_PLAY_WHST1</td><td>Referee whistle</td></tr>
+                            <tr><td><code>$1ABD</code></td><td>X_PLAY_NOTE</td><td>Single-note utility (one pitched bleep)</td></tr>
+                            <tr><td><code>$1EB4</code></td><td>X_STOP_SFX</td><td>Silence any active SFX</td></tr>
+                            <tr><td><code>$1AA8</code></td><td>X_HUSH</td><td>Silence everything (utility)</td></tr>
+                        </tbody>
+                    </table>
+                    <p style="font-size:12px; color:#7a8390; margin-top:8px;">Source of truth: jzIntv's disassembler symbol table (<code>dasm/exec_interp.c</code>).</p>
+                    <p><strong>Why they matter:</strong> Crowd cheer / groan are <em>sample-quality</em> compared to anything you can write with <code>SOUND</code> directly — they're the difference between a generic arcade bleep and "the crowd reacted." Steve Ettinger uses CROWD heavily in his sports homebrews. The SFX Lab's <strong>EXEC tail</strong> dropdown appends one of these calls after the PSG effect — that's how "ball lip-outs and the crowd groans" works (Golf Lip-Out preset).</p>
+                    <p>The Web Audio preview only <em>approximates</em> the EXEC routines (since the actual byte sequences live in Mattel's copyrighted ROM and aren't reproduced here). The exported IntyBASIC calls the real ROM at runtime, so what you ship sounds correct.</p>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑨ Hardware Hazard — DOSOUND Clobbers <code>$011E</code></h3>
+                    <p><em>Tip from <strong>Steve Ettinger</strong>, legendary Intellivision developer:</em></p>
+                    <blockquote style="border-left:3px solid #d4af37; background:#1a1a2e; color:#e0e0e8; padding:10px 14px; border-radius:0 6px 6px 0; font-style:italic;">
+                        If you (or anyone) is using the Exec DOSOUND routine, there is a RAM address (<code>$011E</code>) in user RAM that gets overwritten indiscriminately by the DOSOUND — BEWARE when coding your own game to be SURE that you burn that location with a dummy RAM variable so that your game won't be tanked by DOSOUND!
+                    </blockquote>
+                    <p><strong>What this means for the SFX Lab:</strong></p>
+                    <ul class="primer-list">
+                        <li>The Lab's generated <code>SOUND</code> writes are <strong>direct PSG register writes</strong>, not DOSOUND bytecode — so the SFX statements the Lab produces don't touch <code>$011E</code> themselves.</li>
+                        <li>However, the EXEC sound routines (CROWD, RAZZ, etc.) <em>do</em> route through DOSOUND internally. <strong>If you use the EXEC tail feature, reserve <code>$011E</code></strong> with a dummy variable so EXEC's sound interpreter doesn't silently corrupt whatever your game stored there.</li>
+                        <li>This is the same warning the Music Studio's Audio Primer carries — it's the most common silent gameplay bug in homebrew titles that mix MUSIC + SOUND + EXEC routines.</li>
+                    </ul>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑩ Quick Start — From Preset to <code>.bas</code></h3>
+                    <ol class="primer-numbered-list">
+                        <li><strong>Click any preset</strong> in the left panel. The Designer loads the patch, the IntyBASIC output updates live, and Web Audio plays the effect immediately.</li>
+                        <li><strong>Tweak in the Designer:</strong> channel, duration, freq sweep, noise, envelope. Every change re-renders the SOUND output and plays the next preview when you press ▶ Play.</li>
+                        <li><strong>(Optional) Add an EXEC tail</strong> — e.g. <strong>Crowd Groan</strong> after the Golf Lip-Out preset, or <strong>Referee Whistle</strong> after a foul SFX. The tail plays once at the end and is excluded from any loop.</li>
+                        <li><strong>(Optional) Toggle Loop</strong> — for ambient SFX like Saucer Drone or Helicopter. The output wraps in a <code>sfx_loop:</code> label + <code>GOTO sfx_loop</code>; remove the GOTO to make it one-shot.</li>
+                        <li><strong>📋 Copy SOUND</strong> drops the IntyBASIC statements onto your clipboard. Paste into your <code>.bas</code> file as a labelled subroutine, then <code>GOSUB</code> it whenever the effect should fire.</li>
+                    </ol>
+                    <p>Showcase presets to demo each capability:</p>
+                    <ul class="primer-list">
+                        <li><strong>Astrosmash Boom</strong> — the canonical Intellivision death sound (noise period sweep).</li>
+                        <li><strong>Defender Crack</strong> — 80ms ultra-fast laser (linear sweep, max punch).</li>
+                        <li><strong>Plasma Cannon</strong> — 3-phase multi-segment effect (envelope buckets).</li>
+                        <li><strong>Helicopter</strong> — HW envelope shape 12 (sawtooth-up loop) driving the noise channel.</li>
+                        <li><strong>Golf Lip-Out ★</strong> — Steve Ettinger's exact scenario: PSG SFX + EXEC Crowd Groan composition.</li>
+                    </ul>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑪ Sources &amp; Credits</h3>
+                    <p>The SFX Lab's preset library was distilled from a treasure trove of existing Intellivision sound code. Please credit these authors when you share derived work:</p>
+                    <ul class="primer-list">
+                        <li>
+                            <strong>Oscar Toledo G. (nanochess)</strong> — author of the <strong>IntyBASIC compiler</strong>, the <em>Advanced Programming for the Intellivision</em> book, and the bundled <code>samples/</code> programs (<code>envelope.bas</code>, <code>lander.bas</code>, <code>pak.bas</code>). The Bird Chirp, Pumpkin Fire (quadratic), and all four Ambience presets descend from his cookbook and envelope demos.
+                            <a href="https://nanochess.org/intybasic.html" target="_blank" rel="noopener">nanochess.org/intybasic ↗</a>
+                        </li>
+                        <li>
+                            <strong>Joe Zbiciak (intvnut)</strong> — author of <strong>jzIntv</strong> (the emulator powering this editor's bit-perfect playback path) and the <strong>Space Patrol</strong> homebrew. Space Patrol's <code>snd/sfx.asm</code> contributed the clean 2-word "init-record" SFX engine pattern and several looping-ambient ideas. The canonical EXEC ROM addresses in section ⑧ come from jzIntv's disassembler symbol table.
+                            <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener">spatula-city.org/~im14u2c/intv ↗</a>
+                        </li>
+                        <li>
+                            <strong>Steve Ettinger</strong> — legendary Intellivision developer. The <strong>$011E DOSOUND hazard</strong> (section ⑨) and the <strong>EXEC CROWD composition</strong> pattern (section ⑧) are both credited to him. The Golf Lip-Out preset is his exact use case.
+                        </li>
+                        <li>
+                            <strong>The intv-game-builder collection</strong> — Mike's own homebrew &amp; SFX-research workbench, where most of the catalog mining for these presets happened. Source: <a href="https://gitlab.com/mholzinger/intybasic-workbench" target="_blank" rel="noopener">gitlab.com/mholzinger/intybasic-workbench ↗</a>. Specific contributors to the preset library:
+                            <ul style="margin-top:6px;">
+                                <li><strong>Space Intruders</strong> (<code>games/space-intruders/</code>) — the unified 15-type <code>UpdateSfx</code> engine in <code>waves.bas</code> contributed Spongey Bwop, Saucer Schwing, Belt-Buckle Powerup, and Saucer Drone.</li>
+                                <li><strong>Intruders Beats</strong> (<code>games/intrudersbeats/src/sfxlab.bas</code>) — a 27-effect cataloged sound-design ROM. Astrosmash Boom, Defender Crack, SI Missile, Sad Descent, Plasma Cannon, and Boss Reactor Meltdown. The companion <code>intruderexplosions.bas</code> contributed additional explosion patterns.</li>
+                                <li><strong>downbeat / boss-test</strong> — rhythm-game SFX patterns and boss-assembly stings. The Stepped Fanfare preset distills patterns observed across these projects.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <p style="font-size:12px; color:#7a8390; margin-top:10px;">
+                        Every preset stores its source attribution in a <code>// Source:</code> comment inside the preset definition in <code>sfxEditor.js</code> — search there to find the originating <code>.bas</code> / <code>.asm</code> file and line for any specific effect.
+                    </p>
+                </section>
+
+            </div><!-- /.intv-primer-body -->
+
+            <div class="intv-primer-footer">
+                <button class="btn btn-primary" onclick="closeSfxPrimer()">Got it — start designing!</button>
+                <a href="https://nanochess.org/intybasic.html" target="_blank" rel="noopener" class="primer-external-link">
+                    IntyBASIC documentation ↗
+                </a>
+            </div>
+
+        </div><!-- /.intv-primer-dialog -->
+    </div><!-- /#sfx-primer-modal -->
 
     <!-- JSZip for project export/import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -3408,8 +3634,17 @@ MySong_loop:
             document.getElementById('audio-primer-modal').style.display = 'none';
             document.body.style.overflow = '';
         }
+        function openSfxPrimer() {
+            document.getElementById('sfx-primer-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSfxPrimer(e) {
+            if (e && e.target !== document.getElementById('sfx-primer-modal')) return;
+            document.getElementById('sfx-primer-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { closeIntvPrimer(); closeAudioPrimer(); }
+            if (e.key === 'Escape') { closeIntvPrimer(); closeAudioPrimer(); closeSfxPrimer(); }
         });
     </script>
 </body>

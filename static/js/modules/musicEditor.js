@@ -16,6 +16,7 @@ import { ZmusEngine }        from './music/engines/zmusEngine.js';
 import { PianoRoll }      from './music/pianoRoll.js';
 import { Minimap }        from './music/minimap.js';
 import { PsgSynth }       from './music/playback/psgSynth.js';
+import { audioBufferToWav, downloadBlob, slugifyFilename } from '../utils/wavEncoder.js';
 import { UIManager }      from './uiManager.js';
 
 // Registry of available engines. Phase 9 adds raw-PSG here.
@@ -868,6 +869,38 @@ export class MusicEditor {
         Minimap.setLoopInfo(null);
         this._updatePlayButton();
         this._updateStatusLine();
+    }
+
+    /**
+     * Render the current song (one iteration, no loop expansion) to a
+     * 16-bit PCM WAV and download it. Honors channel mute/solo so the
+     * downloaded WAV matches what you hear in the mixer.
+     */
+    static async downloadWav() {
+        if (!this.song) return;
+        try {
+            const btn = document.querySelector('#music-toolbar button[onclick="musicDownloadWav()"]');
+            const btnLabel = btn?.textContent;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Rendering…'; }
+
+            const events     = this.engine.toPlaybackEvents(this.song, 50, 1)
+                                    .filter(e => this.isChannelAudible(e.channel));
+            const totalTicks = this.engine.getPlaybackTicks
+                ? this.engine.getPlaybackTicks(this.song, 1)
+                : this.engine.getTotalTicks(this.song);
+
+            const buffer = await PsgSynth.renderToBuffer(events, totalTicks);
+            const blob   = audioBufferToWav(buffer);
+            const name   = this.song.name || this.song.title || 'untitled-song';
+            downloadBlob(blob, `${slugifyFilename(name)}.wav`);
+
+            if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
+        } catch (e) {
+            console.error('MusicEditor.downloadWav failed:', e);
+            const btn = document.querySelector('#music-toolbar button[onclick="musicDownloadWav()"]');
+            if (btn) { btn.disabled = false; btn.textContent = '💾 WAV'; }
+            alert('WAV render failed — see browser console for details.');
+        }
     }
 
     /**
