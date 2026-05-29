@@ -11,15 +11,17 @@
 
 import { IntyBasicMusic }    from './music/engines/intybasicMusic.js';
 import { ChevallierTracker } from './music/engines/chevallierTracker.js';
+import { ZmusEngine }        from './music/engines/zmusEngine.js';
 import { PianoRoll }      from './music/pianoRoll.js';
 import { Minimap }        from './music/minimap.js';
 import { PsgSynth }       from './music/playback/psgSynth.js';
 import { UIManager }      from './uiManager.js';
 
-// Registry of available engines. Phases 8/9 add JLP-zmus / raw-PSG here.
+// Registry of available engines. Phase 9 adds raw-PSG here.
 const ENGINES = {
     intybasic: IntyBasicMusic,
     'chevallier-tracker': ChevallierTracker,
+    'zmus':               ZmusEngine,
 };
 
 export class MusicEditor {
@@ -598,12 +600,16 @@ export class MusicEditor {
      * the engine slug or null when undecided (defer to the current engine).
      */
     static _detectEngineSlug(text) {
+        const looksLikeZmus = ZmusEngine.looksLike(text);
         const looksLikeTracker = /^\s*[A-Z_][A-Z0-9_]*\s+PROC\b/im.test(text)
                               && /NOTES\(/i.test(text);
         const looksLikeIntyBasic = /^\s*MUSIC\b/im.test(text)
                                 && /^\s*DATA\s+\d/im.test(text);
+        // ZMUS check first because it overlaps with Tracker's PROC pattern but
+        // is distinguished by the DECLE-heavy body and absence of NOTES() macros.
+        if (looksLikeZmus && !looksLikeTracker) return 'zmus';
         if (looksLikeTracker && !looksLikeIntyBasic) return 'chevallier-tracker';
-        if (looksLikeIntyBasic && !looksLikeTracker) return 'intybasic';
+        if (looksLikeIntyBasic && !looksLikeTracker && !looksLikeZmus) return 'intybasic';
         return null;
     }
 
