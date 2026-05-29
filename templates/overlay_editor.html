@@ -43,6 +43,9 @@
                 <button class="editor-tab" data-tab="music" onclick="switchEditorTab('music')" data-tooltip="Compose and play back Intellivision music — IntyBASIC native, ECS 8-channel, JLP/zmus, raw PSG. Piano-roll editor with Web Audio playback.">
                     🎵 Music Studio <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
                 </button>
+                <button class="editor-tab" data-tab="sfx" onclick="switchEditorTab('sfx')" data-tooltip="Design Intellivision sound effects — PSG-based laser, explosion, coin, jump, percussion. Preview in browser, export as IntyBASIC SOUND statements. Optional EXEC tail (CROWD groan/cheer) for compositions.">
+                    💥 SFX Lab <span style="color: orange; font-weight: bold; text-transform: uppercase; font-size: 0.75em; margin-left: 5px;">BETA</span>
+                </button>
             </div>
 
             <!-- Overlay Editor Action Buttons -->
@@ -204,6 +207,14 @@
                         <option value="intybasic">IntyBASIC MUSIC</option>
                     </select>
                 </span>
+            </div>
+
+            <!-- SFX Lab toolbar -->
+            <div id="sfx-toolbar" class="editor-toolbar">
+                <button class="btn btn-success btn-sm" id="sfx-play-btn" onclick="sfxPlay()" data-tooltip="Preview the current SFX patch through Web Audio (instant, approximate).">▶ Play</button>
+                <button class="btn btn-secondary btn-sm" id="sfx-stop-btn" onclick="sfxStop()" disabled data-tooltip="Stop playback immediately">■ Stop</button>
+                <button class="btn btn-secondary btn-sm" onclick="sfxCopy()" data-tooltip="Copy the generated IntyBASIC SOUND statements to your clipboard, ready to paste into your .bas file">📋 Copy SOUND</button>
+                <span id="sfx-status" class="voice-status-msg" style="margin-left:12px;"></span>
             </div>
         </div>
 
@@ -2817,6 +2828,46 @@
             </div><!-- end music-editor-layout -->
         </div><!-- End music-editor-content -->
 
+        <!-- ============================================================ -->
+        <!-- SFX LAB                                                       -->
+        <!-- ============================================================ -->
+        <div id="sfx-editor-content" class="editor-content">
+            <div class="sfx-editor-layout">
+
+                <!-- Left: preset library -->
+                <div class="sfx-presets-panel">
+                    <div class="sfx-panel-header">
+                        <label class="form-label" style="margin:0;" data-tooltip="Click any preset to load it into the designer and hear it instantly">Preset Library</label>
+                        <span class="voice-hint-inline">(click to load + preview)</span>
+                    </div>
+                    <div id="sfx-presets"></div>
+                </div>
+
+                <!-- Right: designer + EXEC tail + output -->
+                <div class="sfx-right-column">
+                    <div class="sfx-designer-panel">
+                        <div class="sfx-panel-header">
+                            <label class="form-label" style="margin:0;">Designer</label>
+                            <span class="voice-hint-inline">(tweak any control — output updates live)</span>
+                        </div>
+                        <div id="sfx-designer"></div>
+                    </div>
+
+                    <div class="sfx-exec-panel">
+                        <div id="sfx-exec-picker"></div>
+                    </div>
+
+                    <div class="sfx-output-panel">
+                        <label class="form-label" data-tooltip="Generated IntyBASIC SOUND statements — copy into your .bas file">IntyBASIC SOUND Output
+                            <span class="voice-hint-inline">(paste into your .bas)</span>
+                        </label>
+                        <pre id="sfx-output" class="sfx-output">' Loading…</pre>
+                    </div>
+                </div>
+
+            </div><!-- end sfx-editor-layout -->
+        </div><!-- End sfx-editor-content -->
+
     </div>
 
     <!-- INTV Primer Modal -->
@@ -3259,6 +3310,36 @@ MySong_loop:
                         <li><strong>Press ▶ Play</strong> to hear it. Adjust volume with the 🔊 slider.</li>
                         <li><strong>📄 Copy Source</strong> gives you the IntyBASIC <code>MUSIC</code> statements to paste into your game's <code>.bas</code> file.</li>
                     </ol>
+                </section>
+
+                <section class="primer-section">
+                    <h3 class="primer-section-title">⑩ Music Engines &amp; Credits</h3>
+                    <p>The Music Studio supports multiple native Intellivision music engines, each created by community authors. Their work made this editor possible — please credit them when sharing songs:</p>
+                    <ul class="primer-list">
+                        <li>
+                            <strong>IntyBASIC MUSIC</strong> (base PSG + ECS 8-channel) — by <strong>Oscar Toledo G. (nanochess)</strong>.
+                            The native <code>MUSIC</code>/<code>PLAY</code> system shipped with the IntyBASIC compiler.
+                            <a href="https://nanochess.org/intybasic.html" target="_blank" rel="noopener">nanochess.org/intybasic ↗</a>
+                        </li>
+                        <li>
+                            <strong>Chevallier Tracker</strong> — by <strong>Arnauld Chevallier</strong> (2008).
+                            The original 3-channel assembly tracker used in Joe Zbiciak's Space Patrol and other homebrew titles.
+                            <a href="http://wiki.intellivision.us/index.php/Tracker.asm_and_tracker.mac" target="_blank" rel="noopener">Intellivision Wiki ↗</a>
+                        </li>
+                        <li>
+                            <strong>IMT — Intellivision Music Tracker</strong> — extended by <strong>James Pujals (DZ-Jay)</strong>, building on Chevallier's original.
+                            v1.5 adds 6-channel ECS support, first-class envelope instruments, multi-step drum samples, and pitch effects.
+                            <a href="https://forums.atariage.com/topic/315201-intellivision-music-tracker-library/" target="_blank" rel="noopener">AtariAge thread ↗</a>
+                        </li>
+                        <li>
+                            <strong>ZMUS</strong> — by <strong>Joe Zbiciak</strong>.
+                            A microprogrammed bytecode music engine that lives at <code>$D000</code>; well-suited to JLP-equipped cartridges.
+                            See <code>lib/zmus_engine.bas</code> in the intv-game-builder distribution.
+                        </li>
+                    </ul>
+                    <p style="font-size:12px; color:#7a8390; margin-top:10px;">
+                        Demo songs in the editor: <strong>paisleyboxers</strong>' <a href="https://paisleyboxers.itch.io/space-intruders" target="_blank" rel="noopener">Space Intruders</a> soundtrack (IntyBASIC) and the ECS Hex Choir showcase composed for this editor.
+                    </p>
                 </section>
 
             </div><!-- /.intv-primer-body -->
