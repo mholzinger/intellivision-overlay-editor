@@ -112,15 +112,30 @@ const PRESETS = [
                appendExec: 'CROWD_GROAN' } },
 ];
 
-// EXEC routine bindings. The `intybasicCall` strings are placeholders the
-// user adjusts to match their actual EXEC binding (CALL/ASM/etc.).
+// EXEC ROM sound routine entry points. These addresses are CANONICAL and
+// unchanging — the EXEC ROM is the same fixed binary on every Intellivision,
+// so anyone who has loaded EXEC into the emulator (or shipped a cartridge)
+// already has these routines mapped at these addresses. Source of truth:
+// jzIntv's disassembler symbol table at dasm/exec_interp.c.
+//
+// Format: ASM CALL $XXXX — IntyBASIC's escape hatch for invoking arbitrary
+// CP1610 subroutines. EXEC sound routines expect to be called with the
+// PSG already initialised (which IntyBASIC's runtime does at boot).
 const EXEC_CALLS = {
     CROWD_CHEER: { label: '👏 Crowd Cheer',
-                   intybasicCall: 'ASM CALL $1F8C  ; CROWD (cheer) — adjust address/binding for your build' },
-    CROWD_GROAN: { label: '😞 Crowd Groan',
-                   intybasicCall: 'ASM CALL $1F8C  ; CROWD (groan) — adjust address/binding for your build' },
-    CROWD_BOO:   { label: '👎 Crowd Boo',
-                   intybasicCall: 'ASM CALL $1F8C  ; CROWD (boo) — adjust address/binding for your build' },
+                   intybasicCall: 'ASM CALL $1ED5  ; X_PLAY_CHEER1 — EXEC crowd cheer' },
+    CROWD_GROAN: { label: '🤥 Crowd Razz (groan)',
+                   intybasicCall: 'ASM CALL $1EBA  ; X_PLAY_RAZZ1 — EXEC raspberry / Bronx cheer (sonic groan)' },
+    CROWD_BOO:   { label: '👎 Crowd Razz (boo)',
+                   intybasicCall: 'ASM CALL $1EBD  ; X_PLAY_RAZZ2 — EXEC raspberry (longer boo)' },
+    WHISTLE:     { label: '🎺 Referee Whistle',
+                   intybasicCall: 'ASM CALL $1F1B  ; X_PLAY_WHST1 — EXEC ref whistle' },
+    PLAY_NOTE:   { label: '🎵 Single PLAY_NOTE',
+                   intybasicCall: 'ASM CALL $1ABD  ; X_PLAY_NOTE — EXEC single-note utility' },
+    STOP_SFX:    { label: '⏹ Stop SFX',
+                   intybasicCall: 'ASM CALL $1EB4  ; X_STOP_SFX — EXEC SFX silence' },
+    HUSH:        { label: '🤫 HUSH (all silence)',
+                   intybasicCall: 'ASM CALL $1AA8  ; X_HUSH — EXEC silence-all utility' },
 };
 
 // ─── Module ──────────────────────────────────────────────────────────────────
@@ -496,7 +511,7 @@ export class SfxEditor {
                 <option value="" ${!SfxEditor.appendExec ? 'selected' : ''}>(none — PSG only)</option>
                 ${opts}
             </select>
-            <p class="sfx-hint">The CROWD call address is a placeholder — adjust to match your EXEC binding.</p>
+            <p class="sfx-hint">EXEC ROM addresses are canonical (same on every Intellivision). Source: jzIntv's symbol table.</p>
         `;
     }
 

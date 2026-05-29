@@ -1417,7 +1417,7 @@ def music_demos_serve(filename):
 
 
 # Must come after all real API routes so it doesn't shadow them.
-_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music'}
+_TAB_SLUGS = {'overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music', 'sfx'}
 
 @app.route('/<tab>')
 def tab_route(tab):
