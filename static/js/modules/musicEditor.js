@@ -130,18 +130,34 @@ export class MusicEditor {
     // ── jzIntv (bit-perfect) playback ───────────────────────────────────────
 
     /** Probe the server for the compile pipeline (intybasic + as1600 + lib).
-     *  Hides the "▶ jzIntv" button when unavailable so the UI stays clean. */
+     *  Reveals the "▶ jzIntv" button always — enabled when the server has the
+     *  toolchain, disabled with a setup tooltip when it doesn't. Keeps the
+     *  feature discoverable on production-without-toolchain installs. */
     static _probeJzintvAvailability() {
         const btn = document.getElementById('music-play-jzintv-btn');
         if (!btn) return;
+        btn.style.display = '';   // always visible; enabled state set below
         fetch('/music/compile_rom/status')
             .then(r => r.ok ? r.json() : null)
             .then(s => {
-                if (s?.available && this.engine.formatSlug === 'intybasic') {
-                    btn.style.display = '';
+                if (s?.available) {
+                    btn.disabled = false;
+                    btn.title = 'Compile to a real ROM and play through jzIntv WASM (bit-perfect).';
+                } else {
+                    btn.disabled = true;
+                    const missing = !s ? 'reachable' :
+                        [
+                            !s.intybasic && 'intybasic',
+                            !s.as1600    && 'as1600',
+                            !s.library   && 'intybasic library',
+                        ].filter(Boolean).join(' + ');
+                    btn.title = `jzIntv bit-perfect playback requires ${missing} on the server. See docs/wasm-playback.md.`;
                 }
             })
-            .catch(() => { /* silent — keep button hidden on failure */ });
+            .catch(() => {
+                btn.disabled = true;
+                btn.title = 'Server probe failed — bit-perfect playback unavailable.';
+            });
     }
 
     /** Compile the current song to a ROM and open it in the Emulator tab.
