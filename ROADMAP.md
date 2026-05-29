@@ -6,6 +6,38 @@
 
 ---
 
+## Identity / Branding
+
+### Rename the project (and the website)
+
+The name "Intellivision Overlay Editor" no longer describes what this is.
+What started as an overlay-card designer has grown into a full Intellivision
+homebrew authoring suite — Overlay Editor, Box Art Editor, Sprite Editor,
+Layout Designer, DS Overlay, IntelliVoice Builder, Music Studio (with four
+engines: IntyBASIC MUSIC base + ECS, Chevallier Tracker, IMT, ZMUS), SFX
+Lab, and the jzIntv WASM Emulator.
+
+We need a name + URL that reflects the broader scope. Some seeds for the
+naming session:
+- One word that captures "build everything an Intellivision homebrew needs"
+- Something that survives shipping a real IDE (see the IntyBASIC IDE entry
+  below — that's the eventual destination)
+- Available `.dev` / `.app` / `.com` domain ideally
+- Not "Intellivision" anything (trademark risk + too narrow if we ever broaden)
+
+Deferred concrete asks:
+- Pick the name
+- Register the domain
+- Update `<title>` in `templates/overlay_editor.html`
+- Update the header logo / banner
+- Update `README.md` and the GitHub repo name
+- Update Fly.io app name (`fly.toml`)
+- Move/redirect from `intellivision-overlay-editor.fly.dev`
+- Update social cards / meta tags
+- Update every doc that references the project name
+
+---
+
 ## Planned Features
 
 ### IntelliVoice Builder — Continued
