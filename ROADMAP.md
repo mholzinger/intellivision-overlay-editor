@@ -190,6 +190,51 @@ This is months of work, not a sprint. But it's the right north star.
 
 ---
 
+### Music Studio — Interactive MIDI Import (nanochess `inty-midi`)
+
+**Goal:** Let composers drag a `.mid` file onto the Music Studio and have it
+convert to IntyBASIC MUSIC source they can immediately edit on the piano-roll,
+preview through Web Audio, and (eventually) export to the other engines.
+
+**The tool to leverage:** Oscar Toledo's `inty-midi` — Perl-based MIDI → IntyBASIC
+MUSIC translator that already ships in the IntyBASIC distribution. We surveyed it
+during the music-format discovery work; the converter handles channel selection
+(3 or 6), note-length quantisation, automatic repeat detection. It lives at
+`~/src/intv-game-builder/inty-midi-0.1.0.0-bin/` on the dev machine.
+
+**Why interactive matters:** raw MIDI files have far more pitch / timing
+resolution than the PSG can render, so a non-interactive conversion always
+involves judgment calls (which channels carry which voice, how to handle drum
+tracks with no AY noise match, what to do with sustain pedal, …). Surface those
+as a small dialog before commit:
+
+- Track-to-channel mapping (drag MIDI tracks to PSG channels 1–3 or 4–6 for ECS)
+- Note length quantisation (1 row / 2 rows / 4 rows / auto)
+- Velocity → volume curve
+- Drum kit selection (which MIDI percussion notes map to M1 / M2 / M3, or to
+  IMT's DRM events)
+- Octave shift per track
+- "Detect repeat" toggle for ABA / loop sections
+
+**Implementation sketch:**
+1. Backend `/music/midi_to_intybasic` endpoint: accepts `.mid` upload + options,
+   shells out to `inty-midi.pl` with the chosen flags, returns IntyBASIC source.
+2. Frontend MIDI drop zone in the Music toolbar (sibling of "📋 Paste").
+3. Pre-conversion dialog shows the track list + lets the user assign mappings.
+4. Result lands as a regular IntyBASIC MUSIC parse → SongIR → piano-roll.
+
+**Dependencies:**
+- `inty-midi.pl` installed on the server (Perl is everywhere; tool is small)
+- Same opt-in deployment story as the IntyBASIC compiler binaries — local dev
+  works out of the box, prod needs the tool vendored or installed
+
+**Where it slots in:** after ZMUS Phase 2 completes the music-format coverage
+matrix; the MIDI import is then the natural "front door" for non-IntyBASIC
+musicians to start composing for Intellivision without learning the MUSIC
+statement syntax.
+
+---
+
 ### Intellivision ROM File Validator (standalone tool)
 **Goal:** A small standalone utility (separate project or CLI) that inspects an Intellivision
 ROM file, detects its true format, and reports whether the file extension is correct.
