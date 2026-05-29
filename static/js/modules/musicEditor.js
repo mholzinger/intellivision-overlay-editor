@@ -11,6 +11,7 @@
 
 import { IntyBasicMusic }    from './music/engines/intybasicMusic.js';
 import { ChevallierTracker } from './music/engines/chevallierTracker.js';
+import { ImtTracker }        from './music/engines/imtTracker.js';
 import { ZmusEngine }        from './music/engines/zmusEngine.js';
 import { PianoRoll }      from './music/pianoRoll.js';
 import { Minimap }        from './music/minimap.js';
@@ -21,6 +22,7 @@ import { UIManager }      from './uiManager.js';
 const ENGINES = {
     intybasic: IntyBasicMusic,
     'chevallier-tracker': ChevallierTracker,
+    'imt-tracker':        ImtTracker,
     'zmus':               ZmusEngine,
 };
 
@@ -600,16 +602,20 @@ export class MusicEditor {
      * the engine slug or null when undecided (defer to the current engine).
      */
     static _detectEngineSlug(text) {
-        const looksLikeZmus = ZmusEngine.looksLike(text);
-        const looksLikeTracker = /^\s*[A-Z_][A-Z0-9_]*\s+PROC\b/im.test(text)
-                              && /NOTES\(/i.test(text);
-        const looksLikeIntyBasic = /^\s*MUSIC\b/im.test(text)
-                                && /^\s*DATA\s+\d/im.test(text);
-        // ZMUS check first because it overlaps with Tracker's PROC pattern but
-        // is distinguished by the DECLE-heavy body and absence of NOTES() macros.
-        if (looksLikeZmus && !looksLikeTracker) return 'zmus';
-        if (looksLikeTracker && !looksLikeIntyBasic) return 'chevallier-tracker';
-        if (looksLikeIntyBasic && !looksLikeTracker && !looksLikeZmus) return 'intybasic';
+        // IMT and Chevallier both use PROC + NOTES() syntax, so check IMT
+        // first — its distinctive marker is the @@instr / @@drums labels
+        // in the song header. ZMUS uses PROC + DECLE stream (no NOTES).
+        const looksLikeImt   = ImtTracker.looksLike(text);
+        const looksLikeZmus  = ZmusEngine.looksLike(text);
+        const looksLikeTrk   = /^\s*[A-Z_][A-Z0-9_]*\s+PROC\b/im.test(text)
+                            && /NOTES\(/i.test(text);
+        const looksLikeIb    = /^\s*MUSIC\b/im.test(text)
+                            && /^\s*DATA\s+\d/im.test(text);
+
+        if (looksLikeImt)                                return 'imt-tracker';
+        if (looksLikeZmus && !looksLikeTrk)              return 'zmus';
+        if (looksLikeTrk && !looksLikeIb)                return 'chevallier-tracker';
+        if (looksLikeIb && !looksLikeTrk && !looksLikeZmus) return 'intybasic';
         return null;
     }
 
