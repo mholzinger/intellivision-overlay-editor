@@ -1407,9 +1407,11 @@ def music_demos_manifest():
 
 @app.route('/music/demos/<path:filename>')
 def music_demos_serve(filename):
-    """Serve an individual demo .bas file."""
-    # Only allow .bas / .json files to be served from this directory
-    if not (filename.endswith('.bas') or filename.endswith('.json')):
+    """Serve an individual demo source file (any engine's native format)."""
+    # Only allow source-file extensions used by registered engines.
+    # .bas = IntyBASIC + ZMUS-in-IntyBASIC-wrapper; .asm = Chevallier + IMT.
+    allowed_ext = ('.bas', '.asm', '.json')
+    if not filename.endswith(allowed_ext):
         return jsonify({'error': 'not found'}), 404
     if '..' in filename or filename.startswith('/'):
         return jsonify({'error': 'invalid path'}), 400

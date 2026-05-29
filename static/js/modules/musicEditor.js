@@ -530,23 +530,54 @@ export class MusicEditor {
             'Ambient':   '#6f42c1',
             'Showcase':  '#d97706',
             'Reference': '#6a737d',
+            'ECS':       '#48b8c0',
+            'Cover':     '#9c27b0',
+            'Container': '#795548',
         };
 
-        listEl.innerHTML = demos.map(d => {
-            const tagColor = tagColors[d.tag] || '#6a737d';
-            return `
-                <div class="music-demo-item" onclick="musicLoadDemo('${d.file}')"
-                     style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;"
-                     onmouseover="this.style.background='#f6f8fa'"
-                     onmouseout="this.style.background='transparent'">
-                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                        <strong style="font-size:13px; color:#24292e;">${d.title}</strong>
-                        <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:${tagColor}; color:#fff; font-weight:600; letter-spacing:0.5px;">${d.tag.toUpperCase()}</span>
+        // Group by engine. Manifest demos already arrive in engine-order, but
+        // we re-bucket here so an out-of-order manifest still groups cleanly.
+        const engineLabels = {
+            'intybasic':          { name: 'IntyBASIC MUSIC',                     icon: '🎵' },
+            'imt-tracker':        { name: 'IMT (Intellivision Music Tracker)',    icon: '🎼' },
+            'chevallier-tracker': { name: 'Chevallier Tracker',                   icon: '🎼' },
+            'zmus':               { name: 'ZMUS (Zbiciak microprogrammed)',       icon: '📜' },
+        };
+        const grouped = new Map();
+        for (const d of demos) {
+            const slug = d.engine || 'intybasic';
+            if (!grouped.has(slug)) grouped.set(slug, []);
+            grouped.get(slug).push(d);
+        }
+
+        const sections = [];
+        for (const [slug, group] of grouped) {
+            const eng = engineLabels[slug] || { name: slug, icon: '🎶' };
+            sections.push(`
+                <div style="padding:10px 14px 6px; background:#f6f8fa; border-bottom:1px solid #e1e4e8;">
+                    <div style="font-size:10px; font-weight:700; color:#586069; text-transform:uppercase; letter-spacing:1px;">
+                        ${eng.icon} ${eng.name}
                     </div>
-                    <div style="font-size:11px; color:#586069; line-height:1.45;">${d.blurb}</div>
                 </div>
-            `;
-        }).join('');
+            `);
+            for (const d of group) {
+                const tagColor = tagColors[d.tag] || '#6a737d';
+                sections.push(`
+                    <div class="music-demo-item" onclick="musicLoadDemo('${d.file}')"
+                         style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;"
+                         onmouseover="this.style.background='#f6f8fa'"
+                         onmouseout="this.style.background='transparent'">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <strong style="font-size:13px; color:#24292e;">${d.title}</strong>
+                            <span style="font-size:9px; padding:2px 6px; border-radius:3px; background:${tagColor}; color:#fff; font-weight:600; letter-spacing:0.5px;">${d.tag.toUpperCase()}</span>
+                        </div>
+                        <div style="font-size:11px; color:#586069; line-height:1.45;">${d.blurb}</div>
+                    </div>
+                `);
+            }
+        }
+
+        listEl.innerHTML = sections.join('');
     }
 
     static toggleDemosDropdown() {

@@ -1,72 +1,53 @@
 {
-    "description": "Demo songs bundled with the Music Studio. Sourced from the Space Intruders homebrew project (https://paisleyboxers.itch.io/space-intruders) and used as example/test material.",
-    "credit": "Music by paisleyboxers — used with permission as Music Studio demo content.",
+    "description": "Curated demo songs across every Music Studio engine. Loading any demo auto-switches the editor to the right engine.",
+    "credits": [
+        "IntyBASIC demos: Space Intruders soundtrack by paisleyboxers — used with permission.",
+        "ECS Hex Choir: composed for this editor.",
+        "IMT demos: from the trk-distro-rev4 distribution (Arnauld Chevallier 2008 + James Pujals 2020).",
+        "ZMUS Nutcracker March: arrangement by Joe Zbiciak."
+    ],
     "demos": [
         {
-            "file":  "si_title_theme.bas",
-            "title": "Space Intruders — Title Theme",
-            "tag":   "Title",
-            "blurb": "3-channel techno arpeggio (Em–G–D), tempo 6, clarinet X over Z bass pedal. The flagship title-screen track."
+            "file":   "si_title_theme.bas",
+            "title":  "Space Intruders — Title Theme",
+            "engine": "intybasic",
+            "tag":    "Title",
+            "blurb":  "3-channel techno arpeggio (Em–G–D), tempo 6, clarinet X over Z bass pedal. Flagship paisleyboxers track and the most-played IntyBASIC demo."
         },
         {
-            "file":  "si_amen_acid_tracks.bas",
-            "title": "Space Intruders — BG Mid",
-            "tag":   "Gameplay",
-            "blurb": "Amen-break-flavored busy drum loops with acid bass riffs. Great showcase of the M1/M2/M3 drum mix."
+            "file":   "dnb_gameplay_gears.bas",
+            "title":  "Grid Runner — Gears",
+            "engine": "intybasic",
+            "tag":    "Gameplay",
+            "blurb":  "DnB gameplay loop with mid-song MUSIC GOSUB calls sharing drum-only bars across three gear variations. The cleanest demo of GOSUB subroutine playback."
         },
         {
-            "file":  "dark_descent.bas",
-            "title": "Dark Descent",
-            "tag":   "Boss",
-            "blurb": "Chromatic, dissonant boss track. Heavy Z bass walks + sparse M1 kicks. Tempo 7, very slow and crushing."
+            "file":   "ecs_hex_choir.bas",
+            "title":  "ECS Hex Choir",
+            "engine": "intybasic",
+            "tag":    "ECS",
+            "blurb":  "8-channel ECS showcase: 6-voice chord pad (C–Am–F–G) with stacked drum strips. Demonstrates the IntyBASIC 8-arg MUSIC syntax."
         },
         {
-            "file":  "dnb_gameplay.bas",
-            "title": "Grid Runner — Low",
-            "tag":   "Gameplay",
-            "blurb": "Drum-and-bass styled gameplay loop. Two-bar pattern, drum-heavy."
+            "file":   "imt_voyage.asm",
+            "title":  "IMT — Voyage",
+            "engine": "imt-tracker",
+            "tag":    "Showcase",
+            "blurb":  "Clean 6-channel IMT demo from the trk-distro v1.5 distribution. Good first listen for the format — sparse melody, clear pattern structure."
         },
         {
-            "file":  "dnb_gameplay_high.bas",
-            "title": "Grid Runner — High",
-            "tag":   "Gameplay",
-            "blurb": "Faster/higher variant of the Grid Runner loop. Higher tension."
+            "file":   "imt_beatit_remix.asm",
+            "title":  "IMT — Beat It (DZ-Jay remix)",
+            "engine": "imt-tracker",
+            "tag":    "Cover",
+            "blurb":  "Michael Jackson's Beat It tracked & remixed in IMT by James Pujals. Real composition showing instrument envelopes, drum samples, and pattern reuse across ~3800 notes."
         },
         {
-            "file":  "dnb_gameplay_original.bas",
-            "title": "Grid Runner — Original",
-            "tag":   "Gameplay",
-            "blurb": "Original cut of the Grid Runner gameplay loop."
-        },
-        {
-            "file":  "dnb_gameplay_gears.bas",
-            "title": "Grid Runner — Gears",
-            "tag":   "Gameplay",
-            "blurb": "Gears variation — tempo experiments inline (SPEED control)."
-        },
-        {
-            "file":  "starlight.bas",
-            "title": "Starlight",
-            "tag":   "Ambient",
-            "blurb": "Slower atmospheric piece with sparser drums."
-        },
-        {
-            "file":  "showcase_full.bas",
-            "title": "Neon Cathedral",
-            "tag":   "Showcase",
-            "blurb": "Full-melody showcase track — 136 notes, no drums. Good demo of the three melody channels harmonizing."
-        },
-        {
-            "file":  "gr_tempo_stubs.bas",
-            "title": "Grid Runner — Tempo Stubs",
-            "tag":   "Reference",
-            "blurb": "Tempo reference / scaffolding file. Mostly silent — useful as a structural template."
-        },
-        {
-            "file":  "ecs_hex_choir.bas",
-            "title": "ECS Hex Choir",
-            "tag":   "ECS",
-            "blurb": "8-channel ECS showcase: 6-voice chord pad (C–Am–F–G) with stacked drum strips. Demonstrates the IntyBASIC 8-arg MUSIC syntax — written for this editor, not derived from any existing track."
+            "file":   "zmus_nutcracker.bas",
+            "title":  "ZMUS — Nutcracker March",
+            "engine": "zmus",
+            "tag":    "Container",
+            "blurb":  "Tchaikovsky's Nutcracker March in Joe Zbiciak's microprogrammed format (~970 DECLEs). Phase 1 imports as an opaque container — Phase 2 will decode it for piano-roll + playback."
         }
     ]
 }
