@@ -771,8 +771,27 @@ export class MusicEditor {
     }
 
     static play() {
-        if (!this.song || !this.song.notes || this.song.notes.length === 0) {
-            alert('Nothing to play — paste an IntyBASIC MUSIC song first.');
+        if (!this.song) {
+            alert(`Nothing to play — load a demo from the Demos dropdown, or paste a ${this.engine.formatName} song.`);
+            return;
+        }
+        if (!this.song.notes || this.song.notes.length === 0) {
+            // The ZMUS engine ships as a Phase-1 opaque container — the song
+            // data is captured (and round-trips on export), but the bytecode
+            // hasn't been decoded into notes yet. Be honest about it rather
+            // than showing the generic "nothing to play" error.
+            const isOpaque = (this.engine.formatSlug === 'zmus')
+                          && (this.song.metadata?.zmusBytes?.length > 0);
+            if (isOpaque) {
+                alert(
+                    `ZMUS Phase 1: the song imported as ${this.song.metadata.zmusBytes.length} ` +
+                    `DECLEs and round-trips on export, but bytecode decoding into musical ` +
+                    `notes (for piano-roll + Web Audio playback) is Phase 2 work. ` +
+                    `Use the IntyBASIC demos for now, or wait for the ZMUS Phase 2 decoder.`
+                );
+                return;
+            }
+            alert(`Nothing to play — load a demo from the Demos dropdown, or paste a ${this.engine.formatName} song.`);
             return;
         }
         // If already playing, treat as stop (button doubles as pause)
@@ -1288,6 +1307,20 @@ export class MusicEditor {
         const romStr = romBytes < 1024
             ? `${romBytes} B`
             : `${(romBytes / 1024).toFixed(1)} kB`;
+
+        // Opaque-container engines (ZMUS Phase 1) don't have a meaningful
+        // per-note tempo — the bytecode hasn't been decoded yet. Show the
+        // raw container size instead of a phony "tempo / BPM".
+        const isOpaque = (this.engine.formatSlug === 'zmus')
+                      && (this.song?.metadata?.zmusBytes?.length > 0);
+        if (isOpaque) {
+            const decleCount = this.song.metadata.zmusBytes.length;
+            status.textContent =
+                `${label}  ·  ZMUS opaque container · ${decleCount} DECLEs (${romStr})  ·  ` +
+                `bytecode decode is Phase 2 — round-trips on export but no piano-roll yet  ·  ` +
+                `${this.engine.formatName}`;
+            return;
+        }
 
         status.textContent =
             `${label}  ·  ${melody} notes, ${drums} drums  ·  ` +
