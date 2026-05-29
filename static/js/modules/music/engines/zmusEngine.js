@@ -33,7 +33,9 @@ import { MusicEngine } from './engineBase.js';
 
 // Match an ASM PROC block. Songs in the wild are wrapped in IntyBASIC ASM
 // statements (the `ASM` prefix on each line), so we accept both forms.
-const PROC_START_RE = /^(?:ASM\s+)?([A-Z_][A-Z0-9_]*)\s*:\s*PROC\b/i;
+// /m flag — songs typically open with a comment header, so the PROC line
+// is several lines into the file and `^` needs per-line matching.
+const PROC_START_RE = /^(?:ASM\s+)?([A-Z_][A-Z0-9_]*)\s*:\s*PROC\b/im;
 const PROC_END_RE   = /^(?:ASM\s+)?ENDP\b/i;
 // DECLE line, with optional ASM prefix. Captures the comma-separated values.
 const DECLE_RE = /^(?:ASM\s+)?DECLE\s+(.+?)(?:\s*;.*)?$/i;

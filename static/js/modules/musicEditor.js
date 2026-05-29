@@ -563,7 +563,7 @@ export class MusicEditor {
             for (const d of group) {
                 const tagColor = tagColors[d.tag] || '#6a737d';
                 sections.push(`
-                    <div class="music-demo-item" onclick="musicLoadDemo('${d.file}')"
+                    <div class="music-demo-item" onclick="musicLoadDemo('${d.file}', '${slug}')"
                          style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;"
                          onmouseover="this.style.background='#f6f8fa'"
                          onmouseout="this.style.background='transparent'">
@@ -586,16 +586,47 @@ export class MusicEditor {
         menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     }
 
-    static async loadDemo(filename) {
+    static async loadDemo(filename, engineSlug) {
         const menu = document.getElementById('music-demos-dropdown-menu');
         if (menu) menu.style.display = 'none';
         try {
             const r = await fetch(`/music/demos/${encodeURIComponent(filename)}`);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const text = await r.text();
-            this._parseWithDetect(text, `demo "${filename}"`);
+            // Demos in the manifest declare their engine explicitly. If we
+            // have that hint, use it directly — no auto-detection needed.
+            // Falls back to detection for legacy callers.
+            if (engineSlug && ENGINES[engineSlug]) {
+                this._parseWithEngine(text, engineSlug, `demo "${filename}"`);
+            } else {
+                this._parseWithDetect(text, `demo "${filename}"`);
+            }
         } catch (e) {
             alert(`Failed to load demo: ${e.message}`);
+        }
+    }
+
+    /** Parse source with a pre-selected engine — used when the caller already
+     *  knows the right engine (e.g. demo manifest declares it). Switches the
+     *  active engine transparently if it differs from the current selection. */
+    static _parseWithEngine(text, engineSlug, sourceLabel = 'source') {
+        const targetEngine = ENGINES[engineSlug];
+        if (!targetEngine) { return this._parseWithDetect(text, sourceLabel); }
+        const switched = targetEngine !== this.engine;
+        if (switched) {
+            this.engine = targetEngine;
+            this._renderEngineSelector();
+        }
+        try {
+            this._loadNewSong(targetEngine.parse(text));
+            if (switched) {
+                UIManager.showStatus(
+                    `Switched to ${targetEngine.formatName} — ${sourceLabel}`,
+                    'info'
+                );
+            }
+        } catch (e) {
+            alert(`Failed to load ${sourceLabel}: ${e.message}`);
         }
     }
 

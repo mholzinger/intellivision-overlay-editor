@@ -70,8 +70,10 @@ const NOTES_RE      = new RegExp(`^\\s*${LABEL_PREFIX}NOTES\\(\\s*"([^"]*)"\\s*,
 const NPK_NOTE_RE   = new RegExp(`^\\s*${LABEL_PREFIX}NPK\\.Note\\(\\s*"([^"]*)"\\s*\\)`, 'i');
 const NPK_BEGIN_RE  = new RegExp(`^\\s*${LABEL_PREFIX}NPK\\.Begin\\(`, 'i');
 const NPK_END_RE    = new RegExp(`^\\s*${LABEL_PREFIX}NPK\\.End\\b`, 'i');
-const PROC_START_RE = /^(?:ASM\s+)?([A-Z_][A-Z0-9_]*)\s+PROC\b/i;
-const PROC_END_RE   = /^(?:ASM\s+)?\s*ENDP\b/i;
+// /m flag so PROC anywhere in the file is reachable (songs open with
+// comment headers; the PROC line is typically not at file start).
+const PROC_START_RE = /^(?:ASM\s+)?([A-Z_][A-Z0-9_]*)\s+PROC\b/im;
+const PROC_END_RE   = /^(?:ASM\s+)?\s*ENDP\b/im;
 const LABEL_RE      = /^(@@[A-Za-z0-9_]+|[A-Za-z_][A-Za-z0-9_]*):/;
 const DECLE_RE      = new RegExp(`^\\s*${LABEL_PREFIX}DECLE\\s+(.*)`, 'i');
 
@@ -135,19 +137,25 @@ export class ImtTracker extends MusicEngine {
 
         // For each pattern, decode each channel's NOTES stream into a flat
         // array of { offsetTick, lengthTicks, pitch (MIDI) | drum | sustain, volume }.
+        // We pass `speed` so the decoder can convert row-based note lengths
+        // into per-frame ticks (each "row" of the tracker takes `speed`
+        // frames at 60Hz on real hardware).
+        const speedFrames = Math.max(1, speed);
         const patternNotes = patterns.map(p => p.chLabels.map(lbl => {
             // The silence-sentinel label is a documented placeholder meaning
             // "this channel produces no audible content for this pattern".
             if (lbl === SILENCE_LABEL) return [];
             const startIdx = labelLine[lbl];
             if (startIdx == null) return [];
-            return this._decodePatternChannel(body, startIdx);
+            return this._decodePatternChannel(body, startIdx, speedFrames);
         }));
 
         // Build SongIR by walking the sequence and stacking patterns linearly.
+        // ticksPerNote uses `speed` so each "row" of tracker time = `speed`
+        // ticks at 60Hz, matching how the engine runs on real hardware.
         const song = this.defaultSong();
         song.label = name;
-        song.ticksPerNote = Math.max(1, speed);
+        song.ticksPerNote = speedFrames;
         song.channelCount = 6;
         song.metadata.imtSpeed = speed;
         song.metadata.imtSourceLabels = {
@@ -178,7 +186,9 @@ export class ImtTracker extends MusicEngine {
                         });
                     }
                 }
-                currentTick += pat.length;
+                // Pattern length is in rows; convert to frames at 60Hz so
+                // the timeline matches real-hardware playback duration.
+                currentTick += pat.length * speedFrames;
             } else if (entry.kind === 'JUMP_BACK') {
                 // Resolve the negative offset by counting back N PATTERN entries
                 const patternEntries = sequence.filter(e => e.kind === 'PATTERN');
@@ -274,17 +284,19 @@ export class ImtTracker extends MusicEngine {
         return patterns;
     }
 
-    static _decodePatternChannel(body, startIdx) {
+    static _decodePatternChannel(body, startIdx, speedFrames = 1) {
         const out = [];
         let offsetTick = 0;
 
         // Process one decoded event (NOTE / DRM / NUL) — shared between the
-        // NOTES() and NPK.Note() macros.
+        // NOTES() and NPK.Note() macros. Multiplies the L (row count) by
+        // speedFrames so the resulting lengthTicks are in 60Hz frames,
+        // not raw tracker rows.
         const processToken = (token) => {
             if (token === '') return;
             const decoded = this._decodeNoteString(token);
             if (!decoded) return;
-            const lengthTicks = decoded.length + 1;
+            const lengthTicks = (decoded.length + 1) * speedFrames;
             if (decoded.kind === 'NOTE') {
                 out.push({
                     kind:       'NOTE',
@@ -436,9 +448,15 @@ export class ImtTracker extends MusicEngine {
 
     // ── Playback events (Web Audio synth) ──────────────────────────────────
 
-    static toPlaybackEvents(song, framerate = 50, loopCount = 4) {
+    static toPlaybackEvents(song, _framerate = 50, loopCount = 4) {
+        // IMT plays at 60Hz on NTSC — the engine ticks once per video frame.
+        // We ignore the editor's default-50Hz argument and use the native
+        // rate so song-stored durations (already in 60Hz frames) map to
+        // real seconds correctly. Web Audio events carry timeSec in
+        // real seconds either way, so the synth doesn't notice.
+        const IMT_FRAMERATE = 60;
         const events = [];
-        const tickSec = 1 / framerate;
+        const tickSec = 1 / IMT_FRAMERATE;
         const loop = this.getLoopInfo(song);
 
         const noteToEvent = (note, startTick) => {

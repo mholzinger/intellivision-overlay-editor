@@ -45,8 +45,10 @@ const SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 // NOTES() call on the same line as the channel's pattern label.
 const NOTES_RE = /^\s*(?:[A-Za-z_@][A-Za-z0-9_@]*:)?\s*NOTES\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\)/i;
 // PROC / ENDP block delimiters
-const PROC_START_RE = /^([A-Z_][A-Z0-9_]*)\s+PROC\b/i;
-const PROC_END_RE   = /^\s*ENDP\b/i;
+// /m flag so PROC anywhere in the file is reachable (songs often have a
+// comment header before the PROC declaration).
+const PROC_START_RE = /^([A-Z_][A-Z0-9_]*)\s+PROC\b/im;
+const PROC_END_RE   = /^\s*ENDP\b/im;
 // Labels (global "FOO:" and local "@@FOO:") at start of line
 const LABEL_RE = /^(@@[A-Za-z0-9_]+|[A-Za-z_][A-Za-z0-9_]*):/;
 // DECLE / DECLE chain
