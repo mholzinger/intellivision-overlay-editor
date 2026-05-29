@@ -270,6 +270,15 @@ export class SfxEditor {
             SfxEditor.activeNodes.push(noise);
         }
 
+        // Optional EXEC tail preview — Web Audio approximation of the real
+        // EXEC ROM routine that the exported source calls. Scheduled to start
+        // immediately after the PSG SFX finishes, mirroring how the export
+        // would play in-game.
+        let tailDurSec = 0;
+        if (SfxEditor.appendExec && EXEC_CALLS[SfxEditor.appendExec]) {
+            tailDurSec = SfxEditor._scheduleExecTail(SfxEditor.appendExec, t0 + durSec);
+        }
+
         SfxEditor.playing = true;
         SfxEditor._setPlayButtonState(true);
 
@@ -279,7 +288,103 @@ export class SfxEditor {
                 SfxEditor.playing = false;
                 SfxEditor._setPlayButtonState(false);
             }
-        }, (durSec * 1000) + 100);
+        }, ((durSec + tailDurSec) * 1000) + 100);
+    }
+
+    /**
+     * Web Audio approximation of an EXEC ROM sound routine. These aren't
+     * bit-perfect to the real EXEC PSG data (the byte sequences live in
+     * Mattel's read-only EXEC binary and aren't reproduced here), but they
+     * match the sonic character closely enough that previews feel right.
+     * Returns the tail's duration in seconds so play() can update its
+     * auto-stop timer.
+     */
+    static _scheduleExecTail(key, t0) {
+        const ctx = SfxEditor.ctx;
+        if (!ctx) return 0;
+
+        const mkEnv = (peak, dur) => {
+            const env = ctx.createGain();
+            env.gain.setValueAtTime(0.0001, t0);
+            env.gain.linearRampToValueAtTime(peak, t0 + 0.02);
+            env.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+            env.connect(SfxEditor.masterGain);
+            return env;
+        };
+
+        if (key === 'CROWD_CHEER') {
+            // Crowd cheer/applause — long bright noise burst with mild
+            // amplitude modulation, suggesting many overlapping voices.
+            const dur = 1.0;
+            const noise = ctx.createBufferSource();
+            noise.buffer = SfxEditor.noiseBuffer;
+            noise.loop = true;
+            const hp = ctx.createBiquadFilter();
+            hp.type = 'highpass'; hp.frequency.value = 800;
+            const env = mkEnv(0.35, dur);
+            noise.connect(hp).connect(env);
+            noise.start(t0, Math.random() * 0.5);
+            noise.stop(t0 + dur + 0.05);
+            SfxEditor.activeNodes.push(noise);
+            return dur;
+        }
+
+        if (key === 'CROWD_GROAN' || key === 'CROWD_BOO') {
+            // Bronx cheer / raspberry — buzzy low tone with noise overlay.
+            const dur = (key === 'CROWD_BOO') ? 0.8 : 0.5;
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, t0);
+            osc.frequency.linearRampToValueAtTime(110, t0 + dur);
+            const env = mkEnv(0.30, dur);
+            osc.connect(env);
+            osc.start(t0); osc.stop(t0 + dur + 0.05);
+            SfxEditor.activeNodes.push(osc);
+            // Noise overlay for that raspberry texture
+            const noise = ctx.createBufferSource();
+            noise.buffer = SfxEditor.noiseBuffer;
+            noise.loop = true;
+            const lp = ctx.createBiquadFilter();
+            lp.type = 'lowpass'; lp.frequency.value = 1500;
+            const env2 = mkEnv(0.20, dur);
+            noise.connect(lp).connect(env2);
+            noise.start(t0, Math.random() * 0.5);
+            noise.stop(t0 + dur + 0.05);
+            SfxEditor.activeNodes.push(noise);
+            return dur;
+        }
+
+        if (key === 'WHISTLE') {
+            // Referee whistle — bright square at ~2.5kHz with a short chirp.
+            const dur = 0.4;
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(2400, t0);
+            osc.frequency.linearRampToValueAtTime(2700, t0 + 0.05);
+            osc.frequency.setValueAtTime(2700, t0 + dur - 0.05);
+            osc.frequency.linearRampToValueAtTime(2400, t0 + dur);
+            const env = mkEnv(0.25, dur);
+            osc.connect(env);
+            osc.start(t0); osc.stop(t0 + dur + 0.05);
+            SfxEditor.activeNodes.push(osc);
+            return dur;
+        }
+
+        if (key === 'PLAY_NOTE') {
+            // Single utility tone — A4 for ~300ms.
+            const dur = 0.3;
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = 440;
+            const env = mkEnv(0.25, dur);
+            osc.connect(env);
+            osc.start(t0); osc.stop(t0 + dur + 0.05);
+            SfxEditor.activeNodes.push(osc);
+            return dur;
+        }
+
+        // STOP_SFX / HUSH are pure-silence routines — nothing to preview.
+        return 0;
     }
 
     static stop() {
@@ -511,7 +616,7 @@ export class SfxEditor {
                 <option value="" ${!SfxEditor.appendExec ? 'selected' : ''}>(none — PSG only)</option>
                 ${opts}
             </select>
-            <p class="sfx-hint">EXEC ROM addresses are canonical (same on every Intellivision). Source: jzIntv's symbol table.</p>
+            <p class="sfx-hint">EXEC ROM addresses are canonical (same on every Intellivision). Preview uses Web Audio approximations of the real EXEC routines; the exported source calls the actual EXEC ROM. Source: jzIntv's symbol table.</p>
         `;
     }
 
