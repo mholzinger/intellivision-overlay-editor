@@ -14,6 +14,7 @@ import { ChevallierTracker } from './music/engines/chevallierTracker.js';
 import { PianoRoll }      from './music/pianoRoll.js';
 import { Minimap }        from './music/minimap.js';
 import { PsgSynth }       from './music/playback/psgSynth.js';
+import { UIManager }      from './uiManager.js';
 
 // Registry of available engines. Phases 8/9 add JLP-zmus / raw-PSG here.
 const ENGINES = {
