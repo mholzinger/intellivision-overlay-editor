@@ -26,6 +26,7 @@ import { LayoutDesigner } from './modules/layoutDesigner.js';
 import { DSOverlayEditor } from './modules/dsOverlayEditor.js';
 import { VoiceEditor } from './modules/voiceEditor.js';
 import { MusicEditor } from './modules/musicEditor.js';
+import { SfxEditor } from './modules/sfxEditor.js';
 import { tooltipInit } from './utils/tooltip.js';
 
 /**
@@ -463,7 +464,7 @@ window.updateRowDescFont = () => RowDescriptions.updateRowDescFont();
 window.ImageProcessor = ImageProcessor;
 
 // Known tab slugs and their canonical URL paths.
-const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music']);
+const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music', 'sfx']);
 
 // Tab switching — call with pushState=false when restoring from history.
 window.switchEditorTab = (tabName, pushState = true) => {
@@ -530,6 +531,12 @@ window.switchEditorTab = (tabName, pushState = true) => {
     if (tabName === 'music' && !window._musicEditorInitialized) {
         MusicEditor.init();
         window._musicEditorInitialized = true;
+    }
+
+    // Initialize SFX Lab on first switch to that tab
+    if (tabName === 'sfx' && !window._sfxEditorInitialized) {
+        SfxEditor.init();
+        window._sfxEditorInitialized = true;
     }
 
     // Sync the browser URL.
@@ -716,6 +723,14 @@ window.musicToggleKeyboardMode = () => MusicEditor.toggleKeyboardMode();
 window.musicOctaveDown        = () => MusicEditor.octaveDown();
 window.musicOctaveUp          = () => MusicEditor.octaveUp();
 window.musicSetVolume         = (v) => { import('./modules/music/playback/psgSynth.js').then(m => m.PsgSynth.setVolume(v / 100)); };
+
+// SFX Lab wiring
+window.sfxPlay        = () => SfxEditor.play();
+window.sfxStop        = () => SfxEditor.stop();
+window.sfxCopy        = () => SfxEditor.copyOutput();
+window.sfxLoadPreset  = (id) => SfxEditor.loadPreset(id);
+window.sfxUpdate      = (field, val) => SfxEditor.updateField(field, val);
+window.sfxSetExec     = (key) => SfxEditor.setExec(key);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);
