@@ -58,6 +58,13 @@ export class ChevallierTracker extends MusicEngine {
     static channelCount  = 3;
     static supportsDrums = false;   // percussion is a noise instrument on one of the 3 voices
 
+    // Hidden from the engine selector dropdown to avoid a redundant choice
+    // alongside IMT (which is the same lineage, DZ-Jay's evolution of this
+    // tracker). This engine remains in the registry so the auto-detect path
+    // can still parse the original 3-channel Space-Patrol-style songs that
+    // pre-date the IMT header changes. New compositions go through IMT.
+    static hideFromDropdown = true;
+
     /**
      * Parse a Tracker .asm source. We look for the first PROC block and treat
      * it as the song. Unrecognised PROCs are skipped. Outside of PROCs we

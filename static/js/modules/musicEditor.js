@@ -660,6 +660,10 @@ export class MusicEditor {
         if (!select) return;
         select.innerHTML = '';
         for (const slug of Object.keys(ENGINES)) {
+            // Engines flagged `hideFromDropdown` stay in the registry for
+            // auto-detect (so pasted source from that format still parses)
+            // but don't crowd the user-facing selector.
+            if (ENGINES[slug].hideFromDropdown) continue;
             const opt = document.createElement('option');
             opt.value = slug;
             opt.textContent = ENGINES[slug].formatName;
