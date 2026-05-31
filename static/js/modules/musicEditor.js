@@ -81,6 +81,7 @@ export class MusicEditor {
         this._wireClipboardShortcuts();
         this._wireMixerShortcuts();
         this._probeJzintvAvailability();
+        this._checkMidiAvailable();
         this._renderKeyboard();
 
         // Close demos dropdown when clicking outside it
@@ -754,6 +755,52 @@ export class MusicEditor {
         );
         if (text == null) return;
         this._parseWithDetect(text, 'pasted source');
+    }
+
+    /**
+     * Probe the server for inty-midi availability and toggle the 📥 MIDI
+     * toolbar button accordingly. Called once on tab init.
+     */
+    static async _checkMidiAvailable() {
+        const btn = document.getElementById('music-midi-btn');
+        if (!btn) return;
+        try {
+            const r = await fetch('/music/midi_to_intybasic/status');
+            const j = await r.json();
+            btn.style.display = j.available ? '' : 'none';
+        } catch (_) {
+            btn.style.display = 'none';
+        }
+    }
+
+    /**
+     * Open a file picker, upload a .mid to /music/midi_to_intybasic, and
+     * load the returned IntyBASIC source onto the piano-roll via the
+     * existing auto-detect parse flow.
+     */
+    static importMidi() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.mid,.midi,audio/midi,audio/x-midi';
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('file', file, file.name);
+            try {
+                const r = await fetch('/music/midi_to_intybasic', { method: 'POST', body: fd });
+                const j = await r.json();
+                if (!r.ok || j.error) {
+                    alert(`MIDI import failed: ${j.error || r.statusText}`);
+                    return;
+                }
+                this._parseWithDetect(j.source, `imported MIDI: ${j.filename}`);
+            } catch (e) {
+                console.error('MusicEditor.importMidi failed:', e);
+                alert('MIDI import failed — see browser console for details.');
+            }
+        };
+        input.click();
     }
 
     static copyToClipboard() {

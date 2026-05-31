@@ -726,6 +726,7 @@ window.musicSetVolume         = (v) => { import('./modules/music/playback/psgSyn
 window.musicDownloadWav       = () => MusicEditor.downloadWav();
 window.musicSaveProject       = () => MusicEditor.saveProject();
 window.musicLoadProject       = () => MusicEditor.loadProject();
+window.musicImportMidi        = () => MusicEditor.importMidi();
 
 // SFX Lab wiring
 window.sfxPlay        = () => SfxEditor.play();

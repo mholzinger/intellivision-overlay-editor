@@ -126,6 +126,16 @@ class Config:
             '/Users/mikeholzinger/jzintv-20200712-osx-sdl2/bin/as1600',
         ])
 
+    # inty-midi (MIDI → IntyBASIC MUSIC converter, Oscar Toledo).
+    # Optional — enables Music Studio's "📥 MIDI" import button.
+    @classmethod
+    def get_inty_midi_path(cls) -> Path | None:
+        return cls._find_binary('OVL_INTY_MIDI_PATH', 'inty-midi', [
+            '/usr/local/bin/inty-midi',
+            '/Users/mikeholzinger/src/intv-game-builder/inty-midi-0.1.0.0-bin/mac/inty-midi',
+            '/Users/mikeholzinger/src/intv-game-builder/inty-midi-0.1.0.0-bin/linux/inty-midi',
+        ])
+
     @classmethod
     def get_intybasic_library_path(cls) -> Path | None:
         """Directory containing intybasic_prologue.asm / epilogue (the as1600

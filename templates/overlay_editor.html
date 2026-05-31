@@ -188,6 +188,7 @@
                 </span>
                 <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source — it will be parsed and rendered on the piano-roll">📋 Paste</button>
+                <button id="music-midi-btn" class="btn btn-secondary btn-sm" onclick="musicImportMidi()" style="display:none;" data-tooltip="Import a .mid file — converts to IntyBASIC MUSIC source via Oscar Toledo's inty-midi tool, then loads onto the piano-roll. Shown only when the converter is installed on the server.">📥 MIDI</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicSaveProject()" data-tooltip="Save the current song + active engine to a .intvmusic.json project file (downloads to your computer). Pairs with 📂 Load.">💾 Save</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicLoadProject()" data-tooltip="Open a .intvmusic.json project file previously saved from this editor. Switches engine automatically if the project was saved under a different one.">📂 Load</button>

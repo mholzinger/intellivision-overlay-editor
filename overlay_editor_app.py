@@ -1322,6 +1322,80 @@ def music_compile_rom_status():
     })
 
 
+@app.route('/music/midi_to_intybasic', methods=['POST'])
+def music_midi_to_intybasic():
+    """Convert an uploaded MIDI file into IntyBASIC MUSIC source by shelling
+    to Oscar Toledo's `inty-midi` tool.
+
+    Request: multipart/form-data with a single 'file' field containing the
+    .mid blob. (Optional in future: -i instrument, -q quantize, -p first-bar
+    nudge — for the MVP we accept inty-midi defaults.)
+
+    Response on success:
+        {"source": "<IntyBASIC MUSIC source>", "filename": "<original.mid>"}
+    Response on failure:
+        {"error": "<message>"} with status 400/500.
+    """
+    inty_midi = Config.get_inty_midi_path()
+    if not inty_midi:
+        return jsonify({
+            'error': 'inty-midi not found on this server. Set OVL_INTY_MIDI_PATH '
+                     'or install the binary on PATH. See the MIDI Import section '
+                     'in the Dockerfile for the deployment recipe.'
+        }), 503
+
+    upload = request.files.get('file')
+    if not upload or not upload.filename:
+        return jsonify({'error': 'No file uploaded — expected multipart "file" field.'}), 400
+    if not upload.filename.lower().endswith(('.mid', '.midi')):
+        return jsonify({'error': 'Upload must be a .mid or .midi file.'}), 400
+
+    import tempfile, re as _re
+    with tempfile.TemporaryDirectory(prefix='midi_import_') as tmpdir:
+        mid_path = Path(tmpdir) / 'input.mid'
+        bas_path = Path(tmpdir) / 'output.bas'
+        upload.save(str(mid_path))
+        if mid_path.stat().st_size == 0:
+            return jsonify({'error': 'Uploaded file is empty.'}), 400
+
+        try:
+            r = subprocess.run(
+                [str(inty_midi), str(mid_path), str(bas_path)],
+                capture_output=True, text=True, timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'inty-midi timed out (>30s). File may be too large or malformed.'}), 500
+        except FileNotFoundError as exc:
+            return jsonify({'error': f'inty-midi could not be executed: {exc}'}), 500
+
+        if r.returncode != 0 or not bas_path.exists():
+            err = (r.stderr or r.stdout or 'inty-midi returned non-zero exit with no output.').strip()
+            return jsonify({'error': f'inty-midi failed: {err}'}), 400
+
+        source = bas_path.read_text(encoding='utf-8', errors='replace')
+
+    # Sanitize filename for the editor's display purposes.
+    safe_name = _re.sub(r'[^A-Za-z0-9_.-]+', '_', upload.filename)[:80] or 'imported.mid'
+
+    return jsonify({
+        'source':   source,
+        'filename': safe_name,
+        'bytes':    len(source),
+    })
+
+
+@app.route('/music/midi_to_intybasic/status')
+def music_midi_to_intybasic_status():
+    """Tells the frontend whether MIDI import is available on this server.
+    Frontend uses this to hide the 📥 MIDI button when the converter isn't
+    installed."""
+    inty_midi = Config.get_inty_midi_path()
+    return jsonify({
+        'available': bool(inty_midi),
+        'inty_midi': bool(inty_midi),
+    })
+
+
 @app.route('/emulator/game/token/<token>')
 def emulator_game_token(token):
     """Retrieve a previously uploaded ROM by token."""
