@@ -55,6 +55,15 @@ COPY sf_intellivised/ sf_intellivised/
 # RUN chmod +x /usr/local/bin/intybasic /usr/local/bin/as1600
 # ENV OVL_INTYBASIC_LIBRARY_PATH=/usr/local/share/intybasic
 
+# ── Music Studio: MIDI Import ───────────────────────────────────────────────
+# Enables the 📥 MIDI button in the Music Studio toolbar. The vendored Linux
+# binary lives in vendor/inty-midi/ (Patrick Pelletier's MIDI → IntyBASIC
+# MUSIC converter, BSD-3-Clause — see vendor/inty-midi/LICENSES.txt). The
+# binary needs libgmp10 at runtime.
+RUN apt-get update && apt-get install -y libgmp10 && rm -rf /var/lib/apt/lists/*
+COPY vendor/inty-midi/inty-midi /usr/local/bin/inty-midi
+RUN chmod +x /usr/local/bin/inty-midi
+
 # Create directory for logs
 RUN mkdir -p /app/logs
 
