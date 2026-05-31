@@ -14,6 +14,12 @@ if [ -n "$GIT_COMMIT_HASH" ]; then
     echo ""
 fi
 
+# Built as linux/amd64 (matches fly.io) via docker-compose.yml's platform pin.
+# On Apple Silicon this uses BuildKit's QEMU emulation transparently — the
+# vendored x86-64 inty-midi binary runs identically to prod.
+echo "🏗️  Target platform: linux/amd64 (emulated on arm64 hosts)"
+echo ""
+
 echo "🧹 Tearing down existing containers, networks, and volumes..."
 docker-compose down --volumes --remove-orphans
 
@@ -64,6 +70,20 @@ check_200 "http://localhost:5000/emulator/shell/jzintv.js"   "Emulator JS"
 check_200 "http://localhost:5000/emulator/shell/jzintv.wasm" "Emulator WASM"
 check_200 "http://localhost:5000/emulator/shell/jzintv.data" "Emulator data"
 check_200 "http://localhost:5000/emulator/bios/status"   "Emulator BIOS status"
+
+echo ""
+echo "🎵 Music Studio endpoints..."
+check_200 "http://localhost:5000/music/compile_rom/status"        "Music: compile_rom status"
+check_200 "http://localhost:5000/music/midi_to_intybasic/status"  "Music: MIDI import status"
+
+# inty-midi binary smoke test — confirms the vendored binary actually runs
+# under whatever architecture the container is. Catches the rosetta/exec
+# class of errors that don't show up via plain HTTP probes.
+if docker exec intellivision-overlay-editor inty-midi -v 2>&1 | grep -qE "^inty-midi version" ; then
+    echo "✅ inty-midi binary: runs"
+else
+    echo "❌ inty-midi binary: FAILED to exec (check arch / libgmp / rosetta)"
+fi
 
 echo ""
 echo "=================================================================="

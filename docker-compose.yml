@@ -2,8 +2,17 @@
 
 services:
   overlay-editor:
+    # Pin to linux/amd64 so the container matches fly.io's runtime architecture
+    # (its default `cpu_kind = 'shared'` is amd64). The vendored inty-midi
+    # binary at vendor/inty-midi/inty-midi is x86-64 ELF, so we need this
+    # platform pin on Apple Silicon hosts — otherwise the local container
+    # runs as aarch64 and fails to exec the binary with a rosetta error.
+    # Compose hands this to BuildKit (== `docker buildx --platform=linux/amd64`).
+    platform: linux/amd64
     build:
       context: .
+      platforms:
+        - linux/amd64
       args:
         GIT_COMMIT_HASH: ${GIT_COMMIT_HASH:-}
         GIT_COMMIT_DATE: ${GIT_COMMIT_DATE:-}
