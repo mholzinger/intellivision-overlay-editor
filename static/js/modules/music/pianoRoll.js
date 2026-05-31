@@ -26,7 +26,12 @@ export class PianoRoll {
     // ── Display constants ───────────────────────────────────────────────────
     static KEYBOARD_WIDTH   = 60;   // px gutter for the piano keys
     static KEY_HEIGHT       =  8;   // px per semitone row
-    static TICK_WIDTH       = 16;   // px per tempo step
+    static BASE_TICK_WIDTH  = 16;   // design-target px per tempo step
+    // TICK_WIDTH is intentionally mutable — _sizeForStaticMode scales it
+    // down for songs whose desired canvas width exceeds the browser's
+    // single-canvas size limit (Safari ≈16384 px, Chrome ≈32767 px).
+    // Follow mode always restores it to BASE_TICK_WIDTH.
+    static TICK_WIDTH       = 16;
     static NUM_KEYS         = 60;   // 5 octaves (C2-B6) — Intellivision range
     static LOWEST_MIDI      = 36;   // C2 (MIDI 36)
     static RULER_HEIGHT     = 22;   // px strip at top for timeline ruler
@@ -258,7 +263,11 @@ export class PianoRoll {
 
     // ── Sizing ──────────────────────────────────────────────────────────────
 
-    /** Static mode: canvas spans the full song width (container scrolls). */
+    /** Static mode: canvas spans the full song width (container scrolls).
+     *  Long songs (e.g. BEAT_IT at ~12000 ticks × 16 px/tick = ~190k px wide)
+     *  would exceed every browser's single-canvas dimension cap and silently
+     *  render blank. We auto-compress TICK_WIDTH so the whole song still fits
+     *  in one canvas under the cap. Follow mode resets TICK_WIDTH on play. */
     static _sizeForStaticMode() {
         if (!this.canvas) return;
         let maxTick = 0;
@@ -266,7 +275,19 @@ export class PianoRoll {
             maxTick = Math.max(maxTick, note.startTick + note.durationTicks);
         }
         const widthTicks = Math.max(64, maxTick + 8);
-        this.canvas.width  = this.KEYBOARD_WIDTH + widthTicks * this.TICK_WIDTH;
+
+        // 16000 stays safely under Safari's ≈16384 cap. Chrome/Firefox allow
+        // ≈32767 but we cap at the tightest browser so the editor works
+        // identically everywhere.
+        const MAX_CANVAS_WIDTH = 16000;
+        const desiredWidth = this.KEYBOARD_WIDTH + widthTicks * this.BASE_TICK_WIDTH;
+        if (desiredWidth <= MAX_CANVAS_WIDTH) {
+            this.TICK_WIDTH   = this.BASE_TICK_WIDTH;
+            this.canvas.width = desiredWidth;
+        } else {
+            this.TICK_WIDTH   = (MAX_CANVAS_WIDTH - this.KEYBOARD_WIDTH) / widthTicks;
+            this.canvas.width = MAX_CANVAS_WIDTH;
+        }
         this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this._totalDrumHeight();
     }
 
@@ -277,6 +298,9 @@ export class PianoRoll {
         if (!container) return;
         // Reset any external scroll — follow mode doesn't use container scrollLeft
         container.scrollLeft = 0;
+        // Restore the base tick width — follow mode's canvas is viewport-sized
+        // so the static-mode auto-compression doesn't apply here.
+        this.TICK_WIDTH    = this.BASE_TICK_WIDTH;
         this.canvas.width  = Math.max(800, container.clientWidth - 20);
         this.canvas.height = this.RULER_HEIGHT + this.NUM_KEYS * this.KEY_HEIGHT + this._totalDrumHeight();
     }
