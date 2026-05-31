@@ -872,6 +872,85 @@ export class MusicEditor {
     }
 
     /**
+     * Save the current song + engine selection to a downloadable .json
+     * project file. Pairs with loadProject() for round-trip.
+     *
+     * Format:
+     *   {
+     *     fileType: "intv-music-project",
+     *     version:  1,
+     *     engine:   "intybasic" | "imt" | "zmus" | ...,
+     *     song:     <SongIR>,
+     *     savedAt:  ISO-8601 string,
+     *     savedBy:  "Intellivision Overlay Editor — Music Studio"
+     *   }
+     */
+    static saveProject() {
+        if (!this.song) return;
+        const engineSlug = Object.entries(ENGINES).find(([_, cls]) => cls === this.engine)?.[0]
+                         || this.song.engine
+                         || 'intybasic';
+        const payload = {
+            fileType: 'intv-music-project',
+            version:  1,
+            engine:   engineSlug,
+            song:     this.song,
+            savedAt:  new Date().toISOString(),
+            savedBy:  'Intellivision Overlay Editor — Music Studio',
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const name = this.song.label || this.song.name || this.song.title || 'untitled-song';
+        downloadBlob(blob, `${slugifyFilename(name)}.intvmusic.json`);
+    }
+
+    /**
+     * Open a file picker, load a .intvmusic.json project, switch engines if
+     * needed, and replace the current song. Round-trips with saveProject().
+     */
+    static loadProject() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+
+                if (payload.fileType !== 'intv-music-project') {
+                    alert('Not a Music Studio project file (missing fileType marker).');
+                    return;
+                }
+                if (typeof payload.version !== 'number' || payload.version > 1) {
+                    alert(`Unsupported project file version: ${payload.version}. Upgrade the editor.`);
+                    return;
+                }
+                if (!payload.song) {
+                    alert('Project file has no song data.');
+                    return;
+                }
+
+                // Switch engine if the project's engine differs from the active one.
+                const wantedEngine = payload.engine || payload.song.engine || 'intybasic';
+                if (ENGINES[wantedEngine] && ENGINES[wantedEngine] !== this.engine) {
+                    this.setEngine(wantedEngine);
+                }
+
+                this.stop();
+                this.song = payload.song;
+                PianoRoll.setSong(this.song);
+                this._updateStatusLine();
+                this._updatePlayButton();
+            } catch (e) {
+                console.error('MusicEditor.loadProject failed:', e);
+                alert('Failed to load project — see browser console for details.');
+            }
+        };
+        input.click();
+    }
+
+    /**
      * Render the current song (one iteration, no loop expansion) to a
      * 16-bit PCM WAV and download it. Honors channel mute/solo so the
      * downloaded WAV matches what you hear in the mixer.

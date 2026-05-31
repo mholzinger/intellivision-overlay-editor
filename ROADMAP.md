@@ -57,7 +57,7 @@ Deferred concrete asks:
 **Shipped so far:** IntyBASIC MUSIC parser, piano-roll visualization, Web Audio AY-3-8914 synth playback (50 Hz, 4 instruments, 3 drum types), demo song library (10 Space Intruders tracks), click-to-edit composing, player-piano tracking with loop support (JUMP/REPEAT), volume slider, note hover tooltip, INTV Audio Primer modal.
 
 **Next phases (per `~/.claude/plans/intellivision-music-studio.md`):**
-- **Phase 4: Export round-trip** — serialize SongIR back to IntyBASIC MUSIC .bas text, project save/load, Copy Source actually produces valid code. This is the "shippable to friends" milestone.
+- ~~**Phase 4: Export round-trip** — serialize SongIR back to IntyBASIC MUSIC .bas text, project save/load, Copy Source actually produces valid code. This is the "shippable to friends" milestone.~~ **✅ Shipped.** IntyBASIC MUSIC serializer round-trips cleanly (verified against `si_title_theme` + `showcase_full`); 💾 Save / 📂 Load buttons land in the toolbar with a `.intvmusic.json` format. IMT round-trip improved 40× (fixed the rows-vs-ticks 5× duration bug + the pattern-length unit) but a residual NUL-silence-vs-NUL-extension semantic gap remains — documented in the IMT serializer comment as a follow-up. ZMUS is pass-through. Chevallier serializer is a stub (engine is hidden from the UI anyway).
 - **Phase 5: ECS 8-channel** — second PSG, 8-arg MUSIC lines, wider piano-roll
 - **Phase 6: Music templates** — starter patterns (blank, drum loop, chord progressions, scale exercises)
 - **Phase 7: WASM jzIntv bit-perfect playback** — compile music into a stub ROM, run through the existing WASM emulator, A/B toggle vs Web Audio synth

@@ -724,6 +724,8 @@ window.musicOctaveDown        = () => MusicEditor.octaveDown();
 window.musicOctaveUp          = () => MusicEditor.octaveUp();
 window.musicSetVolume         = (v) => { import('./modules/music/playback/psgSynth.js').then(m => m.PsgSynth.setVolume(v / 100)); };
 window.musicDownloadWav       = () => MusicEditor.downloadWav();
+window.musicSaveProject       = () => MusicEditor.saveProject();
+window.musicLoadProject       = () => MusicEditor.loadProject();
 
 // SFX Lab wiring
 window.sfxPlay        = () => SfxEditor.play();

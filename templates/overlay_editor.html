@@ -189,6 +189,8 @@
                 <button class="btn btn-secondary btn-sm" onclick="musicNew()" data-tooltip="Start a new blank song using the currently selected engine">➕ New Song</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicPaste()" data-tooltip="Paste IntyBASIC MUSIC source — it will be parsed and rendered on the piano-roll">📋 Paste</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicCopy()" data-tooltip="Copy the current song as engine-native source to clipboard">📄 Copy Source</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicSaveProject()" data-tooltip="Save the current song + active engine to a .intvmusic.json project file (downloads to your computer). Pairs with 📂 Load.">💾 Save</button>
+                <button class="btn btn-secondary btn-sm" onclick="musicLoadProject()" data-tooltip="Open a .intvmusic.json project file previously saved from this editor. Switches engine automatically if the project was saved under a different one.">📂 Load</button>
                 <button class="btn btn-secondary btn-sm" onclick="musicDownloadWav()" data-tooltip="Render the full song (one iteration, mute/solo honored) to a 16-bit PCM WAV file and download. Plays through the same Web Audio synth as the preview.">💾 WAV</button>
                 <button class="btn btn-info btn-sm" onclick="openAudioPrimer()" data-tooltip="Intellivision audio concepts for beginners — PSG channels, instruments, drums, tempo, looping">📖 Audio Primer</button>
                 <div class="music-demos-dropdown" style="position:relative; display:inline-block;">
