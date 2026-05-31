@@ -905,44 +905,59 @@ export class MusicEditor {
     static async confirmMidiConvert() {
         const cbs = document.querySelectorAll('#midi-modal-tracks input[data-midi-track]:checked');
         const keep = Array.from(cbs).map(cb => parseInt(cb.dataset.midiTrack, 10));
+        const qSel = document.getElementById('midi-modal-quantize');
+        const quantize = qSel && qSel.value ? parseInt(qSel.value, 10) : null;
         const status = document.getElementById('midi-modal-status');
         const btn = document.getElementById('midi-modal-convert');
         if (btn) { btn.disabled = true; btn.textContent = '⏳ Converting…'; }
         if (status) { status.textContent = 'Calling inty-midi…'; status.className = 'midi-modal-status'; }
         try {
-            await this._convertMidiNow(keep);
-            this.hideMidiModal();
+            const ok = await this._convertMidiNow(keep, quantize);
+            if (ok) this.hideMidiModal();
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Convert'; }
         }
     }
 
-    /** Shared conversion call. `keep` is a list of track indices, or [] for all. */
-    static async _convertMidiNow(keep) {
+    /**
+     * Shared conversion call. `keep` is a list of track indices (or [] for all);
+     * `quantize` is null/undefined for auto, or an int (4/8/16/32/64) for an
+     * explicit -q grid. When `quantize` is null and inty-midi reports
+     * needs_quantize, we auto-retry once with 16 (a reasonable default that
+     * works for most pop/classical/arcade MIDI). Returns true on success.
+     */
+    static async _convertMidiNow(keep, quantize = null) {
         const file = this._stashedMidiFile;
         if (!file) {
             alert('No MIDI file in flight — pick one via the 📥 MIDI button.');
-            return;
+            return false;
         }
         const fd = new FormData();
         fd.append('file', file, file.name);
-        if (keep && keep.length > 0) {
-            fd.append('keep_tracks', JSON.stringify(keep));
-        }
+        if (keep && keep.length > 0) fd.append('keep_tracks', JSON.stringify(keep));
+        if (quantize != null)        fd.append('quantize', String(quantize));
         try {
             const r = await fetch('/music/midi_to_intybasic', { method: 'POST', body: fd });
             const j = await r.json();
             if (!r.ok || j.error) {
+                if (j.needs_quantize && quantize == null) {
+                    // Single-track skip path: auto-retry with the most common default.
+                    console.info('MIDI auto-retry with -q 16 (inty-midi auto-quantize failed).');
+                    return this._convertMidiNow(keep, 16);
+                }
                 alert(`MIDI convert failed: ${j.error || r.statusText}`);
-                return;
+                return false;
             }
-            const label = keep && keep.length > 0
-                ? `imported MIDI: ${j.filename} (tracks ${j.kept_tracks?.join(', ')})`
-                : `imported MIDI: ${j.filename}`;
-            this._parseWithDetect(j.source, label);
+            const qNote = j.quantize ? ` · q=1/${j.quantize}` : '';
+            const tracksNote = keep && keep.length > 0
+                ? ` (tracks ${j.kept_tracks?.join(', ')})`
+                : '';
+            this._parseWithDetect(j.source, `imported MIDI: ${j.filename}${tracksNote}${qNote}`);
+            return true;
         } catch (e) {
             console.error('MusicEditor._convertMidiNow failed:', e);
             alert('MIDI convert failed — see browser console for details.');
+            return false;
         }
     }
 

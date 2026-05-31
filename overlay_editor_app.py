@@ -1454,6 +1454,19 @@ def music_midi_to_intybasic():
         except (ValueError, TypeError) as exc:
             return jsonify({'error': f'Invalid keep_tracks: {exc}'}), 400
 
+    # Optional quantization grid (inty-midi -q n). When unset, inty-midi
+    # auto-detects; if its detection fails it returns "Needs quantization"
+    # which the frontend either auto-retries or surfaces in the modal.
+    quantize_raw = request.form.get('quantize', '').strip()
+    quantize: int | None = None
+    if quantize_raw:
+        try:
+            quantize = int(quantize_raw)
+            if not (1 <= quantize <= 64):
+                raise ValueError('out of range (expected 1-64)')
+        except ValueError as exc:
+            return jsonify({'error': f'Invalid quantize: {exc}'}), 400
+
     import tempfile, re as _re
     with tempfile.TemporaryDirectory(prefix='midi_import_') as tmpdir:
         raw_path = Path(tmpdir) / 'raw.mid'
@@ -1472,11 +1485,12 @@ def music_midi_to_intybasic():
         except Exception as exc:
             return jsonify({'error': f'Track filtering failed: {exc}'}), 400
 
+        cmd = [str(inty_midi)]
+        if quantize is not None:
+            cmd += ['-q', str(quantize)]
+        cmd += [str(mid_path), str(bas_path)]
         try:
-            r = subprocess.run(
-                [str(inty_midi), str(mid_path), str(bas_path)],
-                capture_output=True, text=True, timeout=30,
-            )
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         except subprocess.TimeoutExpired:
             return jsonify({'error': 'inty-midi timed out (>30s). File may be too large or malformed.'}), 500
         except FileNotFoundError as exc:
@@ -1484,7 +1498,14 @@ def music_midi_to_intybasic():
 
         if r.returncode != 0 or not bas_path.exists():
             err = (r.stderr or r.stdout or 'inty-midi returned non-zero exit with no output.').strip()
-            return jsonify({'error': f'inty-midi failed: {err}'}), 400
+            # Tag the response so the frontend can auto-retry with a default
+            # quantization on the modal-skip path. The substring matches the
+            # exact wording inty-midi emits for this failure mode.
+            needs_quantize = 'Needs quantization' in err
+            return jsonify({
+                'error': f'inty-midi failed: {err}',
+                'needs_quantize': needs_quantize,
+            }), 400
 
         source = bas_path.read_text(encoding='utf-8', errors='replace')
 
@@ -1492,10 +1513,11 @@ def music_midi_to_intybasic():
     safe_name = _re.sub(r'[^A-Za-z0-9_.-]+', '_', upload.filename)[:80] or 'imported.mid'
 
     return jsonify({
-        'source':   source,
-        'filename': safe_name,
-        'bytes':    len(source),
+        'source':      source,
+        'filename':    safe_name,
+        'bytes':       len(source),
         'kept_tracks': sorted(keep_tracks) if keep_tracks else None,
+        'quantize':    quantize,
     })
 
 

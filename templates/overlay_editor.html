@@ -3601,6 +3601,19 @@ MySong_loop:
                     handles the channel allocation and drops out-of-range notes.
                 </p>
                 <div id="midi-modal-tracks" class="midi-modal-tracks"></div>
+                <div class="midi-modal-options">
+                    <label class="midi-modal-option-label" data-tooltip="Quantize note timings to the nearest 1/N-note grid before conversion. Leave on 'Auto' to let inty-midi detect; if it errors out with 'Needs quantization', pick 16 (16th notes) — works for most pop / classical / arcade MIDI.">
+                        Quantization:
+                        <select id="midi-modal-quantize" class="form-control">
+                            <option value="">Auto (let inty-midi decide)</option>
+                            <option value="4">1/4 (quarter notes)</option>
+                            <option value="8">1/8 (eighth notes)</option>
+                            <option value="16" selected>1/16 (sixteenth notes)</option>
+                            <option value="32">1/32 (thirty-second notes)</option>
+                            <option value="64">1/64 (sixty-fourth notes)</option>
+                        </select>
+                    </label>
+                </div>
             </div>
             <div class="midi-modal-footer">
                 <span id="midi-modal-status" class="midi-modal-status"></span>

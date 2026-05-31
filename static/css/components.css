@@ -2900,3 +2900,21 @@ details[open] .voice-dict-summary::before {
 .midi-modal-status.warn {
     color: #b45309;
 }
+.midi-modal-options {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--gray-200, #e5e7eb);
+}
+.midi-modal-option-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--gray-700, #374151);
+}
+.midi-modal-option-label select.form-control {
+    width: auto;
+    min-width: 220px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
