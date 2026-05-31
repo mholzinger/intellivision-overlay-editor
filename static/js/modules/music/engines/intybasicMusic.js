@@ -270,31 +270,42 @@ export class IntyBasicMusic extends MusicEngine {
             const musicM = line.match(MUSIC_DATA_RE);
             if (musicM) {
                 const args = musicM[1].split(',').map(s => s.trim());
-                // 4 args = base PSG (3 melody + drum). 8 args = ECS variant
-                // (3 melody + drum on each of the two PSGs).
-                if (args.length !== 4 && args.length !== 8) {
+                // Three accepted arities:
+                //   4 args (3 melody + drum)              — base PSG
+                //   7 args (3 melody + drum + 3 melody)   — ECS, no second drum
+                //                                           (inty-midi's emitted
+                //                                           form — there's only
+                //                                           one shared noise gen
+                //                                           on the chip anyway)
+                //   8 args (3 melody + drum + 3 melody + drum) — full ECS, both
+                //                                           drum slots present
+                //                                           (the form our own
+                //                                           authoring tools emit)
+                if (args.length !== 4 && args.length !== 7 && args.length !== 8) {
                     // Bad MUSIC line — skip silently. Real IntyBASIC would error;
                     // we'd rather show what we can than refuse to import.
                     continue;
                 }
-                if (args.length === 8 && ctx.song.channelCount < 8) {
+                if ((args.length === 7 || args.length === 8) && ctx.song.channelCount < 8) {
                     ctx.song.channelCount = 8;
                 }
 
                 // Args 0-2 = base PSG melody → channels 0,1,2
                 // Arg 3   = base PSG drum   → channel 3
                 // Args 4-6 = ECS PSG melody → channels 4,5,6
-                // Arg 7   = ECS PSG drum   → channel 7
+                // Arg 7   = ECS PSG drum   → channel 7 (8-arg form only)
                 for (let ch = 0; ch < 3; ch++) {
                     this._processChannelToken(args[ch], ch, ctx.song, ctx.channelState, ctx.currentTick, ctx.currentVolume);
                 }
                 this._processDrumToken(args[3], ctx.song, ctx.currentTick, ctx.currentVolume, 3);
 
-                if (args.length === 8) {
+                if (args.length === 7 || args.length === 8) {
                     for (let ch = 4; ch < 7; ch++) {
                         this._processChannelToken(args[ch], ch, ctx.song, ctx.channelState, ctx.currentTick, ctx.currentVolume);
                     }
-                    this._processDrumToken(args[7], ctx.song, ctx.currentTick, ctx.currentVolume, 7);
+                    if (args.length === 8) {
+                        this._processDrumToken(args[7], ctx.song, ctx.currentTick, ctx.currentVolume, 7);
+                    }
                 }
 
                 ctx.currentTick += ctx.song.ticksPerNote;
