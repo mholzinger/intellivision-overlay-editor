@@ -727,6 +727,11 @@ window.musicDownloadWav       = () => MusicEditor.downloadWav();
 window.musicSaveProject       = () => MusicEditor.saveProject();
 window.musicLoadProject       = () => MusicEditor.loadProject();
 window.musicImportMidi        = () => MusicEditor.importMidi();
+window.musicMidiConvert       = () => MusicEditor.confirmMidiConvert();
+window.musicMidiCancel        = (e) => {
+    if (e && e.target !== document.getElementById('midi-import-modal')) return;
+    MusicEditor.hideMidiModal();
+};
 
 // SFX Lab wiring
 window.sfxPlay        = () => SfxEditor.play();

@@ -1322,14 +1322,104 @@ def music_compile_rom_status():
     })
 
 
+def _midi_inspect_tracks(midi_path: Path) -> list[dict]:
+    """Parse a MIDI file with `mido` and return a summary per track.
+
+    Each entry: {index, name, channel, program, note_count, pitch_min,
+    pitch_max, has_drums}. has_drums is true for channel 10 (the GM
+    percussion channel; mido reports 0-indexed so we check channel == 9).
+    """
+    import mido as _mido
+    mid = _mido.MidiFile(str(midi_path))
+    out = []
+    for idx, track in enumerate(mid.tracks):
+        notes = [m for m in track if m.type == 'note_on' and getattr(m, 'velocity', 0) > 0]
+        pitches = [m.note for m in notes]
+        progs = [m.program for m in track if m.type == 'program_change']
+        # Take the channel of the first event that carries one.
+        ch = next((m.channel for m in track if hasattr(m, 'channel')), None)
+        name = next((m.name.strip() for m in track if m.type == 'track_name'), '')
+        out.append({
+            'index':       idx,
+            'name':        name or f'Track {idx}',
+            'channel':     ch,                                   # 0-15 or None (metadata-only track)
+            'program':     progs[0] if progs else None,
+            'note_count':  len(notes),
+            'pitch_min':   min(pitches) if pitches else None,
+            'pitch_max':   max(pitches) if pitches else None,
+            'has_drums':   ch == 9,
+        })
+    return out
+
+
+def _midi_filter_tracks(src: Path, dst: Path, keep_indices: set[int]):
+    """Read `src` MIDI, write `dst` keeping only tracks whose index is in
+    `keep_indices` (plus track 0, which usually carries tempo/timesig meta
+    in format-1 files — preserving it ensures inty-midi gets the timing
+    information). If keep_indices is empty, copy verbatim."""
+    import mido as _mido
+    mid = _mido.MidiFile(str(src))
+    if not keep_indices:
+        mid.save(str(dst))
+        return
+    # In a format-1 MIDI, track 0 is the conductor track (tempo, time sig,
+    # key sig) and usually has no notes — we always keep it so inty-midi's
+    # timing is correct. Filter the others by `keep_indices`.
+    kept = []
+    for i, t in enumerate(mid.tracks):
+        if i == 0 or i in keep_indices:
+            kept.append(t)
+    mid.tracks = kept
+    mid.save(str(dst))
+
+
+@app.route('/music/midi_inspect', methods=['POST'])
+def music_midi_inspect():
+    """Inspect an uploaded MIDI file and return per-track metadata so the
+    frontend can show a track-selection dialog before conversion.
+
+    Request: multipart/form-data with a 'file' field containing the .mid.
+    Response: {"format": 0|1|2, "ticks_per_beat": N, "tracks": [...]}.
+    """
+    upload = request.files.get('file')
+    if not upload or not upload.filename:
+        return jsonify({'error': 'No file uploaded — expected multipart "file" field.'}), 400
+    if not upload.filename.lower().endswith(('.mid', '.midi')):
+        return jsonify({'error': 'Upload must be a .mid or .midi file.'}), 400
+
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix='midi_inspect_') as tmpdir:
+        mid_path = Path(tmpdir) / 'input.mid'
+        upload.save(str(mid_path))
+        if mid_path.stat().st_size == 0:
+            return jsonify({'error': 'Uploaded file is empty.'}), 400
+        try:
+            import mido as _mido
+            mid_meta = _mido.MidiFile(str(mid_path))
+            tracks = _midi_inspect_tracks(mid_path)
+        except Exception as exc:
+            return jsonify({'error': f'Could not parse MIDI file: {exc}'}), 400
+
+    return jsonify({
+        'filename':        upload.filename,
+        'format':          mid_meta.type,
+        'ticks_per_beat':  mid_meta.ticks_per_beat,
+        'length_seconds':  round(mid_meta.length, 2),
+        'tracks':          tracks,
+    })
+
+
 @app.route('/music/midi_to_intybasic', methods=['POST'])
 def music_midi_to_intybasic():
     """Convert an uploaded MIDI file into IntyBASIC MUSIC source by shelling
     to Oscar Toledo's `inty-midi` tool.
 
-    Request: multipart/form-data with a single 'file' field containing the
-    .mid blob. (Optional in future: -i instrument, -q quantize, -p first-bar
-    nudge — for the MVP we accept inty-midi defaults.)
+    Request (multipart/form-data):
+      file         — required, .mid blob
+      keep_tracks  — optional JSON array of track indices to keep (others
+                     dropped before handoff to inty-midi). When omitted,
+                     all tracks pass through and inty-midi's auto-channel
+                     logic decides what fits.
 
     Response on success:
         {"source": "<IntyBASIC MUSIC source>", "filename": "<original.mid>"}
@@ -1350,13 +1440,37 @@ def music_midi_to_intybasic():
     if not upload.filename.lower().endswith(('.mid', '.midi')):
         return jsonify({'error': 'Upload must be a .mid or .midi file.'}), 400
 
+    # Optional track-selection filter. Form field is a JSON array string
+    # (e.g. "[1,3,4]"). Empty / missing means "keep everything."
+    import json as _json
+    keep_tracks_raw = request.form.get('keep_tracks', '').strip()
+    keep_tracks: set[int] = set()
+    if keep_tracks_raw:
+        try:
+            parsed = _json.loads(keep_tracks_raw)
+            if not isinstance(parsed, list):
+                raise ValueError('keep_tracks must be a JSON array of integers')
+            keep_tracks = {int(x) for x in parsed}
+        except (ValueError, TypeError) as exc:
+            return jsonify({'error': f'Invalid keep_tracks: {exc}'}), 400
+
     import tempfile, re as _re
     with tempfile.TemporaryDirectory(prefix='midi_import_') as tmpdir:
-        mid_path = Path(tmpdir) / 'input.mid'
+        raw_path = Path(tmpdir) / 'raw.mid'
+        mid_path = Path(tmpdir) / 'input.mid'   # what inty-midi receives
         bas_path = Path(tmpdir) / 'output.bas'
-        upload.save(str(mid_path))
-        if mid_path.stat().st_size == 0:
+        upload.save(str(raw_path))
+        if raw_path.stat().st_size == 0:
             return jsonify({'error': 'Uploaded file is empty.'}), 400
+
+        # Filter tracks if requested; otherwise hand the raw file straight to inty-midi.
+        try:
+            if keep_tracks:
+                _midi_filter_tracks(raw_path, mid_path, keep_tracks)
+            else:
+                raw_path.rename(mid_path)
+        except Exception as exc:
+            return jsonify({'error': f'Track filtering failed: {exc}'}), 400
 
         try:
             r = subprocess.run(
@@ -1381,6 +1495,7 @@ def music_midi_to_intybasic():
         'source':   source,
         'filename': safe_name,
         'bytes':    len(source),
+        'kept_tracks': sorted(keep_tracks) if keep_tracks else None,
     })
 
 

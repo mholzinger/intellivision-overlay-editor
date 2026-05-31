@@ -774,11 +774,14 @@ export class MusicEditor {
     }
 
     /**
-     * Open a file picker, upload a .mid to /music/midi_to_intybasic, and
-     * load the returned IntyBASIC source onto the piano-roll via the
-     * existing auto-detect parse flow.
+     * Open a file picker, inspect the uploaded MIDI server-side, then show
+     * the track-selection modal. The actual conversion happens when the
+     * user clicks Convert in the modal (see musicMidiConvert window fn).
+     *
+     * For single-musical-track MIDIs the modal is skipped — we go straight
+     * to conversion with all tracks selected.
      */
-    static importMidi() {
+    static async importMidi() {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.mid,.midi,audio/midi,audio/x-midi';
@@ -788,19 +791,159 @@ export class MusicEditor {
             const fd = new FormData();
             fd.append('file', file, file.name);
             try {
-                const r = await fetch('/music/midi_to_intybasic', { method: 'POST', body: fd });
+                const r = await fetch('/music/midi_inspect', { method: 'POST', body: fd });
                 const j = await r.json();
                 if (!r.ok || j.error) {
-                    alert(`MIDI import failed: ${j.error || r.statusText}`);
+                    alert(`MIDI inspect failed: ${j.error || r.statusText}`);
                     return;
                 }
-                this._parseWithDetect(j.source, `imported MIDI: ${j.filename}`);
+                this._stashedMidiFile = file;
+                this._stashedMidiMeta = j;
+                const musicalTrackCount = j.tracks.filter(t => t.note_count > 0).length;
+                if (musicalTrackCount <= 1) {
+                    // Nothing to choose between — skip the modal.
+                    await this._convertMidiNow([]);
+                } else {
+                    this._showMidiModal(j);
+                }
             } catch (e) {
                 console.error('MusicEditor.importMidi failed:', e);
-                alert('MIDI import failed — see browser console for details.');
+                alert('MIDI inspect failed — see browser console for details.');
             }
         };
         input.click();
+    }
+
+    /** Render the inspect response into the modal and show it. */
+    static _showMidiModal(meta) {
+        const tracksEl = document.getElementById('midi-modal-tracks');
+        const metaEl   = document.getElementById('midi-modal-meta');
+        const modal    = document.getElementById('midi-import-modal');
+        const status   = document.getElementById('midi-modal-status');
+        if (!tracksEl || !metaEl || !modal) return;
+
+        const fmtLabel = ['Type 0 (single track)', 'Type 1 (multi-track)', 'Type 2 (multi-song)'][meta.format] || `Type ${meta.format}`;
+        metaEl.textContent = `📁 ${meta.filename}  ·  ${fmtLabel}  ·  ${meta.tracks.length} tracks  ·  ${meta.length_seconds}s  ·  ${meta.ticks_per_beat} ticks/beat`;
+
+        tracksEl.innerHTML = meta.tracks.map(t => this._renderMidiTrackRow(t)).join('');
+
+        // Sync the warn-line whenever a checkbox changes.
+        tracksEl.querySelectorAll('input[data-midi-track]').forEach(cb => {
+            cb.addEventListener('change', () => this._updateMidiModalStatus());
+        });
+        this._updateMidiModalStatus();
+
+        status.textContent = '';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    static _renderMidiTrackRow(t) {
+        const noteName = (midi) => {
+            if (midi == null) return '–';
+            const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+            return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
+        };
+        const hasNotes = t.note_count > 0;
+        const checked = hasNotes ? 'checked' : '';
+        const disabled = hasNotes ? '' : 'disabled';
+        const drumBadge = t.has_drums ? `<span class="midi-track-badge drum">🥁 drums</span>` : '';
+        const chBadge   = (t.channel != null) ? `<span class="midi-track-badge">ch ${t.channel + 1}</span>` : '';
+        const progBadge = (t.program != null) ? `<span class="midi-track-badge">prog ${t.program}</span>` : '';
+        const pitchRange = hasNotes ? `${noteName(t.pitch_min)}–${noteName(t.pitch_max)}` : '(empty)';
+        const rowClass = `midi-track-row ${hasNotes ? 'selected' : 'disabled'}`;
+        return `
+            <div class="${rowClass}">
+                <input type="checkbox" data-midi-track="${t.index}" ${checked} ${disabled}
+                       onchange="this.parentElement.classList.toggle('selected', this.checked)">
+                <span class="midi-track-idx">#${t.index}</span>
+                <span class="midi-track-name">${this._escapeHtml(t.name)}</span>
+                <span class="midi-track-meta">${t.note_count} notes · ${pitchRange}</span>
+                <span style="display:inline-flex; gap:4px;">${chBadge}${progBadge}${drumBadge}</span>
+            </div>
+        `;
+    }
+
+    static _updateMidiModalStatus() {
+        const cbs = document.querySelectorAll('#midi-modal-tracks input[data-midi-track]:checked');
+        const status = document.getElementById('midi-modal-status');
+        const btn = document.getElementById('midi-modal-convert');
+        if (!status || !btn) return;
+        const n = cbs.length;
+        if (n === 0) {
+            status.textContent = 'Select at least one track to convert.';
+            status.className = 'midi-modal-status warn';
+            btn.disabled = true;
+        } else if (n > 6) {
+            status.textContent = `${n} tracks selected — IntyBASIC supports max 6 (with ECS). inty-midi will drop excess voices.`;
+            status.className = 'midi-modal-status warn';
+            btn.disabled = false;
+        } else if (n > 3) {
+            status.textContent = `${n} tracks selected — needs ECS expansion (6 channels). Without ECS, the first 3 will fit.`;
+            status.className = 'midi-modal-status';
+            btn.disabled = false;
+        } else {
+            status.textContent = `${n} track${n === 1 ? '' : 's'} selected.`;
+            status.className = 'midi-modal-status';
+            btn.disabled = false;
+        }
+    }
+
+    static _escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    static hideMidiModal() {
+        const modal = document.getElementById('midi-import-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    /** Called from the Convert button. Reads selected tracks and posts to convert. */
+    static async confirmMidiConvert() {
+        const cbs = document.querySelectorAll('#midi-modal-tracks input[data-midi-track]:checked');
+        const keep = Array.from(cbs).map(cb => parseInt(cb.dataset.midiTrack, 10));
+        const status = document.getElementById('midi-modal-status');
+        const btn = document.getElementById('midi-modal-convert');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Converting…'; }
+        if (status) { status.textContent = 'Calling inty-midi…'; status.className = 'midi-modal-status'; }
+        try {
+            await this._convertMidiNow(keep);
+            this.hideMidiModal();
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Convert'; }
+        }
+    }
+
+    /** Shared conversion call. `keep` is a list of track indices, or [] for all. */
+    static async _convertMidiNow(keep) {
+        const file = this._stashedMidiFile;
+        if (!file) {
+            alert('No MIDI file in flight — pick one via the 📥 MIDI button.');
+            return;
+        }
+        const fd = new FormData();
+        fd.append('file', file, file.name);
+        if (keep && keep.length > 0) {
+            fd.append('keep_tracks', JSON.stringify(keep));
+        }
+        try {
+            const r = await fetch('/music/midi_to_intybasic', { method: 'POST', body: fd });
+            const j = await r.json();
+            if (!r.ok || j.error) {
+                alert(`MIDI convert failed: ${j.error || r.statusText}`);
+                return;
+            }
+            const label = keep && keep.length > 0
+                ? `imported MIDI: ${j.filename} (tracks ${j.kept_tracks?.join(', ')})`
+                : `imported MIDI: ${j.filename}`;
+            this._parseWithDetect(j.source, label);
+        } catch (e) {
+            console.error('MusicEditor._convertMidiNow failed:', e);
+            alert('MIDI convert failed — see browser console for details.');
+        }
     }
 
     static copyToClipboard() {

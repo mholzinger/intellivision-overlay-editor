@@ -3583,6 +3583,33 @@ MySong_loop:
         </div><!-- /.intv-primer-dialog -->
     </div><!-- /#sfx-primer-modal -->
 
+    <!-- ====================================================== -->
+    <!-- MIDI Import Track-Selection Modal                       -->
+    <!-- ====================================================== -->
+    <div id="midi-import-modal" class="midi-modal-overlay" style="display:none;" onclick="musicMidiCancel(event)">
+        <div class="midi-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="midi-modal-title">
+            <div class="midi-modal-header">
+                <h2 id="midi-modal-title">Import MIDI</h2>
+                <button class="primer-close-btn" onclick="musicMidiCancel()" aria-label="Close">&times;</button>
+            </div>
+            <div class="midi-modal-body">
+                <div id="midi-modal-meta" class="midi-modal-meta"></div>
+                <p class="midi-modal-hint">
+                    Intellivision PSG has <strong>3 tone channels + 1 noise drum channel</strong>
+                    (or 6 + 2 with the ECS expansion). MIDI files often contain many more —
+                    pick which tracks should make it into the IntyBASIC source. inty-midi
+                    handles the channel allocation and drops out-of-range notes.
+                </p>
+                <div id="midi-modal-tracks" class="midi-modal-tracks"></div>
+            </div>
+            <div class="midi-modal-footer">
+                <span id="midi-modal-status" class="midi-modal-status"></span>
+                <button class="btn btn-secondary" onclick="musicMidiCancel()">Cancel</button>
+                <button id="midi-modal-convert" class="btn btn-primary" onclick="musicMidiConvert()">Convert</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JSZip for project export/import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="/static/js/overlay_editor.js"></script>

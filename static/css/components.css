@@ -2772,3 +2772,131 @@ details[open] .voice-dict-summary::before {
     margin: 0 0 12px;
     white-space: pre;
 }
+
+/* ============================================================ */
+/* MIDI Import track-selection modal                            */
+/* ============================================================ */
+
+.midi-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 20, 0.65);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.midi-modal-dialog {
+    background: var(--gray-50, #f9fafb);
+    border: 1px solid var(--gray-300, #d1d5db);
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.midi-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-200, #e5e7eb);
+}
+.midi-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--gray-800, #1f2937);
+}
+.midi-modal-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+.midi-modal-meta {
+    background: #1a1a2e;
+    color: #a0c0ff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.midi-modal-hint {
+    font-size: 12px;
+    color: var(--gray-600, #6a737d);
+    margin: 0 0 12px;
+    line-height: 1.5;
+}
+.midi-modal-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.midi-track-row {
+    display: grid;
+    grid-template-columns: 24px 32px 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: 4px;
+    font-size: 12px;
+}
+.midi-track-row.disabled {
+    opacity: 0.5;
+    background: #f3f4f6;
+}
+.midi-track-row.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+.midi-track-row input[type="checkbox"] {
+    margin: 0;
+}
+.midi-track-idx {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--gray-500, #9ca3af);
+}
+.midi-track-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.midi-track-meta {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--gray-500, #9ca3af);
+    white-space: nowrap;
+}
+.midi-track-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--gray-200, #e5e7eb);
+    color: var(--gray-700, #374151);
+    white-space: nowrap;
+}
+.midi-track-badge.drum {
+    background: #fef3c7;
+    color: #92400e;
+}
+.midi-modal-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--gray-200, #e5e7eb);
+}
+.midi-modal-status {
+    flex: 1 1 auto;
+    font-size: 12px;
+    color: var(--gray-600, #6a737d);
+}
+.midi-modal-status.warn {
+    color: #b45309;
+}
