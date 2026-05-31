@@ -54,3 +54,11 @@ Thumbs.db
 # See docs/wasm-playback.md. Only the README is tracked.
 vendor/intellivision-toolchain/*
 !vendor/intellivision-toolchain/README.md
+
+# /code-review ultra session artifacts (local reports, not for the repo)
+council-report-*.html
+council-transcript-*.md
+
+# Third-party reference material kept locally (e.g. IMT v1.5 distro, PDFs).
+# Not for distribution — copyrighted, big binaries.
+imt/
