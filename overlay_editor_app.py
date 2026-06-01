@@ -1322,6 +1322,82 @@ def music_compile_rom_status():
     })
 
 
+def _sanitize_midi(src: Path, dst: Path) -> list[str]:
+    """Repair a malformed MIDI by rebuilding track-length fields and (when
+    necessary) synthesizing missing end-of-track markers.
+
+    Background: real-world MIDI files from DAW exports sometimes carry a
+    track-length header that overstates the actual byte count (truncated
+    write, premature close, etc.). mido reads bytes against the claimed
+    length and EOFs out mid-parse; inty-midi gives a cryptic "note-off"
+    error for the same root cause.
+
+    Strategy: walk the file at the byte level. For each MTrk chunk, find
+    the actual end-of-track marker (`FF 2F 00`) within the byte budget
+    and rewrite the length field to match. If the EOT marker is missing
+    (file was cut short), synthesize a delta-0 EOT at the end of the
+    available data.
+
+    Returns a list of human-readable repair notes (empty if no repairs
+    were needed). Raises ValueError on input that isn't a recognizable
+    MIDI file at all.
+    """
+    data = src.read_bytes()
+    if len(data) < 14 or data[:4] != b'MThd':
+        raise ValueError('not a valid MIDI file (missing or wrong MThd header)')
+
+    repairs: list[str] = []
+    out = bytearray()
+    out.extend(data[:14])  # MThd + 6 length bytes + 6 header data bytes
+    pos = 14
+
+    while pos + 8 <= len(data):
+        if data[pos:pos + 4] != b'MTrk':
+            # Skip any unknown chunk type (rare; spec says ignore unknown)
+            chunk_len = int.from_bytes(data[pos + 4:pos + 8], 'big')
+            unknown_end = min(pos + 8 + chunk_len, len(data))
+            out.extend(data[pos:unknown_end])
+            pos = unknown_end
+            continue
+
+        claimed = int.from_bytes(data[pos + 4:pos + 8], 'big')
+        body_start = pos + 8
+        body_end_claimed = body_start + claimed
+        available_end = min(body_end_claimed, len(data))
+
+        # Scan within whatever bytes are actually available for an EOT marker.
+        eot_pos = data.find(b'\xff\x2f\x00', body_start, available_end)
+        if eot_pos != -1:
+            actual_end = eot_pos + 3
+            actual_length = actual_end - body_start
+            if actual_length != claimed:
+                repairs.append(
+                    f'track at file offset {pos}: rewrote length {claimed} → {actual_length}'
+                )
+            out.extend(b'MTrk')
+            out.extend(actual_length.to_bytes(4, 'big'))
+            out.extend(data[body_start:actual_end])
+            pos = actual_end
+        else:
+            # No EOT marker in the available bytes — synthesize one. Include
+            # whatever data we do have, then append (delta 0x00, FF 2F 00).
+            actual_body = data[body_start:available_end]
+            synth = b'\x00\xff\x2f\x00'
+            actual_length = len(actual_body) + len(synth)
+            repairs.append(
+                f'track at file offset {pos}: synthesized end-of-track marker; '
+                f'length {claimed} → {actual_length}'
+            )
+            out.extend(b'MTrk')
+            out.extend(actual_length.to_bytes(4, 'big'))
+            out.extend(actual_body)
+            out.extend(synth)
+            pos = available_end
+
+    dst.write_bytes(bytes(out))
+    return repairs
+
+
 def _midi_inspect_tracks(midi_path: Path) -> list[dict]:
     """Parse a MIDI file with `mido` and return a summary per track.
 
@@ -1389,16 +1465,32 @@ def music_midi_inspect():
 
     import tempfile
     with tempfile.TemporaryDirectory(prefix='midi_inspect_') as tmpdir:
+        raw_path = Path(tmpdir) / 'raw.mid'
         mid_path = Path(tmpdir) / 'input.mid'
-        upload.save(str(mid_path))
-        if mid_path.stat().st_size == 0:
+        upload.save(str(raw_path))
+        if raw_path.stat().st_size == 0:
             return jsonify({'error': 'Uploaded file is empty.'}), 400
+
+        # Sanitize first — rewrites track lengths + synthesizes missing EOT
+        # markers so DAW-truncated MIDIs become parseable. No-op for well-
+        # formed files.
+        try:
+            repairs = _sanitize_midi(raw_path, mid_path)
+        except ValueError as exc:
+            return jsonify({'error': f'Not a valid MIDI file: {exc}'}), 400
+
         try:
             import mido as _mido
             mid_meta = _mido.MidiFile(str(mid_path))
             tracks = _midi_inspect_tracks(mid_path)
+        except (EOFError, OSError) as exc:
+            return jsonify({
+                'error': 'Malformed MIDI — even after sanitization, the file '
+                         'could not be parsed. The track data may be corrupted '
+                         'beyond repair; try re-exporting from your DAW.'
+            }), 400
         except Exception as exc:
-            return jsonify({'error': f'Could not parse MIDI file: {exc}'}), 400
+            return jsonify({'error': f'Could not parse MIDI file: {exc or type(exc).__name__}'}), 400
 
     return jsonify({
         'filename':        upload.filename,
@@ -1406,6 +1498,7 @@ def music_midi_inspect():
         'ticks_per_beat':  mid_meta.ticks_per_beat,
         'length_seconds':  round(mid_meta.length, 2),
         'tracks':          tracks,
+        'repairs':         repairs,
     })
 
 
@@ -1469,21 +1562,34 @@ def music_midi_to_intybasic():
 
     import tempfile, re as _re
     with tempfile.TemporaryDirectory(prefix='midi_import_') as tmpdir:
-        raw_path = Path(tmpdir) / 'raw.mid'
-        mid_path = Path(tmpdir) / 'input.mid'   # what inty-midi receives
-        bas_path = Path(tmpdir) / 'output.bas'
+        raw_path       = Path(tmpdir) / 'raw.mid'
+        sanitized_path = Path(tmpdir) / 'sanitized.mid'
+        mid_path       = Path(tmpdir) / 'input.mid'   # what inty-midi receives
+        bas_path       = Path(tmpdir) / 'output.bas'
         upload.save(str(raw_path))
         if raw_path.stat().st_size == 0:
             return jsonify({'error': 'Uploaded file is empty.'}), 400
 
-        # Filter tracks if requested; otherwise hand the raw file straight to inty-midi.
+        # Sanitize first so truncated DAW exports become parseable.
+        try:
+            repairs = _sanitize_midi(raw_path, sanitized_path)
+        except ValueError as exc:
+            return jsonify({'error': f'Not a valid MIDI file: {exc}'}), 400
+
+        # Filter tracks if requested; otherwise hand the sanitized file
+        # straight to inty-midi.
         try:
             if keep_tracks:
-                _midi_filter_tracks(raw_path, mid_path, keep_tracks)
+                _midi_filter_tracks(sanitized_path, mid_path, keep_tracks)
             else:
-                raw_path.rename(mid_path)
+                sanitized_path.rename(mid_path)
+        except (EOFError, OSError) as exc:
+            return jsonify({
+                'error': 'Malformed MIDI — even after sanitization the track '
+                         'data could not be read. Try re-exporting from your DAW.'
+            }), 400
         except Exception as exc:
-            return jsonify({'error': f'Track filtering failed: {exc}'}), 400
+            return jsonify({'error': f'Track filtering failed: {exc or type(exc).__name__}'}), 400
 
         cmd = [str(inty_midi)]
         if quantize is not None:
@@ -1518,6 +1624,7 @@ def music_midi_to_intybasic():
         'bytes':       len(source),
         'kept_tracks': sorted(keep_tracks) if keep_tracks else None,
         'quantize':    quantize,
+        'repairs':     repairs,
     })
 
 
