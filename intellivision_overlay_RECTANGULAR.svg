@@ -15,10 +15,26 @@
       .zone { fill: none; stroke: #8B4513; stroke-width: 0.1; stroke-dasharray: 0.4,0.4; opacity: 0.3; }
       .copyright { font-family: Arial Black, sans-serif; font-size: 2px; fill: #333333; }
     </style>
+
+    <!-- Preview-only clip: matches outer_boundary so the background fill
+         visually honors the controller's rounded corners in the live SVG.
+         Export ignores this — exportManager replaces #overlay-background
+         with a pre-rendered image and applies its own canvas mask. -->
+    <clipPath id="overlay-shape-clip" clipPathUnits="userSpaceOnUse">
+      <path d="M 2.26 0
+               L 53.34 0
+               Q 55.6 0 55.6 2.26
+               L 55.6 81.4
+               Q 55.6 90.4 46.6 90.4
+               L 9.0 90.4
+               Q 0 90.4 0 81.4
+               L 0 2.26
+               Q 0 0 2.26 0 Z"/>
+    </clipPath>
   </defs>
 
   <!-- Background -->
-  <rect id="overlay-background" x="0" y="0" width="55.6" height="90.4" fill="#FFFFFF"/>
+  <rect id="overlay-background" x="0" y="0" width="55.6" height="90.4" fill="#FFFFFF" clip-path="url(#overlay-shape-clip)"/>
 
   <!-- Outer boundary with different top/bottom rounded corners -->
   <!-- Top corners: 2.26mm radius | Bottom corners: 9.0mm radius -->
