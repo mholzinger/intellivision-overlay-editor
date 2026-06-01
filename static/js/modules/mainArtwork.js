@@ -143,6 +143,10 @@ export class MainArtwork {
             tiledRect.setAttributeNS(null, 'height', artworkHeight.toString());
             tiledRect.setAttributeNS(null, 'fill', 'url(#artwork-pattern)');
             tiledRect.setAttributeNS(null, 'opacity', opacity.toString());
+            // Honor the controller's rounded corners in the preview (same
+            // clipPath the static overlay-background uses). Export ignores
+            // this — exportManager pre-renders + applies its own canvas mask.
+            tiledRect.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
 
             background.parentNode.insertBefore(tiledRect, background.nextSibling);
         } else {
@@ -156,6 +160,7 @@ export class MainArtwork {
             image.setAttributeNS(null, 'height', artworkHeight.toString());
             image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
             image.setAttributeNS(null, 'opacity', opacity.toString());
+            image.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
 
             // Build transform with position, scale, and rotation
             const centerX = artworkWidth / 2;
