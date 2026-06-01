@@ -1350,15 +1350,22 @@ def _sanitize_midi(src: Path, dst: Path) -> list[str]:
     out = bytearray()
     out.extend(data[:14])  # MThd + 6 length bytes + 6 header data bytes
     pos = 14
+    tracks_written = 0
+    claimed_ntrks = int.from_bytes(data[10:12], 'big')
 
     while pos + 8 <= len(data):
         if data[pos:pos + 4] != b'MTrk':
-            # Skip any unknown chunk type (rare; spec says ignore unknown)
-            chunk_len = int.from_bytes(data[pos + 4:pos + 8], 'big')
-            unknown_end = min(pos + 8 + chunk_len, len(data))
-            out.extend(data[pos:unknown_end])
-            pos = unknown_end
-            continue
+            # Not a track header. Could be (a) trailing garbage from a
+            # truncated DAW write — drop it; or (b) a non-MTrk chunk the
+            # spec says to skip. We can't distinguish reliably, so stop
+            # processing here: any further "tracks" claimed by the ntrks
+            # field will be removed when we patch it below.
+            if pos < len(data):
+                repairs.append(
+                    f'dropped {len(data) - pos} byte(s) of trailing data after the '
+                    f'last valid MTrk chunk (likely a truncated DAW write)'
+                )
+            break
 
         claimed = int.from_bytes(data[pos + 4:pos + 8], 'big')
         body_start = pos + 8
@@ -1393,6 +1400,17 @@ def _sanitize_midi(src: Path, dst: Path) -> list[str]:
             out.extend(actual_body)
             out.extend(synth)
             pos = available_end
+
+        tracks_written += 1
+
+    # Patch the ntrks header field to match what we actually wrote. This is
+    # the key fix for files whose MThd claims more tracks than the bytes
+    # actually contain (most common: 2 claimed, 1 + truncated 2nd).
+    if tracks_written != claimed_ntrks:
+        repairs.append(
+            f'patched MThd ntrks {claimed_ntrks} → {tracks_written}'
+        )
+        out[10:12] = tracks_written.to_bytes(2, 'big')
 
     dst.write_bytes(bytes(out))
     return repairs
