@@ -28,6 +28,29 @@ export class ExportManager {
     };
 
     /**
+     * Remove the preview-only clip-path attributes from the export clone.
+     *
+     * The preview SVG paints background + artwork through a `clip-path=
+     * "url(#overlay-shape-clip)"` so the live editor honors the controller's
+     * rounded corners. For export we don't want CairoSVG (or the browser
+     * canvas pre-render) to apply that clip — it can produce a 1-2 px
+     * cropping disagreement against the authoritative canvas-level
+     * applyOverlayMask() below. Stripping the attribute leaves the inner
+     * elements rendering as full rectangles; the canvas mask at the end
+     * gives every export the exact same rounded shape.
+     *
+     * Wrapper groups themselves are kept (no-ops without the attribute) so
+     * other queries by id still resolve.
+     */
+    static _stripPreviewOnlyClips(exportCopy) {
+        const ids = ['custom-artwork-wrap', 'custom-artwork-tiled-wrap', 'overlay-background'];
+        for (const id of ids) {
+            const el = exportCopy.querySelector('#' + id);
+            if (el) el.removeAttribute('clip-path');
+        }
+    }
+
+    /**
      * Apply the overlay mask (rounded corners) to a canvas context
      * This clips the canvas to match the Intellivision overlay shape
      * @param {CanvasRenderingContext2D} ctx - Canvas context to apply mask to
@@ -611,6 +634,7 @@ export class ExportManager {
 
             // Clone preview SVG and include page-level preview fonts (if any)
             const exportCopy = svgDoc.cloneNode(true);
+            ExportManager._stripPreviewOnlyClips(exportCopy);
 
             // Replace background rect with pre-rendered image to ensure opacity works
             const bgRect = exportCopy.querySelector('#overlay-background');
@@ -1153,6 +1177,7 @@ export class ExportManager {
 
             // Clone the SVG
             const exportCopy = svgDoc.cloneNode(true);
+            ExportManager._stripPreviewOnlyClips(exportCopy);
 
             // Apply all the same transformations as exportPNG
             // Replace background rect
