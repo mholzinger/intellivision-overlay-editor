@@ -60,20 +60,23 @@ export class MainArtwork {
         const svgNS = "http://www.w3.org/2000/svg";
         const xlinkNS = "http://www.w3.org/1999/xlink";
 
-        // Remove existing artwork if present
+        // Remove existing artwork if present. We now wrap the artwork in a
+        // clipped <g>, so prefer removing the wrapper (which takes the inner
+        // image/rect with it); fall back to the bare element for projects
+        // saved before the wrapper was introduced.
+        const existingImgWrap = svgDoc.querySelector('#custom-artwork-wrap');
+        if (existingImgWrap) existingImgWrap.remove();
         const existingArtwork = svgDoc.querySelector('#custom-artwork');
-        if (existingArtwork) {
-            existingArtwork.remove();
-        }
+        if (existingArtwork) existingArtwork.remove();
+
         // Remove existing pattern if present
         const existingPattern = svgDoc.querySelector('#artwork-pattern');
-        if (existingPattern) {
-            existingPattern.remove();
-        }
+        if (existingPattern) existingPattern.remove();
+
+        const existingTiledWrap = svgDoc.querySelector('#custom-artwork-tiled-wrap');
+        if (existingTiledWrap) existingTiledWrap.remove();
         const existingPatternRect = svgDoc.querySelector('#custom-artwork-tiled');
-        if (existingPatternRect) {
-            existingPatternRect.remove();
-        }
+        if (existingPatternRect) existingPatternRect.remove();
 
         const artworkWidth = 55.6;
         const artworkHeight = 90.4;
@@ -134,7 +137,16 @@ export class MainArtwork {
             pattern.appendChild(patternImage);
             defs.appendChild(pattern);
 
-            // Create rect that uses the pattern
+            // Create rect that uses the pattern, wrapped in a clipped group so
+            // the rounded controller boundary is honored even if a transform
+            // (position/scale/rotation) is later applied to the inner element.
+            // Applying clip-path directly on the rect fails once a transform
+            // exists because userSpaceOnUse clips post-transform; wrapping in
+            // a clipped <g> applies the clip at the parent level instead.
+            const tiledWrapper = document.createElementNS(svgNS, 'g');
+            tiledWrapper.setAttributeNS(null, 'id', 'custom-artwork-tiled-wrap');
+            tiledWrapper.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
+
             const tiledRect = document.createElementNS(svgNS, 'rect');
             tiledRect.setAttributeNS(null, 'id', 'custom-artwork-tiled');
             tiledRect.setAttributeNS(null, 'x', '0');
@@ -143,14 +155,15 @@ export class MainArtwork {
             tiledRect.setAttributeNS(null, 'height', artworkHeight.toString());
             tiledRect.setAttributeNS(null, 'fill', 'url(#artwork-pattern)');
             tiledRect.setAttributeNS(null, 'opacity', opacity.toString());
-            // Honor the controller's rounded corners in the preview (same
-            // clipPath the static overlay-background uses). Export ignores
-            // this — exportManager pre-renders + applies its own canvas mask.
-            tiledRect.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
+            tiledWrapper.appendChild(tiledRect);
 
-            background.parentNode.insertBefore(tiledRect, background.nextSibling);
+            background.parentNode.insertBefore(tiledWrapper, background.nextSibling);
         } else {
-            // Single image mode
+            // Single image mode — wrap in a clipped group (see comment above).
+            const imageWrapper = document.createElementNS(svgNS, 'g');
+            imageWrapper.setAttributeNS(null, 'id', 'custom-artwork-wrap');
+            imageWrapper.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
+
             const image = document.createElementNS(svgNS, 'image');
             image.setAttributeNS(null, 'id', 'custom-artwork');
             image.setAttributeNS(xlinkNS, 'xlink:href', dataURL);
@@ -160,7 +173,6 @@ export class MainArtwork {
             image.setAttributeNS(null, 'height', artworkHeight.toString());
             image.setAttributeNS(null, 'preserveAspectRatio', 'xMidYMid meet');
             image.setAttributeNS(null, 'opacity', opacity.toString());
-            image.setAttributeNS(null, 'clip-path', 'url(#overlay-shape-clip)');
 
             // Build transform with position, scale, and rotation
             const centerX = artworkWidth / 2;
@@ -188,7 +200,8 @@ export class MainArtwork {
                 image.setAttributeNS(null, 'transform', transforms.join(' '));
             }
 
-            background.parentNode.insertBefore(image, background.nextSibling);
+            imageWrapper.appendChild(image);
+            background.parentNode.insertBefore(imageWrapper, background.nextSibling);
         }
     }
 
@@ -197,13 +210,18 @@ export class MainArtwork {
      */
     static clearArtwork() {
         const svgDoc = appState.getSvgDoc();
-        const artwork = svgDoc.querySelector('#custom-artwork');
-        const tiledArtwork = svgDoc.querySelector('#custom-artwork-tiled');
-        const pattern = svgDoc.querySelector('#artwork-pattern');
+        const imgWrap     = svgDoc.querySelector('#custom-artwork-wrap');
+        const tiledWrap   = svgDoc.querySelector('#custom-artwork-tiled-wrap');
+        const artwork     = svgDoc.querySelector('#custom-artwork');
+        const tiledArtwork= svgDoc.querySelector('#custom-artwork-tiled');
+        const pattern     = svgDoc.querySelector('#artwork-pattern');
 
-        // Remove SVG elements if they exist
-        if (artwork) artwork.remove();
-        if (tiledArtwork) tiledArtwork.remove();
+        // Remove the clipped wrapper if present (takes inner element with it),
+        // otherwise the bare element from pre-wrapper project saves.
+        if (imgWrap) imgWrap.remove();
+        else if (artwork) artwork.remove();
+        if (tiledWrap) tiledWrap.remove();
+        else if (tiledArtwork) tiledArtwork.remove();
         if (pattern) pattern.remove();
 
         // Always clear state, even if SVG elements weren't found
