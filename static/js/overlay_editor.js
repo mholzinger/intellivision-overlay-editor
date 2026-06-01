@@ -466,9 +466,31 @@ window.ImageProcessor = ImageProcessor;
 // Known tab slugs and their canonical URL paths.
 const _TAB_SLUGS = new Set(['overlay', 'boxart', 'sprite', 'ds', 'voice', 'emulator', 'music', 'sfx']);
 
+// Per-tab page title + subtitle. The header H1 + subtitle line + browser
+// <title> all retarget on every tab switch so users (and bookmarks) see
+// the actual app they're using.
+const _TAB_TITLES = {
+    overlay:  ['Intellivision Overlay Editor',      'for Sprint controllers'],
+    boxart:   ['Intellivision Box Art Editor',      'cardboard-sleeve art for your homebrew'],
+    sprite:   ['Intellivision Sprite Editor',       '8×8 / 8×16 / 16×16 GRAM card painter'],
+    ds:       ['Intellivision DS Overlay Editor',   'touchscreen hotspots for NINTV-DS'],
+    voice:    ['Intellivision IntelliVoice Editor', 'SP0256-AL2 phrase builder'],
+    emulator: ['Intellivision Emulator',            'jzIntv WASM, in your browser'],
+    music:    ['Intellivision Music Studio',        'PSG composer — IntyBASIC / IMT / ZMUS'],
+    sfx:      ['Intellivision SFX Lab',             'PSG sound-effect designer'],
+};
+
 // Tab switching — call with pushState=false when restoring from history.
 window.switchEditorTab = (tabName, pushState = true) => {
     if (!_TAB_SLUGS.has(tabName)) tabName = 'overlay';
+
+    // Retitle the page header + browser tab to match the active editor.
+    const [pageTitle, pageSubtitle] = _TAB_TITLES[tabName] || _TAB_TITLES.overlay;
+    const titleEl = document.getElementById('page-title');
+    const subEl   = document.getElementById('page-subtitle');
+    if (titleEl) titleEl.textContent = pageTitle;
+    if (subEl)   subEl.textContent   = pageSubtitle;
+    document.title = pageTitle;
 
     // Update tab buttons
     document.querySelectorAll('.editor-tab').forEach(tab => {
