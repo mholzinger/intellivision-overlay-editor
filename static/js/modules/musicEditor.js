@@ -37,7 +37,21 @@ export class MusicEditor {
     static currentInstrument = 'W';   // W/X/Y/Z for melody
     static currentDrum       = 'M1';  // M1/M2/M3 for drum channel
     static loopEnabled       = true;  // honor MUSIC JUMP / REPEAT during playback
-    static LOOP_COUNT        = 4;     // how many iterations per Play press
+    static LOOP_COUNT        = 4;     // iterations baked into one Web Audio scheduling pass
+
+    // ── Transport state ─────────────────────────────────────────────────────
+    // playbackStartTick: where the next ▶ Play will start from. Set by
+    // handleSeek() (minimap/ruler click) and continuously updated during
+    // playback so a subsequent stop+play resumes from the stopped position.
+    // _loopRequested: snapshot of `loopEnabled` taken when play() began —
+    // tells the natural-end callback whether to auto-restart for true
+    // infinite looping. stop() clears it to prevent the restart.
+    // _userStopped: set by stop() while it runs so the synchronously-fired
+    // end callback doesn't rewind playbackStartTick on top of the position
+    // the user wants to resume from.
+    static playbackStartTick = 0;
+    static _loopRequested    = false;
+    static _userStopped      = false;
 
     // ── Software keyboard state ─────────────────────────────────────────────
     static KEYBOARD_LOW_MIDI  = 36;   // C2 (Intellivision's lowest usable note)
@@ -92,17 +106,20 @@ export class MusicEditor {
         });
     }
 
-    /** Ruler click — seek to that tick. Also moves the keyboard write cursor. */
+    /** Ruler / minimap click — seek to that tick. Also moves the keyboard
+     *  write cursor AND the playback-start position so the next ▶ Play picks
+     *  up from here. Red playhead stays visible (was previously cleared) so
+     *  the user sees exactly where playback will resume from. */
     static handleSeek(tick) {
         if (PsgSynth.isPlaying()) {
+            this._loopRequested = false;        // suppress auto-restart on the impending stop
             PsgSynth.stop();
             this.isPlaying = false;
             this._updatePlayButton();
         }
-        this.writeCursorTick = tick;
-        // Seeking is an EDIT action, not playback — clear the red playhead and
-        // show only the green write cursor.
-        PianoRoll.setPlayhead(null);
+        this.writeCursorTick    = tick;
+        this.playbackStartTick  = tick;
+        PianoRoll.setPlayhead(tick);
         PianoRoll.setWriteCursor(tick);
         Minimap.setPlayhead(tick);
         this._updateStatusLine(tick);
@@ -1042,12 +1059,34 @@ export class MusicEditor {
             PianoRoll.setLoopInfo(loopForVisual);
             Minimap.setLoopInfo(loopForVisual);
             useFollowMode = true;
+
+            // Honor playbackStartTick (set by handleSeek / minimap click):
+            // filter events to those at-or-after the start tick, shift them
+            // so the first one plays immediately, and tell the playhead
+            // callback to display them at their real song position.
+            if (this.playbackStartTick > 0) {
+                const tickSec = 1 / 50;
+                const startSec = this.playbackStartTick * tickSec;
+                events = events
+                    .filter(e => e.timeSec >= startSec)
+                    .map(e => ({ ...e, timeSec: e.timeSec - startSec }));
+                totalTicks     = Math.max(0, totalTicks - this.playbackStartTick);
+                playheadOffset = this.playbackStartTick;
+            }
         }
 
         if (useFollowMode) PianoRoll.setFollowMode(true);
 
+        // Snapshot loop intent at play() time. Cleared by stop() so a user-
+        // initiated stop doesn't get clobbered by an auto-restart. Selection
+        // playback never loops.
+        this._loopRequested = this.loopEnabled && !selection;
+
         PsgSynth.play(events, totalTicks, (tick) => {
             const displayTick = tick == null ? null : tick + playheadOffset;
+            // Continuously remember where the playhead is, so a subsequent
+            // stop() leaves us positioned to resume from that exact tick.
+            if (displayTick != null) this.playbackStartTick = Math.floor(displayTick);
             PianoRoll.setPlayhead(displayTick);
             Minimap.setPlayhead(displayTick);
             this._updateStatusLine(displayTick);
@@ -1055,6 +1094,19 @@ export class MusicEditor {
                 this.isPlaying = false;
                 this._updatePlayButton();
                 if (useFollowMode) PianoRoll.setFollowMode(false);
+                // True infinite loop: when natural end is reached AND the
+                // user still has loop enabled, restart from the loop body's
+                // beginning (or song start if there's no JUMP/REPEAT).
+                if (this._loopRequested) {
+                    const li = this.engine.getLoopInfo?.(this.song);
+                    this.playbackStartTick = li?.introEnd ?? 0;
+                    queueMicrotask(() => this.play());
+                } else if (!this._userStopped) {
+                    // Natural end (no loop, no user stop) — rewind to start
+                    // so the next ▶ Play replays from the beginning rather
+                    // than from the silence past the last note.
+                    this.playbackStartTick = 0;
+                }
             }
         });
         this.isPlaying = true;
@@ -1062,10 +1114,18 @@ export class MusicEditor {
     }
 
     static stop() {
+        // Suppress auto-restart AND the natural-end rewind. PsgSynth.stop()
+        // fires the playhead callback synchronously with tick=null, so both
+        // flags must be set before the call returns.
+        this._loopRequested = false;
+        this._userStopped   = true;
         PsgSynth.stop();
+        this._userStopped   = false;
         this.isPlaying = false;
         // Switch back to static view but KEEP the playhead at its last
         // position so users see where they stopped (and can resume from there).
+        // playbackStartTick already tracks that position via the playhead
+        // callback, so the next ▶ Play picks up right where we stopped.
         PianoRoll.setFollowMode(false);
         // Clear loop wrap so the preserved playhead reflects the actual
         // (raw) tick position rather than a wrapped one — once stopped,
