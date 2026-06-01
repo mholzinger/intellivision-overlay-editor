@@ -1078,9 +1078,11 @@ export class MusicEditor {
         if (useFollowMode) PianoRoll.setFollowMode(true);
 
         // Snapshot loop intent at play() time. Cleared by stop() so a user-
-        // initiated stop doesn't get clobbered by an auto-restart. Selection
-        // playback never loops.
-        this._loopRequested = this.loopEnabled && !selection;
+        // initiated stop doesn't get clobbered by an auto-restart.
+        // Applies to both full-song and selection playback: when a selection
+        // is active and Loop is on, the next play() call re-enters the
+        // selection branch (the yellow range survives across iterations).
+        this._loopRequested = this.loopEnabled;
 
         PsgSynth.play(events, totalTicks, (tick) => {
             const displayTick = tick == null ? null : tick + playheadOffset;
