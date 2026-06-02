@@ -763,6 +763,9 @@ window.sfxLoadPreset  = (id) => SfxEditor.loadPreset(id);
 window.sfxUpdate      = (field, val) => SfxEditor.updateField(field, val);
 window.sfxSetExec     = (key) => SfxEditor.setExec(key);
 window.sfxDownloadWav = () => SfxEditor.downloadWav();
+window.sfxExecAddStep    = () => SfxEditor.execAddStep();
+window.sfxExecRemoveStep = (idx) => SfxEditor.execRemoveStep(idx);
+window.sfxExecUpdateStep = (idx, field, value) => SfxEditor.execUpdateStep(idx, field, value);
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initializeApp);

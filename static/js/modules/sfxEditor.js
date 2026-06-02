@@ -408,6 +408,38 @@ const PRESETS = [
       patch: { channel: 0, durationMs: 2000, freqStart: 0, freqEnd: 0,
                sweepShape: 'step', steps: 1, noise: true, noisePeriod: 31, volume: 15,
                envMode: 'hw', envShape: 8, envPeriod: 32000, loop: true } },
+
+    // ── EXEC ROM sequences ─────────────────────────────────────────────────
+    // These presets emit pure EXEC ROM calls (no PSG content). Each
+    // sequence step retriggers the EXEC routine after `waitTicks` frames.
+    // With loop=true the whole sequence wraps in a label + GOTO for
+    // sustained ambient crowd reactions / whistle bursts / etc. See
+    // generateIntyBasic()'s execOnly branch for the output format.
+    { id: 'crowd_cheer_loop', name: 'Crowd Cheer (loop)', cat: 'EXEC ROM', icon: '👏',
+      patch: { execOnly: true, loop: true,
+        sequence: [{ execCall: 'CROWD_CHEER', waitTicks: 30 }] } },
+    { id: 'crowd_boo_loop', name: 'Crowd Boo (loop)', cat: 'EXEC ROM', icon: '👎',
+      patch: { execOnly: true, loop: true,
+        sequence: [{ execCall: 'CROWD_BOO', waitTicks: 30 }] } },
+    { id: 'crowd_razz_loop', name: 'Crowd Razz (loop)', cat: 'EXEC ROM', icon: '🤥',
+      patch: { execOnly: true, loop: true,
+        sequence: [{ execCall: 'CROWD_GROAN', waitTicks: 25 }] } },
+    { id: 'whistle_burst', name: 'Whistle Burst', cat: 'EXEC ROM', icon: '🎺',
+      patch: { execOnly: true, loop: false,
+        sequence: [{ execCall: 'WHISTLE', waitTicks: 30 }] } },
+    { id: 'mixed_reactions', name: 'Mixed Reactions', cat: 'EXEC ROM', icon: '🎭',
+      patch: { execOnly: true, loop: true,
+        sequence: [
+          { execCall: 'CROWD_CHEER', waitTicks: 30 },
+          { execCall: 'CROWD_BOO',   waitTicks: 30 }
+        ] } },
+    { id: 'three_note_pattern', name: 'Three-Note Pattern', cat: 'EXEC ROM', icon: '🎵',
+      patch: { execOnly: true, loop: true,
+        sequence: [
+          { execCall: 'PLAY_NOTE', waitTicks: 20 },
+          { execCall: 'PLAY_NOTE', waitTicks: 20 },
+          { execCall: 'PLAY_NOTE', waitTicks: 40 }
+        ] } },
 ];
 
 // EXEC ROM sound routine entry points. These addresses are CANONICAL and
@@ -523,6 +555,14 @@ export class SfxEditor {
         const ctx = SfxEditor.ctx;
         const t0 = ctx.currentTime + 0.02;
         const p = SfxEditor.patch;
+
+        // EXEC-only preset: schedule a sequence of EXEC tail previews
+        // (no PSG content), optionally looping.
+        if (p.execOnly) {
+            SfxEditor._scheduleExecSequence(p.sequence || [], !!p.loop, t0);
+            return;
+        }
+
         const durSec = p.durationMs / 1000;
 
         // Schedule each segment in sequence.
@@ -782,6 +822,54 @@ export class SfxEditor {
         return 0;
     }
 
+    /**
+     * Schedule a sequenced preview of EXEC routine calls (execOnly presets).
+     * Each step fires one _scheduleExecTail at time = `t` and advances `t`
+     * by `step.waitTicks * frameSec`. When `loop` is true, the entire
+     * sequence re-triggers via setTimeout after the cycle's audible duration
+     * — same retrigger pattern PSG loops use.
+     *
+     * @param {Array<{execCall:string, waitTicks:number}>} sequence
+     * @param {boolean} loop
+     * @param {number}  t0 — AudioContext time to start the first step
+     */
+    static _scheduleExecSequence(sequence, loop, t0) {
+        const ctx = SfxEditor.ctx;
+        if (!ctx || !sequence.length) {
+            SfxEditor._setPlayButtonState(false);
+            return;
+        }
+        const frameSec = 1 / 60;
+        let t = t0;
+        for (const step of sequence) {
+            if (EXEC_CALLS[step.execCall]) SfxEditor._scheduleExecTail(step.execCall, t);
+            t += Math.max(1, step.waitTicks || 1) * frameSec;
+        }
+
+        SfxEditor.playing = true;
+        SfxEditor._setPlayButtonState(true);
+
+        const cycleMs = (t - t0) * 1000;
+        if (loop) {
+            SfxEditor._loopTimer = setTimeout(() => {
+                if (SfxEditor.playing) {
+                    SfxEditor._scheduleExecSequence(
+                        sequence, true,
+                        SfxEditor.ctx.currentTime + 0.02
+                    );
+                }
+            }, cycleMs);
+        } else {
+            // Add a small buffer to let the final EXEC tail's tail decay.
+            SfxEditor._loopTimer = setTimeout(() => {
+                if (SfxEditor.playing) {
+                    SfxEditor.playing = false;
+                    SfxEditor._setPlayButtonState(false);
+                }
+            }, cycleMs + 1100);
+        }
+    }
+
     static stop() {
         if (SfxEditor._loopTimer != null) {
             clearTimeout(SfxEditor._loopTimer);
@@ -914,11 +1002,17 @@ export class SfxEditor {
     static generateIntyBasic() {
         const p = SfxEditor.patch;
         if (!p) return '';
-        const lines = [];
         const presetName = SfxEditor.currentId
             ? PRESETS.find(x => x.id === SfxEditor.currentId)?.name || 'Custom SFX'
             : 'Custom SFX';
 
+        // EXEC-only patches emit a sequence of ASM CALL + WAIT, optionally
+        // wrapped in a label + GOTO for sustained looped reactions.
+        if (p.execOnly) {
+            return SfxEditor._generateExecSequence(p, presetName);
+        }
+
+        const lines = [];
         lines.push(`' ${presetName} — ${p.durationMs}ms on channel ${CH_NAMES[p.channel]}`);
         lines.push(`' Generated by Intellivision Overlay Editor (SFX tab)`);
         lines.push('');
@@ -1035,6 +1129,50 @@ export class SfxEditor {
         return out;
     }
 
+    /**
+     * Emit IntyBASIC source for an execOnly patch — a sequence of
+     * `ASM CALL $XXXX` (the EXEC routine entry point) interleaved with
+     * `WAIT n` lines, optionally wrapped in a `sfx_loop:` label + `GOTO`
+     * for sustained reactions.
+     */
+    static _generateExecSequence(p, presetName) {
+        const lines = [];
+        const seq = p.sequence || [];
+        const cycleTicks = seq.reduce((sum, s) => sum + Math.max(1, s.waitTicks || 1), 0);
+
+        lines.push(`' ${presetName} — EXEC ROM sequence (${seq.length} step${seq.length === 1 ? '' : 's'}, ~${cycleTicks} tick${cycleTicks === 1 ? '' : 's'}/cycle)`);
+        lines.push(`' Generated by Intellivision Overlay Editor (SFX tab)`);
+        lines.push('');
+
+        if (seq.length === 0) {
+            lines.push(`' (empty sequence — add steps in the designer)`);
+            return lines.join('\n');
+        }
+
+        if (p.loop) {
+            lines.push(`' Loop label — remove the GOTO below for one-shot`);
+            lines.push('sfx_loop:');
+        }
+
+        for (let i = 0; i < seq.length; i++) {
+            const step = seq[i];
+            const exec = EXEC_CALLS[step.execCall];
+            if (!exec) {
+                lines.push(`' (unknown EXEC routine "${step.execCall}" — skipped)`);
+                continue;
+            }
+            lines.push(`${exec.intybasicCall}\t' step ${i + 1}/${seq.length}: ${exec.label}`);
+            const wt = Math.max(1, step.waitTicks || 1);
+            lines.push(`WAIT ${wt}\t\t' retrigger gap ≈ ${(wt * FRAME_MS).toFixed(0)}ms`);
+        }
+
+        if (p.loop) {
+            lines.push('GOTO sfx_loop');
+        }
+
+        return lines.join('\n');
+    }
+
     static copyOutput() {
         const txt = SfxEditor.generateIntyBasic();
         navigator.clipboard.writeText(txt).then(() => {
@@ -1076,6 +1214,12 @@ export class SfxEditor {
         if (!container) return;
         const raw = SfxEditor.rawPatch;
         if (!raw) return;
+
+        // EXEC-only patches (no PSG) get a dedicated Sequence editor.
+        if (raw.execOnly) {
+            container.innerHTML = SfxEditor._renderExecSequenceEditor(raw);
+            return;
+        }
 
         // Multi-segment patches don't get the per-segment slider UI in v1.5
         // (the segments are interrelated and a flat slider can't represent
@@ -1178,6 +1322,86 @@ export class SfxEditor {
                 <p class="sfx-hint">Manual envelope: linear volume fade from peak to 0 across all steps.</p>
             `}
         `;
+    }
+
+    /**
+     * Designer view for execOnly patches: a sequence of `[EXEC dropdown]
+     * [WAIT slider] [✕]` rows + an "Add step" button + the Loop checkbox.
+     * Mutations go through window.sfxExec* fns into _execAddStep /
+     * _execRemoveStep / _execUpdateStep below.
+     */
+    static _renderExecSequenceEditor(raw) {
+        const sequence = raw.sequence || [];
+        const execOptions = Object.entries(EXEC_CALLS).map(([key, val]) =>
+            `<option value="${key}">${val.label}</option>`
+        ).join('');
+        const rows = sequence.map((step, idx) => `
+            <div class="sfx-exec-step-row">
+                <span class="sfx-exec-step-idx">#${idx + 1}</span>
+                <select class="form-control sfx-select" onchange="sfxExecUpdateStep(${idx}, 'execCall', this.value)">
+                    ${Object.entries(EXEC_CALLS).map(([key, val]) =>
+                        `<option value="${key}" ${step.execCall === key ? 'selected' : ''}>${val.label}</option>`
+                    ).join('')}
+                </select>
+                <span class="sfx-exec-step-wait">
+                    <input type="range" min="1" max="120" step="1" value="${step.waitTicks}"
+                           oninput="sfxExecUpdateStep(${idx}, 'waitTicks', this.value); this.nextElementSibling.textContent = this.value + 't (~' + Math.round(this.value * ${FRAME_MS}) + 'ms)'">
+                    <span class="sfx-exec-step-wait-val">${step.waitTicks}t (~${Math.round(step.waitTicks * FRAME_MS)}ms)</span>
+                </span>
+                <button class="sfx-exec-step-remove" onclick="sfxExecRemoveStep(${idx})" data-tooltip="Remove this step" ${sequence.length <= 1 ? 'disabled' : ''}>✕</button>
+            </div>
+        `).join('');
+
+        return `
+            <div class="sfx-exec-notice">
+                <strong>🎭 EXEC ROM sequence preset</strong>
+                <p class="sfx-hint">No PSG content — this preset emits only EXEC ROM calls. The sequence below replays once per cycle; Loop wraps it in a <code>sfx_loop:</code> label + <code>GOTO</code> for sustained reactions. Adjust the WAIT after each call to tune the retrigger gap.</p>
+            </div>
+
+            <div class="sfx-designer-row">
+                <label class="sfx-designer-label" data-tooltip="When checked, the entire sequence loops indefinitely until ■ Stop.">Loop</label>
+                <input type="checkbox" ${raw.loop ? 'checked' : ''}
+                       onchange="sfxUpdate('loop', this.checked)">
+            </div>
+
+            <div class="sfx-designer-section">SEQUENCE</div>
+            <div id="sfx-exec-sequence">${rows}</div>
+            <button class="btn btn-secondary btn-sm" onclick="sfxExecAddStep()" style="margin-top:8px;">+ Add step</button>
+        `;
+    }
+
+    /** Append a new step (defaults to the first available EXEC routine + 30 ticks). */
+    static execAddStep() {
+        if (!SfxEditor.rawPatch?.execOnly) return;
+        const firstKey = Object.keys(EXEC_CALLS)[0];
+        SfxEditor.rawPatch.sequence = SfxEditor.rawPatch.sequence || [];
+        SfxEditor.rawPatch.sequence.push({ execCall: firstKey, waitTicks: 30 });
+        SfxEditor.currentId = null;
+        SfxEditor._renderPresets();
+        SfxEditor._renderDesigner();
+        SfxEditor._updateOutput();
+    }
+
+    static execRemoveStep(idx) {
+        const seq = SfxEditor.rawPatch?.sequence;
+        if (!seq || seq.length <= 1) return;
+        seq.splice(idx, 1);
+        SfxEditor.currentId = null;
+        SfxEditor._renderPresets();
+        SfxEditor._renderDesigner();
+        SfxEditor._updateOutput();
+    }
+
+    static execUpdateStep(idx, field, value) {
+        const step = SfxEditor.rawPatch?.sequence?.[idx];
+        if (!step) return;
+        if (field === 'waitTicks') value = Math.max(1, Math.min(120, Number(value)));
+        step[field] = value;
+        SfxEditor.currentId = null;
+        SfxEditor._renderPresets();
+        // Don't re-render the whole sequence editor on every slider tick —
+        // the input listener already updates the displayed value inline.
+        SfxEditor._updateOutput();
     }
 
     /** Channel / duration / loop controls — shown above both flat and multi-segment patches. */

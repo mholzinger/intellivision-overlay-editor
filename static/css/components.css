@@ -2900,6 +2900,77 @@ details[open] .voice-dict-summary::before {
 .midi-modal-status.warn {
     color: #b45309;
 }
+
+/* ── SFX Lab — EXEC sequence editor ── */
+.sfx-exec-notice {
+    background: #ede9fe;
+    border: 1px solid #ddd6fe;
+    border-radius: var(--radius-sm, 4px);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+.sfx-exec-notice strong {
+    display: block;
+    font-size: 13px;
+    color: #5b21b6;
+    margin-bottom: 4px;
+}
+.sfx-exec-notice .sfx-hint {
+    margin: 0;
+    color: #6d28d9;
+    font-style: normal;
+}
+.sfx-exec-step-row {
+    display: grid;
+    grid-template-columns: 28px minmax(160px, 1fr) 1fr 32px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+}
+.sfx-exec-step-idx {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--gray-500, #9ca3af);
+    text-align: center;
+}
+.sfx-exec-step-wait {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sfx-exec-step-wait input[type="range"] {
+    flex: 1 1 auto;
+    min-width: 80px;
+}
+.sfx-exec-step-wait-val {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--gray-600, #6a737d);
+    min-width: 90px;
+    text-align: right;
+}
+.sfx-exec-step-remove {
+    background: var(--gray-100, #f3f4f6);
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: 4px;
+    color: var(--gray-700, #374151);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px;
+}
+.sfx-exec-step-remove:hover:not(:disabled) {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+.sfx-exec-step-remove:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
 .midi-modal-options {
     margin-top: 14px;
     padding-top: 10px;
