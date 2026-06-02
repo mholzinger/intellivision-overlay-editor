@@ -741,27 +741,37 @@ export class SfxEditor {
      * Returns the tail's duration in seconds so play() can update its
      * auto-stop timer.
      */
-    static _scheduleExecTail(key, t0) {
+    static _scheduleExecTail(key, t0, forcedDur = null) {
         const ctx = SfxEditor.ctx;
         if (!ctx) return 0;
 
-        const mkEnv = (peak, dur) => {
+        // Pick the effective preview duration. `forcedDur` (when set) caps
+        // the natural tail so consecutive EXEC sequence steps don't audibly
+        // overlap — on real hardware each ASM CALL self-aborts the previous
+        // routine, so this matches what a player will hear. Without a cap,
+        // each routine plays its natural duration as before.
+        const naturalDur = SfxEditor._execTailDurSec(key);
+        const dur = (forcedDur != null && forcedDur > 0)
+            ? Math.min(forcedDur, naturalDur)
+            : naturalDur;
+        if (dur <= 0) return 0;
+
+        const mkEnv = (peak) => {
             const env = ctx.createGain();
             env.gain.setValueAtTime(0.0001, t0);
-            env.gain.linearRampToValueAtTime(peak, t0 + 0.02);
+            env.gain.linearRampToValueAtTime(peak, t0 + Math.min(0.02, dur * 0.1));
             env.gain.linearRampToValueAtTime(0.0001, t0 + dur);
             env.connect(SfxEditor.masterGain);
             return env;
         };
 
         if (key === 'CROWD_CHEER') {
-            const dur = 1.0;
             const noise = ctx.createBufferSource();
             noise.buffer = SfxEditor.noiseBuffer;
             noise.loop = true;
             const hp = ctx.createBiquadFilter();
             hp.type = 'highpass'; hp.frequency.value = 800;
-            const env = mkEnv(0.35, dur);
+            const env = mkEnv(0.35);
             noise.connect(hp).connect(env);
             noise.start(t0, Math.random() * 0.5);
             noise.stop(t0 + dur + 0.05);
@@ -770,12 +780,11 @@ export class SfxEditor {
         }
 
         if (key === 'CROWD_GROAN' || key === 'CROWD_BOO') {
-            const dur = (key === 'CROWD_BOO') ? 0.8 : 0.5;
             const osc = ctx.createOscillator();
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(180, t0);
             osc.frequency.linearRampToValueAtTime(110, t0 + dur);
-            const env = mkEnv(0.30, dur);
+            const env = mkEnv(0.30);
             osc.connect(env);
             osc.start(t0); osc.stop(t0 + dur + 0.05);
             SfxEditor.activeNodes.push(osc);
@@ -784,7 +793,7 @@ export class SfxEditor {
             noise.loop = true;
             const lp = ctx.createBiquadFilter();
             lp.type = 'lowpass'; lp.frequency.value = 1500;
-            const env2 = mkEnv(0.20, dur);
+            const env2 = mkEnv(0.20);
             noise.connect(lp).connect(env2);
             noise.start(t0, Math.random() * 0.5);
             noise.stop(t0 + dur + 0.05);
@@ -793,14 +802,17 @@ export class SfxEditor {
         }
 
         if (key === 'WHISTLE') {
-            const dur = 0.4;
             const osc = ctx.createOscillator();
             osc.type = 'square';
+            // The natural whistle has a chirp at the end. Only emit it when
+            // we have room (i.e., forcedDur didn't clip the tail short).
             osc.frequency.setValueAtTime(2400, t0);
-            osc.frequency.linearRampToValueAtTime(2700, t0 + 0.05);
-            osc.frequency.setValueAtTime(2700, t0 + dur - 0.05);
-            osc.frequency.linearRampToValueAtTime(2400, t0 + dur);
-            const env = mkEnv(0.25, dur);
+            osc.frequency.linearRampToValueAtTime(2700, t0 + Math.min(0.05, dur * 0.2));
+            if (dur > 0.1) {
+                osc.frequency.setValueAtTime(2700, t0 + dur - 0.05);
+                osc.frequency.linearRampToValueAtTime(2400, t0 + dur);
+            }
+            const env = mkEnv(0.25);
             osc.connect(env);
             osc.start(t0); osc.stop(t0 + dur + 0.05);
             SfxEditor.activeNodes.push(osc);
@@ -808,11 +820,10 @@ export class SfxEditor {
         }
 
         if (key === 'PLAY_NOTE') {
-            const dur = 0.3;
             const osc = ctx.createOscillator();
             osc.type = 'square';
             osc.frequency.value = 440;
-            const env = mkEnv(0.25, dur);
+            const env = mkEnv(0.25);
             osc.connect(env);
             osc.start(t0); osc.stop(t0 + dur + 0.05);
             SfxEditor.activeNodes.push(osc);
@@ -842,8 +853,14 @@ export class SfxEditor {
         const frameSec = 1 / 60;
         let t = t0;
         for (const step of sequence) {
-            if (EXEC_CALLS[step.execCall]) SfxEditor._scheduleExecTail(step.execCall, t);
-            t += Math.max(1, step.waitTicks || 1) * frameSec;
+            const stepWaitSec = Math.max(1, step.waitTicks || 1) * frameSec;
+            // Cap each EXEC tail at its retrigger gap so consecutive steps
+            // don't overlap in preview (matches hardware behavior — each
+            // ASM CALL self-aborts the previous routine).
+            if (EXEC_CALLS[step.execCall]) {
+                SfxEditor._scheduleExecTail(step.execCall, t, stepWaitSec);
+            }
+            t += stepWaitSec;
         }
 
         SfxEditor.playing = true;
