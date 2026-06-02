@@ -2837,7 +2837,7 @@ details[open] .voice-dict-summary::before {
 }
 .midi-track-row {
     display: grid;
-    grid-template-columns: 24px 32px 1fr auto auto;
+    grid-template-columns: 24px 32px 1fr auto auto auto;
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
@@ -2988,4 +2988,16 @@ details[open] .voice-dict-summary::before {
     min-width: 220px;
     padding: 4px 8px;
     font-size: 12px;
+}
+.midi-track-octave {
+    padding: 2px 4px;
+    font-size: 11px;
+    font-family: monospace;
+    background: #f9fafb;
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: 3px;
+    min-width: 64px;
+}
+.midi-track-octave:disabled {
+    opacity: 0.4;
 }

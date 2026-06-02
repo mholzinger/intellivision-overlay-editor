@@ -1416,12 +1416,53 @@ def _sanitize_midi(src: Path, dst: Path) -> list[str]:
     return repairs
 
 
+# General MIDI Level 1 instrument names (program 0..127). Used by the
+# /music/midi_inspect endpoint to label the per-track 'program' field with
+# a human-readable instrument hint in the track-selection modal.
+GM_INSTRUMENT_NAMES = [
+    'Acoustic Grand Piano',  'Bright Acoustic Piano', 'Electric Grand Piano', 'Honky-tonk Piano',
+    'Electric Piano 1',      'Electric Piano 2',      'Harpsichord',          'Clavinet',
+    'Celesta',               'Glockenspiel',          'Music Box',            'Vibraphone',
+    'Marimba',               'Xylophone',             'Tubular Bells',        'Dulcimer',
+    'Drawbar Organ',         'Percussive Organ',      'Rock Organ',           'Church Organ',
+    'Reed Organ',            'Accordion',             'Harmonica',            'Tango Accordion',
+    'Acoustic Guitar (nylon)','Acoustic Guitar (steel)','Electric Guitar (jazz)','Electric Guitar (clean)',
+    'Electric Guitar (muted)','Overdriven Guitar',    'Distortion Guitar',    'Guitar Harmonics',
+    'Acoustic Bass',         'Electric Bass (finger)','Electric Bass (pick)', 'Fretless Bass',
+    'Slap Bass 1',           'Slap Bass 2',           'Synth Bass 1',         'Synth Bass 2',
+    'Violin',                'Viola',                 'Cello',                'Contrabass',
+    'Tremolo Strings',       'Pizzicato Strings',     'Orchestral Harp',      'Timpani',
+    'String Ensemble 1',     'String Ensemble 2',     'Synth Strings 1',      'Synth Strings 2',
+    'Choir Aahs',            'Voice Oohs',            'Synth Voice',          'Orchestra Hit',
+    'Trumpet',               'Trombone',              'Tuba',                 'Muted Trumpet',
+    'French Horn',           'Brass Section',         'Synth Brass 1',        'Synth Brass 2',
+    'Soprano Sax',           'Alto Sax',              'Tenor Sax',            'Baritone Sax',
+    'Oboe',                  'English Horn',          'Bassoon',              'Clarinet',
+    'Piccolo',               'Flute',                 'Recorder',             'Pan Flute',
+    'Blown Bottle',          'Shakuhachi',            'Whistle',              'Ocarina',
+    'Lead 1 (square)',       'Lead 2 (sawtooth)',     'Lead 3 (calliope)',    'Lead 4 (chiff)',
+    'Lead 5 (charang)',      'Lead 6 (voice)',        'Lead 7 (fifths)',      'Lead 8 (bass + lead)',
+    'Pad 1 (new age)',       'Pad 2 (warm)',          'Pad 3 (polysynth)',    'Pad 4 (choir)',
+    'Pad 5 (bowed)',         'Pad 6 (metallic)',      'Pad 7 (halo)',         'Pad 8 (sweep)',
+    'FX 1 (rain)',           'FX 2 (soundtrack)',     'FX 3 (crystal)',       'FX 4 (atmosphere)',
+    'FX 5 (brightness)',     'FX 6 (goblins)',        'FX 7 (echoes)',        'FX 8 (sci-fi)',
+    'Sitar',                 'Banjo',                 'Shamisen',             'Koto',
+    'Kalimba',               'Bagpipe',               'Fiddle',               'Shanai',
+    'Tinkle Bell',           'Agogo',                 'Steel Drums',          'Woodblock',
+    'Taiko Drum',            'Melodic Tom',           'Synth Drum',           'Reverse Cymbal',
+    'Guitar Fret Noise',     'Breath Noise',          'Seashore',             'Bird Tweet',
+    'Telephone Ring',        'Helicopter',            'Applause',             'Gunshot',
+]
+
+
 def _midi_inspect_tracks(midi_path: Path) -> list[dict]:
     """Parse a MIDI file with `mido` and return a summary per track.
 
-    Each entry: {index, name, channel, program, note_count, pitch_min,
-    pitch_max, has_drums}. has_drums is true for channel 10 (the GM
-    percussion channel; mido reports 0-indexed so we check channel == 9).
+    Each entry: {index, name, channel, program, programName, note_count,
+    pitch_min, pitch_max, has_drums}. has_drums is true for channel 10
+    (the GM percussion channel; mido reports 0-indexed so we check
+    channel == 9). programName is the General MIDI Level 1 instrument
+    label for the program, or null when no program_change is in the track.
     """
     import mido as _mido
     mid = _mido.MidiFile(str(midi_path))
@@ -1433,17 +1474,73 @@ def _midi_inspect_tracks(midi_path: Path) -> list[dict]:
         # Take the channel of the first event that carries one.
         ch = next((m.channel for m in track if hasattr(m, 'channel')), None)
         name = next((m.name.strip() for m in track if m.type == 'track_name'), '')
+        program = progs[0] if progs else None
+        program_name = (
+            GM_INSTRUMENT_NAMES[program]
+            if program is not None and 0 <= program < len(GM_INSTRUMENT_NAMES)
+            else None
+        )
         out.append({
             'index':       idx,
             'name':        name or f'Track {idx}',
             'channel':     ch,                                   # 0-15 or None (metadata-only track)
-            'program':     progs[0] if progs else None,
+            'program':     program,
+            'programName': program_name,
             'note_count':  len(notes),
             'pitch_min':   min(pitches) if pitches else None,
             'pitch_max':   max(pitches) if pitches else None,
             'has_drums':   ch == 9,
         })
     return out
+
+
+def _apply_velocity_curve(velocity: int, curve: str) -> int:
+    """Map a MIDI velocity (0-127) according to the chosen curve. Used to
+    pre-shape note dynamics before handing off to inty-midi.
+
+    - linear: pass-through (default)
+    - s-curve: squashes the middle range, expanding loud and soft extremes
+    - max: every note becomes velocity 127 (useful for drum tracks / staccato
+      arcade SFX where you want every hit at full volume)
+    - half: clamps to 64 max (everything quiet, even relatively)
+    """
+    v = max(0, min(127, int(velocity)))
+    if curve == 'max':
+        return 127 if v > 0 else 0
+    if curve == 's-curve':
+        # Cubic ease-in-out centered at v=64. Preserves silence at v=0.
+        if v == 0:
+            return 0
+        x = v / 127.0
+        s = (x * x * (3 - 2 * x))  # smoothstep
+        return max(1, min(127, round(s * 127)))
+    if curve == 'half':
+        return min(64, v)
+    # linear / unknown → pass-through
+    return v
+
+
+def _midi_preprocess(src: Path, dst: Path, octave_shifts: dict[int, int], velocity_curve: str):
+    """Apply per-track transposition and global velocity remapping before
+    handing the MIDI off to inty-midi. Both operations are in-place edits
+    to mido message fields.
+
+    - octave_shifts: {track_index: shift_in_octaves}. note_on/note_off
+      pitches in matching tracks get adjusted by 12*shift, clamped to
+      MIDI's 0-127 range. Tracks not present in the dict are untouched.
+    - velocity_curve: applied to every note_on velocity across all tracks.
+    """
+    import mido as _mido
+    mid = _mido.MidiFile(str(src))
+    for idx, track in enumerate(mid.tracks):
+        shift_semitones = 12 * octave_shifts.get(idx, 0)
+        for msg in track:
+            if msg.type in ('note_on', 'note_off'):
+                if shift_semitones:
+                    msg.note = max(0, min(127, msg.note + shift_semitones))
+                if msg.type == 'note_on':
+                    msg.velocity = _apply_velocity_curve(msg.velocity, velocity_curve)
+    mid.save(str(dst))
 
 
 def _midi_filter_tracks(src: Path, dst: Path, keep_indices: set[int]):
@@ -1578,12 +1675,37 @@ def music_midi_to_intybasic():
         except ValueError as exc:
             return jsonify({'error': f'Invalid quantize: {exc}'}), 400
 
+    # Optional per-track octave shifts. Form field is a JSON object
+    # mapping {"<track_index>": <shift>}, where shift is an integer in
+    # [-3, +3]. Tracks not listed (or shift==0) are untouched.
+    octave_shifts_raw = request.form.get('octave_shifts', '').strip()
+    octave_shifts: dict[int, int] = {}
+    if octave_shifts_raw:
+        try:
+            parsed = _json.loads(octave_shifts_raw)
+            if not isinstance(parsed, dict):
+                raise ValueError('octave_shifts must be a JSON object')
+            for k, v in parsed.items():
+                shift = int(v)
+                if not (-3 <= shift <= 3):
+                    raise ValueError(f'octave_shift for track {k} out of [-3, +3]')
+                if shift != 0:
+                    octave_shifts[int(k)] = shift
+        except (ValueError, TypeError) as exc:
+            return jsonify({'error': f'Invalid octave_shifts: {exc}'}), 400
+
+    # Optional velocity curve. One of: linear (default), s-curve, max, half.
+    velocity_curve = (request.form.get('velocity_curve') or 'linear').strip().lower()
+    if velocity_curve not in ('linear', 's-curve', 'max', 'half'):
+        return jsonify({'error': f'Invalid velocity_curve: {velocity_curve}'}), 400
+
     import tempfile, re as _re
     with tempfile.TemporaryDirectory(prefix='midi_import_') as tmpdir:
-        raw_path       = Path(tmpdir) / 'raw.mid'
-        sanitized_path = Path(tmpdir) / 'sanitized.mid'
-        mid_path       = Path(tmpdir) / 'input.mid'   # what inty-midi receives
-        bas_path       = Path(tmpdir) / 'output.bas'
+        raw_path        = Path(tmpdir) / 'raw.mid'
+        sanitized_path  = Path(tmpdir) / 'sanitized.mid'
+        preprocessed    = Path(tmpdir) / 'preprocessed.mid'
+        mid_path        = Path(tmpdir) / 'input.mid'   # what inty-midi receives
+        bas_path        = Path(tmpdir) / 'output.bas'
         upload.save(str(raw_path))
         if raw_path.stat().st_size == 0:
             return jsonify({'error': 'Uploaded file is empty.'}), 400
@@ -1594,13 +1716,26 @@ def music_midi_to_intybasic():
         except ValueError as exc:
             return jsonify({'error': f'Not a valid MIDI file: {exc}'}), 400
 
-        # Filter tracks if requested; otherwise hand the sanitized file
+        # Apply per-track octave shifts + velocity curve via mido. No-op when
+        # both are at defaults (no shifts, linear curve) — but the rewrite
+        # through mido normalises the file format slightly, so we only run
+        # it when something needs to change.
+        if octave_shifts or velocity_curve != 'linear':
+            try:
+                _midi_preprocess(sanitized_path, preprocessed, octave_shifts, velocity_curve)
+            except Exception as exc:
+                return jsonify({'error': f'MIDI preprocessing failed: {exc or type(exc).__name__}'}), 400
+            src_for_filter = preprocessed
+        else:
+            src_for_filter = sanitized_path
+
+        # Filter tracks if requested; otherwise hand the prepared file
         # straight to inty-midi.
         try:
             if keep_tracks:
-                _midi_filter_tracks(sanitized_path, mid_path, keep_tracks)
+                _midi_filter_tracks(src_for_filter, mid_path, keep_tracks)
             else:
-                sanitized_path.rename(mid_path)
+                src_for_filter.rename(mid_path)
         except (EOFError, OSError) as exc:
             return jsonify({
                 'error': 'Malformed MIDI — even after sanitization the track '
@@ -1637,12 +1772,14 @@ def music_midi_to_intybasic():
     safe_name = _re.sub(r'[^A-Za-z0-9_.-]+', '_', upload.filename)[:80] or 'imported.mid'
 
     return jsonify({
-        'source':      source,
-        'filename':    safe_name,
-        'bytes':       len(source),
-        'kept_tracks': sorted(keep_tracks) if keep_tracks else None,
-        'quantize':    quantize,
-        'repairs':     repairs,
+        'source':         source,
+        'filename':       safe_name,
+        'bytes':          len(source),
+        'kept_tracks':    sorted(keep_tracks) if keep_tracks else None,
+        'quantize':       quantize,
+        'octave_shifts':  octave_shifts or None,
+        'velocity_curve': velocity_curve if velocity_curve != 'linear' else None,
+        'repairs':        repairs,
     })
 
 

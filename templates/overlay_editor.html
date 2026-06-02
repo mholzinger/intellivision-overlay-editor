@@ -3618,6 +3618,15 @@ MySong_loop:
                             <option value="64">1/64 (sixty-fourth notes)</option>
                         </select>
                     </label>
+                    <label class="midi-modal-option-label" data-tooltip="Remap MIDI note velocities (0-127) before conversion. Linear preserves dynamics as-is; S-curve compresses the mid range and exaggerates loud/quiet extremes; Max forces every note to full volume (good for drums / arcade SFX); Half clamps quiet to 64 (everything subdued).">
+                        Velocity:
+                        <select id="midi-modal-velocity" class="form-control">
+                            <option value="linear" selected>Linear (pass-through)</option>
+                            <option value="s-curve">S-curve (compressed dynamics)</option>
+                            <option value="max">Max (every note loud)</option>
+                            <option value="half">Half (clamp ≤ 64)</option>
+                        </select>
+                    </label>
                 </div>
             </div>
             <div class="midi-modal-footer">

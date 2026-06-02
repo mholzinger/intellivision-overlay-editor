@@ -866,9 +866,17 @@ export class MusicEditor {
         const disabled = hasNotes ? '' : 'disabled';
         const drumBadge = t.has_drums ? `<span class="midi-track-badge drum">🥁 drums</span>` : '';
         const chBadge   = (t.channel != null) ? `<span class="midi-track-badge">ch ${t.channel + 1}</span>` : '';
-        const progBadge = (t.program != null) ? `<span class="midi-track-badge">prog ${t.program}</span>` : '';
+        const progLabel = (t.program != null)
+            ? (t.programName ? `${t.programName} (prog ${t.program})` : `prog ${t.program}`)
+            : '';
+        const progBadge = progLabel
+            ? `<span class="midi-track-badge" data-tooltip="${this._escapeHtml(progLabel)}">${t.programName || ('prog ' + t.program)}</span>`
+            : '';
         const pitchRange = hasNotes ? `${noteName(t.pitch_min)}–${noteName(t.pitch_max)}` : '(empty)';
         const rowClass = `midi-track-row ${hasNotes ? 'selected' : 'disabled'}`;
+        const octaveOptions = [-3, -2, -1, 0, 1, 2, 3]
+            .map(n => `<option value="${n}" ${n === 0 ? 'selected' : ''}>${n > 0 ? '+' : ''}${n} oct</option>`)
+            .join('');
         return `
             <div class="${rowClass}">
                 <input type="checkbox" data-midi-track="${t.index}" ${checked} ${disabled}
@@ -877,6 +885,10 @@ export class MusicEditor {
                 <span class="midi-track-name">${this._escapeHtml(t.name)}</span>
                 <span class="midi-track-meta">${t.note_count} notes · ${pitchRange}</span>
                 <span style="display:inline-flex; gap:4px;">${chBadge}${progBadge}${drumBadge}</span>
+                <select class="midi-track-octave" data-midi-octave="${t.index}" ${hasNotes ? '' : 'disabled'}
+                        data-tooltip="Transpose this track by N octaves before conversion. Useful when a MIDI bass line dips below the PSG's C2 floor — bump it up +1 to keep the notes in range.">
+                    ${octaveOptions}
+                </select>
             </div>
         `;
     }
@@ -924,12 +936,24 @@ export class MusicEditor {
         const keep = Array.from(cbs).map(cb => parseInt(cb.dataset.midiTrack, 10));
         const qSel = document.getElementById('midi-modal-quantize');
         const quantize = qSel && qSel.value ? parseInt(qSel.value, 10) : null;
+        const vSel = document.getElementById('midi-modal-velocity');
+        const velocityCurve = vSel?.value || 'linear';
+
+        // Read per-track octave shifts (only non-zero entries get sent).
+        const octaveSelects = document.querySelectorAll('#midi-modal-tracks select[data-midi-octave]');
+        const octaveShifts = {};
+        octaveSelects.forEach(sel => {
+            const n = parseInt(sel.value, 10);
+            if (n !== 0) octaveShifts[sel.dataset.midiOctave] = n;
+        });
+
+        const opts = { quantize, velocityCurve, octaveShifts };
         const status = document.getElementById('midi-modal-status');
         const btn = document.getElementById('midi-modal-convert');
         if (btn) { btn.disabled = true; btn.textContent = '⏳ Converting…'; }
         if (status) { status.textContent = 'Calling inty-midi…'; status.className = 'midi-modal-status'; }
         try {
-            const ok = await this._convertMidiNow(keep, quantize);
+            const ok = await this._convertMidiNow(keep, opts);
             if (ok) this.hideMidiModal();
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Convert'; }
@@ -938,38 +962,48 @@ export class MusicEditor {
 
     /**
      * Shared conversion call. `keep` is a list of track indices (or [] for all);
-     * `quantize` is null/undefined for auto, or an int (4/8/16/32/64) for an
-     * explicit -q grid. When `quantize` is null and inty-midi reports
-     * needs_quantize, we auto-retry once with 16 (a reasonable default that
-     * works for most pop/classical/arcade MIDI). Returns true on success.
+     * `opts` carries:
+     *   - quantize:     null = auto, else int (4/8/16/32/64) for -q grid
+     *   - velocityCurve: 'linear' | 's-curve' | 'max' | 'half'
+     *   - octaveShifts:  { trackIdx: shift } map (non-zero entries only)
+     * When `quantize` is null and inty-midi reports needs_quantize, we auto-
+     * retry once with 16. Returns true on success.
      */
-    static async _convertMidiNow(keep, quantize = null) {
+    static async _convertMidiNow(keep, opts = {}) {
         const file = this._stashedMidiFile;
         if (!file) {
             alert('No MIDI file in flight — pick one via the 📥 MIDI button.');
             return false;
         }
+        const { quantize = null, velocityCurve = 'linear', octaveShifts = {} } = opts;
         const fd = new FormData();
         fd.append('file', file, file.name);
         if (keep && keep.length > 0) fd.append('keep_tracks', JSON.stringify(keep));
         if (quantize != null)        fd.append('quantize', String(quantize));
+        if (velocityCurve && velocityCurve !== 'linear') fd.append('velocity_curve', velocityCurve);
+        if (Object.keys(octaveShifts).length > 0) fd.append('octave_shifts', JSON.stringify(octaveShifts));
         try {
             const r = await fetch('/music/midi_to_intybasic', { method: 'POST', body: fd });
             const j = await r.json();
             if (!r.ok || j.error) {
                 if (j.needs_quantize && quantize == null) {
-                    // Single-track skip path: auto-retry with the most common default.
                     console.info('MIDI auto-retry with -q 16 (inty-midi auto-quantize failed).');
-                    return this._convertMidiNow(keep, 16);
+                    return this._convertMidiNow(keep, { ...opts, quantize: 16 });
                 }
                 alert(`MIDI convert failed: ${j.error || r.statusText}`);
                 return false;
             }
-            const qNote = j.quantize ? ` · q=1/${j.quantize}` : '';
-            const tracksNote = keep && keep.length > 0
-                ? ` (tracks ${j.kept_tracks?.join(', ')})`
-                : '';
-            this._parseWithDetect(j.source, `imported MIDI: ${j.filename}${tracksNote}${qNote}`);
+            // Build a status-line summary of what was applied.
+            const parts = [];
+            if (keep?.length > 0)        parts.push(`tracks ${j.kept_tracks?.join(', ')}`);
+            if (j.quantize)              parts.push(`q=1/${j.quantize}`);
+            if (j.velocity_curve)        parts.push(`vel=${j.velocity_curve}`);
+            if (j.octave_shifts && Object.keys(j.octave_shifts).length > 0) {
+                const shifts = Object.entries(j.octave_shifts).map(([k, v]) => `#${k}:${v > 0 ? '+' : ''}${v}`).join(' ');
+                parts.push(`oct ${shifts}`);
+            }
+            const summary = parts.length ? ` (${parts.join(' · ')})` : '';
+            this._parseWithDetect(j.source, `imported MIDI: ${j.filename}${summary}`);
             return true;
         } catch (e) {
             console.error('MusicEditor._convertMidiNow failed:', e);
