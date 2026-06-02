@@ -3556,12 +3556,10 @@ MySong_loop:
                             <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener">spatula-city.org/~im14u2c/intv ↗</a>
                         </li>
                         <li>
-                            <strong>Steve Ettinger</strong> — legendary Intellivision developer. Generously contributed across this project:
+                            <strong>Steve Ettinger</strong> — legendary Intellivision developer. Two pieces of advice that shaped the SFX Lab:
                             <ul style="margin-top:6px;">
                                 <li>The <strong>$011E DOSOUND hazard</strong> warning (§⑨) — his exact quote, used verbatim with permission.</li>
                                 <li>The <strong>EXEC CROWD composition pattern</strong> (§⑧) — pairing a PSG-synthesized SFX with an EXEC ROM routine for sample-quality endings. The Letdown preset is the editor's reference implementation.</li>
-                                <li>The <strong>Foley</strong> category presets (Tap, Knock, Cascade, Impact, Wind, Sizzle) — translated into our flat-<code>SOUND</code> output format from short bytecode sequences in Steve's archive. Labels and category in the editor are our own naming.</li>
-                                <li>The <strong>SFX-macros reference</strong> at <code>vendor/sfx-macros/S.ASM</code> — Steve's <code>as1600</code> macro definitions for a richer bytecode SFX DSL (velocity ramps, randomized parameters, sub-tempo unit, loop counters). The runtime interpreter that consumes the bytecode isn't bundled; the macros file is reference material for translation work and a possible future "SFX engine" output mode parallel to direct <code>SOUND</code>.</li>
                             </ul>
                         </li>
                         <li>
