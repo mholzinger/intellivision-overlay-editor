@@ -3505,7 +3505,7 @@ MySong_loop:
                         </tbody>
                     </table>
                     <p style="font-size:12px; color:#7a8390; margin-top:8px;">Source of truth: jzIntv's disassembler symbol table (<code>dasm/exec_interp.c</code>).</p>
-                    <p><strong>Why they matter:</strong> Crowd cheer / groan are <em>sample-quality</em> compared to anything you can write with <code>SOUND</code> directly — they're the difference between a generic arcade bleep and "the crowd reacted." Steve Ettinger uses CROWD heavily in his sports homebrews. The SFX Lab's <strong>EXEC tail</strong> dropdown appends one of these calls after the PSG effect — that's how "ball lip-outs and the crowd groans" works (Golf Lip-Out preset).</p>
+                    <p><strong>Why they matter:</strong> Crowd cheer / groan are <em>sample-quality</em> compared to anything you can write with <code>SOUND</code> directly — they're the difference between a generic arcade bleep and "the crowd reacted." The SFX Lab's <strong>EXEC tail</strong> dropdown appends one of these calls after the PSG effect, giving you instant access to compose patterns like a descending PSG tone fading into a crowd groan (see the Letdown preset). The PSG → EXEC composition pattern itself is a contribution from Steve Ettinger — see §⑪.</p>
                     <p>The Web Audio preview only <em>approximates</em> the EXEC routines (since the actual byte sequences live in Mattel's copyrighted ROM and aren't reproduced here). The exported IntyBASIC calls the real ROM at runtime, so what you ship sounds correct.</p>
                 </section>
 
@@ -3528,7 +3528,7 @@ MySong_loop:
                     <ol class="primer-numbered-list">
                         <li><strong>Click any preset</strong> in the left panel. The Designer loads the patch, the IntyBASIC output updates live, and Web Audio plays the effect immediately.</li>
                         <li><strong>Tweak in the Designer:</strong> channel, duration, freq sweep, noise, envelope. Every change re-renders the SOUND output and plays the next preview when you press ▶ Play.</li>
-                        <li><strong>(Optional) Add an EXEC tail</strong> — e.g. <strong>Crowd Groan</strong> after the Golf Lip-Out preset, or <strong>Referee Whistle</strong> after a foul SFX. The tail plays once at the end and is excluded from any loop.</li>
+                        <li><strong>(Optional) Add an EXEC tail</strong> — e.g. <strong>Crowd Groan</strong> after the Letdown preset, or <strong>Referee Whistle</strong> after a foul SFX. The tail plays once at the end and is excluded from any loop.</li>
                         <li><strong>(Optional) Toggle Loop</strong> — for ambient SFX like Saucer Drone or Helicopter. The output wraps in a <code>sfx_loop:</code> label + <code>GOTO sfx_loop</code>; remove the GOTO to make it one-shot.</li>
                         <li><strong>📋 Copy SOUND</strong> drops the IntyBASIC statements onto your clipboard. Paste into your <code>.bas</code> file as a labelled subroutine, then <code>GOSUB</code> it whenever the effect should fire.</li>
                     </ol>
@@ -3538,7 +3538,8 @@ MySong_loop:
                         <li><strong>Defender Crack</strong> — 80ms ultra-fast laser (linear sweep, max punch).</li>
                         <li><strong>Plasma Cannon</strong> — 3-phase multi-segment effect (envelope buckets).</li>
                         <li><strong>Helicopter</strong> — HW envelope shape 12 (sawtooth-up loop) driving the noise channel.</li>
-                        <li><strong>Golf Lip-Out ★</strong> — Steve Ettinger's exact scenario: PSG SFX + EXEC Crowd Groan composition.</li>
+                        <li><strong>Letdown ★</strong> — descending PSG tone + EXEC Crowd Groan composition. Showcases the PSG → EXEC tail pattern (see §⑪).</li>
+                        <li><strong>Cascade</strong> — multi-phase noise SFX (4 segments: hit → fade → swell → fade). Good demonstration of the segmented patch model.</li>
                     </ul>
                 </section>
 
@@ -3555,7 +3556,13 @@ MySong_loop:
                             <a href="https://spatula-city.org/~im14u2c/intv/" target="_blank" rel="noopener">spatula-city.org/~im14u2c/intv ↗</a>
                         </li>
                         <li>
-                            <strong>Steve Ettinger</strong> — legendary Intellivision developer. The <strong>$011E DOSOUND hazard</strong> (section ⑨) and the <strong>EXEC CROWD composition</strong> pattern (section ⑧) are both credited to him. The Golf Lip-Out preset is his exact use case.
+                            <strong>Steve Ettinger</strong> — legendary Intellivision developer. Generously contributed across this project:
+                            <ul style="margin-top:6px;">
+                                <li>The <strong>$011E DOSOUND hazard</strong> warning (§⑨) — his exact quote, used verbatim with permission.</li>
+                                <li>The <strong>EXEC CROWD composition pattern</strong> (§⑧) — pairing a PSG-synthesized SFX with an EXEC ROM routine for sample-quality endings. The Letdown preset is the editor's reference implementation.</li>
+                                <li>The <strong>Foley</strong> category presets (Tap, Knock, Cascade, Impact, Wind, Sizzle) — translated into our flat-<code>SOUND</code> output format from short bytecode sequences in Steve's archive. Labels and category in the editor are our own naming.</li>
+                                <li>The <strong>SFX-macros reference</strong> at <code>vendor/sfx-macros/S.ASM</code> — Steve's <code>as1600</code> macro definitions for a richer bytecode SFX DSL (velocity ramps, randomized parameters, sub-tempo unit, loop counters). The runtime interpreter that consumes the bytecode isn't bundled; the macros file is reference material for translation work and a possible future "SFX engine" output mode parallel to direct <code>SOUND</code>.</li>
+                            </ul>
                         </li>
                         <li>
                             <strong>The intv-game-builder collection</strong> — Mike's own homebrew &amp; SFX-research workbench, where most of the catalog mining for these presets happened. Source: <a href="https://gitlab.com/mholzinger/intybasic-workbench" target="_blank" rel="noopener">gitlab.com/mholzinger/intybasic-workbench ↗</a>. Specific contributors to the preset library:

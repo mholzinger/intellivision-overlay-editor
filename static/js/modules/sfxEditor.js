@@ -271,8 +271,7 @@ const PRESETS = [
       patch: { channel: 0, durationMs: 133, freqStart: 1500, freqEnd: 2500,
                sweepShape: 'linear', steps: 8, noise: false, noisePeriod: 16, volume: 10 } },
     { id: 'stepped_fanfare', name: 'Stepped Fanfare', cat: 'UI', icon: '🎺',
-      // intrudersfx.bas wave-clear and boss-test boss assembly. 4-note
-      // ascending sting using stepped sweep with the right rhythm.
+      // 4-note ascending sting using stepped sweep with the right rhythm.
       patch: { channel: 0, durationMs: 400, envMode: 'manual',
         segments: [
           { durationFraction: 0.25, freqStart: periodToHz(300), freqEnd: periodToHz(300),
@@ -288,6 +287,13 @@ const PRESETS = [
             sweepShape: 'step', steps: 1, noise: false, noisePeriod: 16,
             volStart: 13, volEnd: 0 }
         ] } },
+    { id: 'letdown', name: 'Letdown ★', cat: 'UI', icon: '📉',
+      // Descending pitch into an EXEC CROWD groan. The descending-tone +
+      // crowd-groan composition pattern is Steve Ettinger's advice — see
+      // the SFX Primer credits for the technique attribution.
+      patch: { channel: 0, durationMs: 350, freqStart: 600, freqEnd: 200,
+               sweepShape: 'exp', steps: 8, noise: false, noisePeriod: 16, volume: 12,
+               appendExec: 'CROWD_GROAN' } },
 
     // ── Sports / specialty ────────────────────────────────────────────────
     { id: 'whoosh',    name: 'Whoosh',          cat: 'Sports',  icon: '💨',
@@ -296,10 +302,82 @@ const PRESETS = [
     { id: 'thud',      name: 'Thud',            cat: 'Sports',  icon: '👟',
       patch: { channel: 2, durationMs: 90, freqStart: 80, freqEnd: 50,
                sweepShape: 'linear', steps: 2, noise: true, noisePeriod: 6, volume: 14 } },
-    { id: 'lipout',    name: 'Golf Lip-Out ★',  cat: 'Sports',  icon: '🏌️',
-      patch: { channel: 0, durationMs: 350, freqStart: 600, freqEnd: 200,
-               sweepShape: 'exp', steps: 8, noise: false, noisePeriod: 16, volume: 12,
-               appendExec: 'CROWD_GROAN' } },
+
+    // ── Foley (translated from S.ASM macro examples contributed by Steve
+    //          Ettinger — see vendor/sfx-macros/README.md for provenance).
+    //          Labels here are our own naming; original sequence labels are
+    //          not preserved. ────────────────────────────────────────────
+    { id: 'tap', name: 'Tap', cat: 'Foley', icon: '👆',
+      // HW envelope decay over a single ~1.9 kHz tone, ch.A. Short 100ms.
+      patch: { channel: 0, durationMs: 100, freqStart: 1929, freqEnd: 1929,
+               sweepShape: 'step', steps: 1, noise: false, noisePeriod: 16, volume: 15,
+               envMode: 'hw', envShape: 0, envPeriod: 128 } },
+    { id: 'knock', name: 'Knock', cat: 'Foley', icon: '🚪',
+      // Same envelope shape as Tap but a lower fundamental (~1.4 kHz).
+      patch: { channel: 0, durationMs: 100, freqStart: 1398, freqEnd: 1398,
+               sweepShape: 'step', steps: 1, noise: false, noisePeriod: 16, volume: 15,
+               envMode: 'hw', envShape: 0, envPeriod: 128 } },
+    { id: 'cascade', name: 'Cascade', cat: 'Foley', icon: '💦',
+      // 4-phase noise: high stab → low fade → swelling noise pitch rising →
+      // long fade. Total ~833ms (the original sequence uses STUNIT 2).
+      patch: { channel: 2, durationMs: 833, envMode: 'manual',
+        segments: [
+          { durationFraction: 0.08, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 2, noise: true,
+            noisePeriod: 5,  noisePeriodEnd: 5,
+            volStart: 8,  volEnd: 13 },
+          { durationFraction: 0.12, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 3, noise: true,
+            noisePeriod: 21, noisePeriodEnd: 21,
+            volStart: 13, volEnd: 6 },
+          { durationFraction: 0.40, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 10, noise: true,
+            noisePeriod: 21, noisePeriodEnd: 4,
+            volStart: 6, volEnd: 14 },
+          { durationFraction: 0.40, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 10, noise: true,
+            noisePeriod: 4,  noisePeriodEnd: 4,
+            volStart: 14, volEnd: 0 }
+        ] } },
+    { id: 'impact', name: 'Impact', cat: 'Foley', icon: '💥',
+      // 3-phase noise hit: high stab → low bite → high tail descending in
+      // pitch. ~133ms. Good for crisp foreground impacts.
+      patch: { channel: 2, durationMs: 133, envMode: 'manual',
+        segments: [
+          { durationFraction: 0.125, freqStart: 0, freqEnd: 0,
+            sweepShape: 'step', steps: 1, noise: true,
+            noisePeriod: 2,  volStart: 15, volEnd: 14 },
+          { durationFraction: 0.25, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 2, noise: true,
+            noisePeriod: 30, volStart: 14, volEnd: 12 },
+          { durationFraction: 0.625, freqStart: 0, freqEnd: 0,
+            sweepShape: 'linear', steps: 5, noise: true,
+            noisePeriod: 4,  noisePeriodEnd: 14,
+            volStart: 12, volEnd: 0 }
+        ] } },
+    { id: 'wind', name: 'Wind', cat: 'Foley', icon: '🌬️',
+      // Sustained ~950ms tone + noise mix on ch.C. The original uses two
+      // channels (tone on A, noise on B); we mix both on a single channel
+      // via the mixer for our single-channel schema. The defining shape:
+      // bidirectional pitch sweep (up then down) and matching vol curve.
+      patch: { channel: 2, durationMs: 950, envMode: 'manual',
+        segments: [
+          { durationFraction: 0.47, freqStart: periodToHz(506), freqEnd: periodToHz(263),
+            sweepShape: 'linear', steps: 14, noise: true,
+            noisePeriod: 27, noisePeriodEnd: 4,
+            volStart: 5, volEnd: 12 },
+          { durationFraction: 0.53, freqStart: periodToHz(263), freqEnd: periodToHz(563),
+            sweepShape: 'linear', steps: 15, noise: true,
+            noisePeriod: 4,  noisePeriodEnd: 28,
+            volStart: 12, volEnd: 0 }
+        ] } },
+    { id: 'sizzle', name: 'Sizzle', cat: 'Foley', icon: '🔥',
+      // Single-phase noise burst with a fast volume drop. The defining
+      // character is the high-frequency hiss tail.
+      patch: { channel: 0, durationMs: 133, freqStart: 0, freqEnd: 0,
+               sweepShape: 'linear', steps: 8, noise: true,
+               noisePeriod: 4, noisePeriodEnd: 0,
+               volume: 12 } },
 
     // ── Ambience (loops + HW envelope) ────────────────────────────────────
     { id: 'saucer_drone', name: 'Saucer Drone', cat: 'Ambience', icon: '🛸',
