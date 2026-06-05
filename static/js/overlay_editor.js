@@ -732,6 +732,7 @@ window.musicStop              = () => MusicEditor.stop();
 window.musicNew               = () => MusicEditor.newSong();
 window.musicPaste             = () => MusicEditor.showPasteDialog();
 window.musicCopy              = () => MusicEditor.copyToClipboard();
+window.musicExportPlayable    = (style) => MusicEditor.exportPlayable(style);
 window.musicSetEngine         = (slug) => MusicEditor.setEngine(slug);
 window.musicToggleDemosDropdown = () => MusicEditor.toggleDemosDropdown();
 window.musicLoadDemo          = (file, engineSlug) => MusicEditor.loadDemo(file, engineSlug);

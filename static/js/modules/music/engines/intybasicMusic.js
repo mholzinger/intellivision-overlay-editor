@@ -89,6 +89,234 @@ export class IntyBasicMusic extends MusicEngine {
     ].join('\n');
 
     /**
+     * Wrap the serialised song in a compile-ready IntyBASIC artifact. Two
+     * shapes available via `opts.style`:
+     *
+     *   - 'single' (default) — one .bas file with splash + PLAY wiring and
+     *     the MUSIC data inlined between MUSIC BEGIN / END comment fences.
+     *     Smallest cognitive load: download, compile, run.
+     *
+     *   - 'bundle' — ZIP with main.bas + <slug>.bas + README.md. main.bas
+     *     INCLUDEs the song file so engine updates and song edits move
+     *     independently. Drop <slug>.bas straight into your own game and
+     *     call PLAY <label>.
+     *
+     * Both shapes use the music-sample/main.bas convention from
+     * intv-game-builder for the splash + PLAY pattern.
+     */
+    static exportPlayable(song, opts = {}) {
+        if (!song) return super.exportPlayable(song);
+        const { style = 'single' } = opts;
+        return (style === 'bundle')
+            ? this._exportPlayableBundle(song)
+            : this._exportPlayableSingle(song);
+    }
+
+    static _exportPlayableSingle(song) {
+        const label    = song.label || 'song';
+        const isEcs    = (song.channelCount || 3) >= 8;
+        const playMode = isEcs ? 'FULL ECS' : 'FULL';
+        const slug     = label.replace(/[^a-zA-Z0-9_-]+/g, '_');
+        const data     = this.serialize(song);
+
+        const program =
+`' ============================================================================
+'  Intellivision Overlay Editor — playable music export (single-file)
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This is a complete, compile-ready IntyBASIC program. It puts a splash
+'  screen up and plays the song below on loop.
+'
+'  TO BUILD AND RUN:
+'      intybasic ${slug}.bas ${slug}.asm
+'      as1600 -o ${slug}.rom ${slug}.asm
+'      jzintv ${slug}.rom
+'
+'  TO LIFT THE MUSIC INTO YOUR OWN GAME:
+'    1. Copy everything between "' --- MUSIC BEGIN ---" and "' --- MUSIC END ---"
+'       (below) into your existing .bas file.
+'    2. Wire up playback once, near program start:
+'         PLAY ${playMode}
+'         PLAY VOLUME 12
+'         PLAY ${label}
+'    3. The song will continue playing in the background while your game runs.
+'       Call PLAY SIMPLE / PLAY STOP to silence it.
+'
+'  Prefer engine + song as separate files? Use the "Export Bundle (ZIP)"
+'  button instead — same wiring split into main.bas + ${slug}.bas + README.
+'
+' ============================================================================
+
+${this._renderStarterShell(song)}
+
+' --- MUSIC BEGIN ----------------------------------------------------------
+${data.trimEnd()}
+' --- MUSIC END ------------------------------------------------------------
+`;
+        return {
+            filename: `${slug}.bas`,
+            content:  program,
+            mime:     'text/plain',
+        };
+    }
+
+    static async _exportPlayableBundle(song) {
+        if (typeof JSZip === 'undefined') {
+            throw new Error('JSZip is not loaded — cannot build bundle export.');
+        }
+        const label    = song.label || 'song';
+        const slug     = label.replace(/[^a-zA-Z0-9_-]+/g, '_');
+        const isEcs    = (song.channelCount || 3) >= 8;
+        const playMode = isEcs ? 'FULL ECS' : 'FULL';
+        const data     = this.serialize(song);
+
+        // main.bas: splash + PLAY wiring + INCLUDE of the song data. The
+        // INCLUDE sits at the very end so the song's labels and DATA blocks
+        // land below the executable section (idiomatic IntyBASIC layout).
+        const mainBas =
+`' ============================================================================
+'  Intellivision Overlay Editor — playable music bundle
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This is the runnable shell. It INCLUDEs ${slug}.bas (the song data) and
+'  plays it through IntyBASIC's built-in PLAY engine. Build with:
+'
+'      intybasic main.bas main.asm
+'      as1600 -o ${slug}.rom main.asm
+'      jzintv ${slug}.rom
+'
+' ============================================================================
+
+${this._renderStarterShell(song)}
+
+' --- Song data ------------------------------------------------------------
+'  Pulled in here at compile time. To use this song in your own game, just
+'  INCLUDE "${slug}.bas" near the bottom of your main file and call
+'  PLAY ${label} — no need to copy/paste any data.
+INCLUDE "${slug}.bas"
+`;
+
+        const songBas =
+`' ============================================================================
+'  ${label} — IntyBASIC MUSIC data
+'  Exported from Intellivision Overlay Editor
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This file contains JUST the music data. To use it:
+'    INCLUDE "${slug}.bas"       ' at the bottom of your main .bas
+'    PLAY ${playMode}             ' once at startup
+'    PLAY VOLUME 12
+'    PLAY ${label}               ' starts playback
+'
+' ============================================================================
+
+${data.trimEnd()}
+`;
+
+        const readme =
+`# ${label} — IntyBASIC music bundle
+
+Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-editor.fly.dev).
+
+## Files
+
+| File | What it is |
+|------|------------|
+| \`main.bas\` | Runnable shell. Splash screen + PLAY wiring + \`INCLUDE "${slug}.bas"\`. Compile this. |
+| \`${slug}.bas\` | The song. Pure MUSIC data. Drop into your own game. |
+
+## Build and run
+
+\`\`\`
+intybasic main.bas main.asm
+as1600 -o ${slug}.rom main.asm
+jzintv ${slug}.rom
+\`\`\`
+
+## Lift into your own game
+
+You don't need \`main.bas\` — that's just the playable demo. To use this song
+inside an existing IntyBASIC project:
+
+1. Drop \`${slug}.bas\` somewhere in your project tree.
+2. Near the bottom of your main \`.bas\`, add: \`INCLUDE "${slug}.bas"\`.
+3. Once at startup, wire the engine:
+
+   \`\`\`
+   PLAY ${playMode}
+   PLAY VOLUME 12
+   PLAY ${label}
+   \`\`\`
+
+4. Call \`PLAY STOP\` to silence the song, \`PLAY SIMPLE\` to drop to 1-channel mode.
+
+The song will continue playing in the background while your game runs.
+
+## Engine
+
+This bundle uses IntyBASIC's built-in \`PLAY\` engine — no extra engine source
+is needed because the IntyBASIC compiler bakes the player into your ROM.
+Other engines (ZMUS, Chevallier Tracker, IMT) require their engine source
+file to be bundled separately; those bundles include the engine source and
+the matching license.
+`;
+
+        const zip = new JSZip();
+        zip.file('main.bas', mainBas);
+        zip.file(`${slug}.bas`, songBas);
+        zip.file('README.md', readme);
+        const blob = await zip.generateAsync({ type: 'blob' });
+        return {
+            filename: `${slug}_bundle.zip`,
+            content:  blob,
+            mime:     'application/zip',
+        };
+    }
+
+    /**
+     * Splash screen + PLAY wiring + idle main loop. Shared by both single and
+     * bundle exports so they stay in sync. The label is rendered in the
+     * splash but the song data lives elsewhere (inline or INCLUDEd).
+     */
+    static _renderStarterShell(song) {
+        const label    = song.label || 'song';
+        const isEcs    = (song.channelCount || 3) >= 8;
+        const playMode = isEcs ? 'FULL ECS' : 'FULL';
+        const shown    = label.toUpperCase().slice(0, 20);
+        return `  ' --- Splash screen ---
+  CLS
+  MODE 0, 0, 0, 0, 0
+  WAIT
+  PRINT AT 43  COLOR 7, "INTELLIVISION OVERLAY EDITOR"
+  PRINT AT 104 COLOR 5, "MUSIC EXPORT"
+  PRINT AT 162 COLOR 11, "${shown}"
+  PRINT AT 220 COLOR 3, "PRESS ANY BUTTON"
+
+wait_start:
+  WAIT
+  IF CONT.button = 0 THEN GOTO wait_start
+
+  ' --- Start the music ---
+  PLAY ${playMode}
+  PLAY VOLUME 12
+  PLAY ${label}
+
+  CLS
+  WAIT
+  PRINT AT 43  COLOR 7, "INTELLIVISION OVERLAY EDITOR"
+  PRINT AT 104 COLOR 5, "NOW PLAYING"
+  PRINT AT 162 COLOR 11, "${shown}"
+
+  ' --- Idle main loop: just hold on the screen while the song plays ---
+main_loop:
+  WAIT
+  GOTO main_loop`;
+    }
+
+    /**
      * Parse IntyBASIC source containing one or more music blocks into a SongIR.
      * Picks up the FIRST song block (first label followed by DATA) and parses
      * forward through all MUSIC statements until the next non-music line.

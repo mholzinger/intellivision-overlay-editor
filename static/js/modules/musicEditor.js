@@ -799,6 +799,14 @@ export class MusicEditor {
      * to conversion with all tracks selected.
      */
     static async importMidi() {
+        // Match DAW convention + the New Song button: importing a MIDI replaces
+        // the current song wholesale, so warn before clobbering unsaved work.
+        // The actual replace happens inside _loadNewSong() further down the
+        // chain (_convertMidiNow → _parseWithDetect → _loadNewSong) — we just
+        // gate entry to the import flow here.
+        if (this.song?.notes?.length > 0) {
+            if (!confirm('Importing a MIDI will replace your current song. Continue?')) return;
+        }
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.mid,.midi,audio/midi,audio/x-midi';
@@ -1018,6 +1026,31 @@ export class MusicEditor {
             () => alert(`Copied ${this.engine.formatName} to clipboard.`),
             () => alert('Copy failed — your browser blocked clipboard access.')
         );
+    }
+
+    /**
+     * Download a self-contained, compile-ready artifact for the current song.
+     * `style` chooses the shape — engines decide what each one means:
+     *   - 'single' → one inlined .bas (default)
+     *   - 'bundle' → multi-file ZIP (main.bas + song file + README, plus
+     *                  engine source + LICENSE where applicable)
+     * Engines that don't have a scaffold yet fall back to raw serialise.
+     */
+    static async exportPlayable(style = 'single') {
+        if (!this.song) {
+            alert('Nothing to export — load a demo or write some notes first.');
+            return;
+        }
+        try {
+            const artifact = await this.engine.exportPlayable(this.song, { style });
+            const blob = (artifact.content instanceof Blob)
+                ? artifact.content
+                : new Blob([artifact.content], { type: artifact.mime || 'text/plain' });
+            downloadBlob(blob, artifact.filename);
+        } catch (e) {
+            console.error('MusicEditor.exportPlayable failed:', e);
+            alert(`Export failed: ${e.message}`);
+        }
     }
 
     static newSong() {

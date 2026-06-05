@@ -56,6 +56,34 @@ export class MusicEngine {
     }
 
     /**
+     * Serialize a song into a self-contained, compile-ready artifact. Engines
+     * choose what each style means; the default behaviour is the same as
+     * {@link serialize} for both.
+     *
+     * `style` lets the caller pick between:
+     *   - `'single'`  — one file, everything inlined. Smallest cognitive load.
+     *   - `'bundle'`  — multi-file ZIP (main.bas + song data + engine source +
+     *                   README + LICENSE where applicable). Engine source and
+     *                   song data live in separate files so engine updates
+     *                   don't require re-exporting every song.
+     *
+     * `content` can be a string (single-file) or a Blob (bundle); the caller
+     * wraps it for download either way.
+     *
+     * @param {SongIR} song
+     * @param {{ style?: 'single'|'bundle' }} [opts]
+     * @returns {{ filename: string, content: string|Blob, mime: string }}
+     */
+    static exportPlayable(song, _opts = {}) {
+        const slug = (song?.label || 'song').replace(/[^a-zA-Z0-9_-]+/g, '_');
+        return {
+            filename: `${slug}.${this.formatSlug || 'txt'}.txt`,
+            content:  this.serialize(song),
+            mime:     'text/plain',
+        };
+    }
+
+    /**
      * Return an empty/blank song in this engine's native shape.
      * Used when the user clicks "New Song" with this engine selected.
      * @returns {SongIR}
