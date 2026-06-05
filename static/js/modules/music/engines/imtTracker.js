@@ -699,4 +699,234 @@ export class ImtTracker extends MusicEngine {
             metadata:     {},
         };
     }
+
+    // ── Playable export ─────────────────────────────────────────────────────
+
+    /**
+     * Two export styles, both routed through the standard engine API:
+     *
+     * `style: 'single'` returns just the bare `<slug>.asm` song-data file —
+     *   for users who already have IMT wired up in their game (engine files
+     *   INCLUDEd, TRKINIT/TRKPLAY called). Drop-in song update.
+     *
+     * `style: 'bundle'` returns a full compilable ZIP: main.bas + the 6 IMT
+     *   library files + global-music.asm + the song + README. Compile and
+     *   run with no extra setup.
+     *
+     * The IMT engine (tracker.asm/.mac and the bas-* glue files) was released
+     * into the public domain by Arnauld Chevallier (2008) and James Pujals
+     * (2017/2020) — see the file headers — so the bundle ships under public
+     * domain attribution rather than a copyleft licence.
+     */
+    static async exportPlayable(song, opts = {}) {
+        if (!song?.notes?.length) {
+            throw new Error(
+                'Nothing to export — IMT round-trip serialise needs at least one note. ' +
+                'Load a demo or write some notes first.'
+            );
+        }
+        const { style = 'single' } = opts;
+        return (style === 'bundle')
+            ? this._exportPlayableBundle(song)
+            : this._exportPlayableSingle(song);
+    }
+
+    static _exportPlayableSingle(song) {
+        const slug = (song.label || 'imt_song').replace(/[^a-zA-Z0-9_-]+/g, '_');
+        return {
+            filename: `${slug}.asm`,
+            content:  this.serialize(song),
+            mime:     'text/plain',
+        };
+    }
+
+    static async _exportPlayableBundle(song) {
+        if (typeof JSZip === 'undefined') {
+            throw new Error('JSZip is not loaded — cannot build bundle export.');
+        }
+        const label = song.label || 'imt_song';
+        const slug  = label.replace(/[^a-zA-Z0-9_-]+/g, '_');
+        // Pull the IMT library + the shared music globals from the vendor
+        // route in parallel. These files are public domain (see the headers
+        // on tracker.asm / tracker.mac).
+        const libFiles = [
+            'tracker.asm',
+            'tracker.mac',
+            'bas-memmap.asm',
+            'bas-callapi.asm',
+            'global-config.asm',
+            'bas-interface.bas',
+        ];
+        const musicFiles = ['global-music.asm'];
+        const lib = await Promise.all(
+            libFiles.map(f => this._fetchVendoredFile(f).then(text => [f, text]))
+        );
+        const music = await Promise.all(
+            musicFiles.map(f => this._fetchVendoredFile(f).then(text => [f, text]))
+        );
+
+        const songAsm = this.serialize(song);
+        const mainBas = this._renderBundleMain({ label, slug, song });
+        const readme  = this._renderBundleReadme({ label, slug });
+
+        const zip = new JSZip();
+        // Engine library — matches the trk-demo layout the IMT distro ships,
+        // so paths in bas-interface.bas (`lib/...`) resolve as-is.
+        for (const [name, text] of lib) {
+            zip.file(`lib/${name}`, text);
+        }
+        for (const [name, text] of music) {
+            zip.file(`music/${name}`, text);
+        }
+        zip.file(`music/${slug}.asm`, songAsm);
+        zip.file('main.bas',  mainBas);
+        zip.file('README.md', readme);
+
+        const blob = await zip.generateAsync({ type: 'blob' });
+        return {
+            filename: `${slug}_imt_bundle.zip`,
+            content:  blob,
+            mime:     'application/zip',
+        };
+    }
+
+    /**
+     * Build the bundle's main.bas. Mirrors the trk-demo project that DZ-Jay
+     * ships with IMT: TRKINIT once, ON FRAME GOSUB to call TRKPLAY every
+     * frame, and TRKLOADSONG(VARPTR <label>(0)) to kick off playback. A
+     * minimal splash screen wraps the song so the ROM has something visible.
+     */
+    static _renderBundleMain({ label, slug, song }) {
+        const channels = (song.channelCount || 6) >= 6 ? 6 : 3;
+        const shown    = label.toUpperCase().slice(0, 20);
+        return `' ============================================================================
+'  Intellivision Overlay Editor — IMT playable bundle
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This is the runnable shell. It uses the Intellivision Music Tracker
+'  (IMT, Arnauld Chevallier + James Pujals — public domain) to play
+'  ${slug}.asm on a continuous loop behind a splash screen.
+'
+'  BUILD AND RUN:
+'      intybasic main.bas main.asm
+'      as1600 -o ${slug}.rom main.asm
+'      jzintv ${slug}.rom
+'
+'  LIFT INTO YOUR OWN GAME:
+'      If your game already wires up IMT (CALL TRKINIT at startup, CALL
+'      TRKPLAY every frame), just ASM INCLUDE "music/${slug}.asm" alongside
+'      your other songs and load it with CALL TRKLOADSONG(VARPTR <label>(0))
+'      — see the IMT manual in the source distro for the full API.
+'
+' ============================================================================
+
+    OPTION EXPLICIT
+
+    ' Tick the tracker every frame.
+    ON FRAME GOSUB UpdateTracker
+
+    CALL TRKINIT
+    CALL SET_ACTIVE_CHANNELS(${channels})
+
+    ' Splash screen.
+    CLS
+    MODE 0, 0, 0, 0, 0
+    WAIT
+    PRINT AT 43  COLOR 7, "INTELLIVISION OVERLAY EDITOR"
+    PRINT AT 104 COLOR 5, "IMT EXPORT"
+    PRINT AT 162 COLOR 11, "${shown}"
+
+    ' Start playback. VARPTR turns the IntyBASIC label into the address that
+    ' TRKLOADSONG expects in R0. The song's own PROC label lives inside the
+    ' included .asm; we sit a separate IntyBASIC label right before the
+    ' include site so VARPTR can find the start address without colliding
+    ' with the asm symbol.
+    CALL TRKLOADSONG(VARPTR ${slug}_song(0))
+
+main_loop:
+    WAIT
+    GOTO main_loop
+
+UpdateTracker: PROCEDURE
+    CALL TRKPLAY
+END
+
+' ============================================================================
+' Engine + song data
+' ============================================================================
+    INCLUDE "lib/bas-interface.bas"
+
+    ASM INCLUDE "music/global-music.asm"
+
+${slug}_song:
+    ASM INCLUDE "music/${slug}.asm"
+`;
+    }
+
+    static _renderBundleReadme({ label, slug }) {
+        return `# ${label} — IMT music bundle
+
+Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-editor.fly.dev).
+
+## Files
+
+| File | What it is |
+|------|------------|
+| \`main.bas\` | Runnable shell. Splash + tracker wiring + INCLUDEs everything below. |
+| \`lib/*.asm\`, \`lib/*.mac\`, \`lib/bas-interface.bas\` | The IMT engine (Arnauld Chevallier 2008, James Pujals 2017/2020 — public domain). |
+| \`music/global-music.asm\` | Shared envelope / instrument / drum definitions every IMT song depends on. |
+| \`music/${slug}.asm\` | The song. Pattern + NOTES() macro data. |
+
+## Build and run
+
+\`\`\`
+intybasic main.bas main.asm
+as1600 -o ${slug}.rom main.asm
+jzintv ${slug}.rom
+\`\`\`
+
+## Lift into your own game
+
+If your project already has IMT wired up (CALL TRKINIT at startup + CALL
+TRKPLAY every frame), you only need:
+
+1. Drop \`music/${slug}.asm\` into your project's music folder.
+2. Add \`ASM INCLUDE "music/${slug}.asm"\` after a label that names the song:
+
+   \`\`\`
+   ${label}:
+       ASM INCLUDE "music/${slug}.asm"
+   \`\`\`
+
+3. Trigger playback whenever you want: \`CALL TRKLOADSONG(VARPTR ${label}(0))\`
+
+If your project doesn't have IMT yet, copy \`lib/\` and \`music/global-music.asm\`
+into the equivalent folders in your project and follow \`main.bas\` here as
+the wiring template.
+
+## Engine credit & licence
+
+IMT (Intellivision Music Tracker) was released into the public domain by its
+authors. From the engine source headers:
+
+> *These routines are placed into the public domain by their authors. All
+> copyright rights are hereby relinquished on the routines and data in this
+> file. — Arnauld Chevallier, 2008; James Pujals, 2017*
+
+\`global-music.asm\` adds Anders Carlsson (2020) to that attribution.
+`;
+    }
+
+    static async _fetchVendoredFile(filename) {
+        if (!this._fileCache) this._fileCache = new Map();
+        if (this._fileCache.has(filename)) return this._fileCache.get(filename);
+        const r = await fetch(`/music/engine_source/imt/${encodeURIComponent(filename)}`);
+        if (!r.ok) {
+            throw new Error(`Could not fetch IMT engine file "${filename}": ${r.statusText}`);
+        }
+        const text = await r.text();
+        this._fileCache.set(filename, text);
+        return text;
+    }
 }

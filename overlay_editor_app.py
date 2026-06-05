@@ -218,27 +218,42 @@ def get_badge(name):
         return jsonify({'error': str(e)}), 500
 
 
+# Per-engine vendored source roots. Maps engine slug → repo-relative dirs the
+# Music Studio's bundle export pulls from. IMT (and Chevallier, when its
+# Phase-2 serializer lands) live under imt/trk-demo because the trk-demo
+# distro is already vendored there at the repo root — we serve from it
+# directly instead of duplicating into vendor/.
+ENGINE_VENDOR_ROOTS = {
+    'zmus':     [Path(__file__).parent / 'vendor' / 'zmus'],
+    'imt':      [
+        Path(__file__).parent / 'imt' / 'trk-demo' / 'lib',
+        Path(__file__).parent / 'imt' / 'trk-demo' / 'music',
+    ],
+}
+
+
 @app.route('/music/engine_source/<engine>/<path:filename>')
 def get_music_engine_source(engine, filename):
     """Serve a vendored music-engine source file (e.g. zmus_engine.bas).
 
     Used by the Music Studio's bundle export — the browser fetches the engine
-    file from here and zips it alongside the song data + main.bas shell. The
-    engine name is mapped to its vendor/<engine>/ subdirectory.
+    file from here and zips it alongside the song data + main.bas shell. Each
+    engine has one or more vendor roots; we walk them in order and return
+    the first file that matches.
     """
-    # Only allow files from known vendor subdirs to prevent traversal.
     safe_engine = Path(engine).name
     safe_file   = Path(filename).name
-    vendor_root = Path(__file__).parent / 'vendor' / safe_engine
-    target      = (vendor_root / safe_file).resolve()
-    try:
-        if not str(target).startswith(str(vendor_root.resolve())):
-            return jsonify({'error': 'Invalid engine path'}), 400
-        if not target.exists() or not target.is_file():
-            return jsonify({'error': f'Engine file not found: {safe_engine}/{safe_file}'}), 404
-        return send_file(target, mimetype='text/plain')
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    roots = ENGINE_VENDOR_ROOTS.get(safe_engine, [])
+    for root in roots:
+        target = (root / safe_file).resolve()
+        try:
+            if not str(target).startswith(str(root.resolve())):
+                continue
+            if target.exists() and target.is_file():
+                return send_file(target, mimetype='text/plain')
+        except Exception:
+            continue
+    return jsonify({'error': f'Engine file not found: {safe_engine}/{safe_file}'}), 404
 
 
 @app.route('/get_examples')
