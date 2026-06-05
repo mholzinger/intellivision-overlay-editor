@@ -218,6 +218,29 @@ def get_badge(name):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/music/engine_source/<engine>/<path:filename>')
+def get_music_engine_source(engine, filename):
+    """Serve a vendored music-engine source file (e.g. zmus_engine.bas).
+
+    Used by the Music Studio's bundle export — the browser fetches the engine
+    file from here and zips it alongside the song data + main.bas shell. The
+    engine name is mapped to its vendor/<engine>/ subdirectory.
+    """
+    # Only allow files from known vendor subdirs to prevent traversal.
+    safe_engine = Path(engine).name
+    safe_file   = Path(filename).name
+    vendor_root = Path(__file__).parent / 'vendor' / safe_engine
+    target      = (vendor_root / safe_file).resolve()
+    try:
+        if not str(target).startswith(str(vendor_root.resolve())):
+            return jsonify({'error': 'Invalid engine path'}), 400
+        if not target.exists() or not target.is_file():
+            return jsonify({'error': f'Engine file not found: {safe_engine}/{safe_file}'}), 404
+        return send_file(target, mimetype='text/plain')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/get_examples')
 def get_examples():
     """Return list of available example overlay projects"""

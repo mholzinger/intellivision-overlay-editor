@@ -116,6 +116,229 @@ export class ZmusEngine extends MusicEngine {
         return lines.join('\n');
     }
 
+    /**
+     * Wrap the serialised ZMUS song in a compile-ready IntyBASIC artifact.
+     * ZMUS needs three pieces wired together: the engine source
+     * (zmus_engine.bas, vendored), the song data (a PROC block of DECLE words),
+     * and a player loop that calls USR ZMUS_INIT → USR ZMUS_PLAY → USR
+     * ZMUS_UPDATE every frame.
+     *
+     * `style: 'single'` inlines everything into one .bas (engine source +
+     * song data + player wiring). Bigger file but no INCLUDEs to manage.
+     *
+     * `style: 'bundle'` ships a ZIP with main.bas + zmus_engine.bas +
+     * <slug>.bas + README. main.bas INCLUDEs both — drop just <slug>.bas into
+     * any other game that already has zmus_engine.bas wired up.
+     */
+    static async exportPlayable(song, opts = {}) {
+        if (!song) return super.exportPlayable(song);
+        const isPlaceholder = song.metadata?.placeholder
+                           || !(song.metadata?.zmusBytes?.length > 0);
+        if (isPlaceholder) {
+            throw new Error(
+                'ZMUS export requires real song bytes — Phase 1 placeholder ' +
+                'songs have no data to play. Paste an existing ZMUS source or ' +
+                'load a demo first.'
+            );
+        }
+        const { style = 'single' } = opts;
+        return (style === 'bundle')
+            ? this._exportPlayableBundle(song)
+            : this._exportPlayableSingle(song);
+    }
+
+    static async _exportPlayableSingle(song) {
+        const engineSrc = await this._fetchVendoredEngine();
+        const slug      = (song.label || 'zmus_song').replace(/[^a-zA-Z0-9_-]+/g, '_');
+        const program   = this._renderMainBas({ song, slug, includeEngineInline: true, engineSrc });
+        return {
+            filename: `${slug}.bas`,
+            content:  program,
+            mime:     'text/plain',
+        };
+    }
+
+    static async _exportPlayableBundle(song) {
+        if (typeof JSZip === 'undefined') {
+            throw new Error('JSZip is not loaded — cannot build bundle export.');
+        }
+        const engineSrc = await this._fetchVendoredEngine();
+        const label     = song.label || 'zmus_song';
+        const slug      = label.replace(/[^a-zA-Z0-9_-]+/g, '_');
+        const songData  = this.serialize(song);
+        const mainBas   = this._renderMainBas({ song, slug, includeEngineInline: false });
+        const readme    = this._renderBundleReadme({ label, slug });
+        const zip = new JSZip();
+        zip.file('main.bas',         mainBas);
+        zip.file('zmus_engine.bas',  engineSrc);
+        zip.file(`${slug}.bas`,      songData);
+        zip.file('README.md',        readme);
+        const blob = await zip.generateAsync({ type: 'blob' });
+        return {
+            filename: `${slug}_zmus_bundle.zip`,
+            content:  blob,
+            mime:     'application/zip',
+        };
+    }
+
+    /**
+     * Render the runnable shell. Two shapes:
+     *   - includeEngineInline=true  → engine source is pasted into main.bas
+     *     and the song data is also inlined (single-file export).
+     *   - includeEngineInline=false → main.bas INCLUDEs zmus_engine.bas and
+     *     the per-song <slug>.bas (bundle export).
+     * The splash + player-loop wiring is the same in both shapes.
+     */
+    static _renderMainBas({ song, slug, includeEngineInline, engineSrc }) {
+        const label = song.label || 'zmus_song';
+        const shown = label.toUpperCase().slice(0, 20);
+
+        const header = includeEngineInline
+            ? `' ============================================================================
+'  Intellivision Overlay Editor — ZMUS playable export (single-file)
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This is a complete, compile-ready IntyBASIC program. It includes the
+'  ZMUS engine + the song data + a splash-screen player loop.
+'
+'  TO BUILD AND RUN:
+'      intybasic ${slug}.bas ${slug}.asm
+'      as1600 -o ${slug}.rom ${slug}.asm
+'      jzintv ${slug}.rom
+'
+'  ZMUS engine: Joe Zbiciak's microprogrammed music format.
+'  Source vendored from intv-game-builder/lib/zmus_engine.bas.
+'
+'  Prefer engine + song as separate files? Use the "Export Bundle (ZIP)"
+'  button instead.
+'
+' ============================================================================`
+            : `' ============================================================================
+'  Intellivision Overlay Editor — ZMUS playable bundle
+'  https://intellivision-overlay-editor.fly.dev
+' ============================================================================
+'
+'  This is the runnable shell. It INCLUDEs zmus_engine.bas (the player)
+'  and ${slug}.bas (the song data). Build with:
+'
+'      intybasic main.bas main.asm
+'      as1600 -o ${slug}.rom main.asm
+'      jzintv ${slug}.rom
+'
+' ============================================================================`;
+
+        const splash = `  ' --- Splash screen ---
+  CLS
+  MODE 0, 0, 0, 0, 0
+  WAIT
+  PRINT AT 43  COLOR 7, "INTELLIVISION OVERLAY EDITOR"
+  PRINT AT 104 COLOR 5, "ZMUS EXPORT"
+  PRINT AT 162 COLOR 11, "${shown}"
+  PRINT AT 220 COLOR 3, "PRESS ANY BUTTON"
+
+wait_start:
+  WAIT
+  IF CONT.button = 0 THEN GOTO wait_start
+
+  ' --- Start the ZMUS engine and play the song ---
+  ' CALL is IntyBASIC's statement form for ASM routines (USR only works inside
+  ' expressions like A = USR NAME). The song label is an ASM symbol, so we
+  ' load its address into R0 directly with an inline MVII rather than passing
+  ' it as a CALL argument (which IntyBASIC would treat as a BASIC variable
+  ' and pass 0).
+  CALL ZMUS_INIT
+  ASM MVII #${label}, R0
+  CALL ZMUS_PLAY
+
+  CLS
+  WAIT
+  PRINT AT 43  COLOR 7, "INTELLIVISION OVERLAY EDITOR"
+  PRINT AT 104 COLOR 5, "NOW PLAYING"
+  PRINT AT 162 COLOR 11, "${shown}"
+
+  ' --- Main loop: ZMUS_UPDATE must run every frame to advance playback ---
+main_loop:
+  WAIT
+  CALL ZMUS_UPDATE
+  GOTO main_loop`;
+
+        // ZMUS engine + song data go BEFORE the splash/main code so the
+        // ASM ROMW 16 directive inside the engine sees a clean slate.
+        // Putting them after produces a benign but noisy as1600 warning.
+        const prelude = includeEngineInline
+            ? `' --- ZMUS engine ----------------------------------------------------------
+${engineSrc.trim()}
+
+' --- Song data ------------------------------------------------------------
+${this.serialize(song).trim()}
+`
+            : `' --- ZMUS engine + song data (INCLUDEd at compile time) -------------------
+INCLUDE "zmus_engine.bas"
+INCLUDE "${slug}.bas"
+`;
+
+        return `${header}\n\n${prelude}\n${splash}\n`;
+    }
+
+    static _renderBundleReadme({ label, slug }) {
+        return `# ${label} — ZMUS music bundle
+
+Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-editor.fly.dev).
+
+## Files
+
+| File | What it is |
+|------|------------|
+| \`main.bas\` | Runnable shell. Splash + USR wiring + INCLUDEs both files below. |
+| \`zmus_engine.bas\` | The ZMUS player (Joe Zbiciak's microprogrammed format). Vendored from \`intv-game-builder/lib/zmus_engine.bas\`. |
+| \`${slug}.bas\` | The song. A PROC block of DECLE words. Drop into your own game. |
+
+## Build and run
+
+\`\`\`
+intybasic main.bas main.asm
+as1600 -o ${slug}.rom main.asm
+jzintv ${slug}.rom
+\`\`\`
+
+## Lift into your own game
+
+You don't need \`main.bas\` — it's just the playable demo. To use this song
+inside an existing IntyBASIC project that already has ZMUS wired up (i.e. its
+own \`INCLUDE "zmus_engine.bas"\` + \`USR ZMUS_INIT\` at startup + \`USR
+ZMUS_UPDATE\` every frame):
+
+1. Drop \`${slug}.bas\` somewhere in your project tree.
+2. Near the bottom of your main .bas, add \`INCLUDE "${slug}.bas"\`.
+3. Call \`USR ZMUS_PLAY(${label})\` whenever you want this song to start.
+
+If your project doesn't have ZMUS wired up yet, also copy \`zmus_engine.bas\`
+into your lib folder and wire it the same way \`main.bas\` does here.
+
+## Engine credit
+
+ZMUS is Joe Zbiciak's microprogrammed music engine for the Intellivision.
+The IntyBASIC-integrated wrapper bundled here comes from
+[intv-game-builder/lib/zmus_engine.bas](https://github.com/mholzinger/intv-game-builder/blob/main/lib/zmus_engine.bas).
+`;
+    }
+
+    /**
+     * Pull the vendored engine source from our backend. Cached on the class
+     * for the life of the tab so repeated exports don't re-fetch.
+     */
+    static async _fetchVendoredEngine() {
+        if (!this._engineCache) {
+            const r = await fetch('/music/engine_source/zmus/zmus_engine.bas');
+            if (!r.ok) {
+                throw new Error(`Could not fetch ZMUS engine source: ${r.statusText}`);
+            }
+            this._engineCache = await r.text();
+        }
+        return this._engineCache;
+    }
+
     static defaultSong() {
         return {
             engine:       this.formatSlug,
