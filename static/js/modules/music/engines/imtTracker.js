@@ -809,9 +809,14 @@ export class ImtTracker extends MusicEngine {
 '  ${slug}.asm on a continuous loop behind a splash screen.
 '
 '  BUILD AND RUN:
-'      intybasic main.bas main.asm
+'      intybasic main.bas main.asm ~/intybasic
 '      as1600 -o ${slug}.rom main.asm
 '      jzintv ${slug}.rom
+'
+'    (The third arg points intybasic at intybasic_prologue.asm /
+'     intybasic_epilogue.asm — replace ~/intybasic with your install path.
+'     Without it the .asm is missing all runtime stubs and as1600 fails
+'     with dozens of "undefined symbol" errors.)
 '
 '  LIFT INTO YOUR OWN GAME:
 '      If your game already wires up IMT (CALL TRKINIT at startup, CALL
@@ -881,10 +886,16 @@ Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-e
 ## Build and run
 
 \`\`\`
-intybasic main.bas main.asm
+intybasic main.bas main.asm ~/intybasic
 as1600 -o ${slug}.rom main.asm
 jzintv ${slug}.rom
 \`\`\`
+
+> The third argument to \`intybasic\` is the path to your IntyBASIC install
+> (replace \`~/intybasic\` with wherever you put it). That's where the
+> compiler picks up \`intybasic_prologue.asm\` and \`intybasic_epilogue.asm\`.
+> Without it the generated \`main.asm\` is missing all runtime stubs and
+> \`as1600\` fails with dozens of "undefined symbol" errors.
 
 ## Lift into your own game
 

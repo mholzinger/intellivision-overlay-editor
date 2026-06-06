@@ -203,9 +203,14 @@ export class ZmusEngine extends MusicEngine {
 '  ZMUS engine + the song data + a splash-screen player loop.
 '
 '  TO BUILD AND RUN:
-'      intybasic ${slug}.bas ${slug}.asm
+'      intybasic ${slug}.bas ${slug}.asm ~/intybasic
 '      as1600 -o ${slug}.rom ${slug}.asm
 '      jzintv ${slug}.rom
+'
+'    (The third arg points intybasic at intybasic_prologue.asm /
+'     intybasic_epilogue.asm — replace ~/intybasic with your install path.
+'     Skip it and the .asm comes out without runtime stubs, then as1600
+'     fails with dozens of "undefined symbol" errors.)
 '
 '  ZMUS engine: Joe Zbiciak's microprogrammed music format.
 '  Source vendored from intv-game-builder/lib/zmus_engine.bas.
@@ -222,9 +227,13 @@ export class ZmusEngine extends MusicEngine {
 '  This is the runnable shell. It INCLUDEs zmus_engine.bas (the player)
 '  and ${slug}.bas (the song data). Build with:
 '
-'      intybasic main.bas main.asm
+'      intybasic main.bas main.asm ~/intybasic
 '      as1600 -o ${slug}.rom main.asm
 '      jzintv ${slug}.rom
+'
+'  (The third arg points intybasic at intybasic_prologue.asm /
+'   intybasic_epilogue.asm — replace ~/intybasic with your install path.
+'   Skip it and as1600 fails with dozens of "undefined symbol" errors.)
 '
 ' ============================================================================`;
 
@@ -297,10 +306,16 @@ Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-e
 ## Build and run
 
 \`\`\`
-intybasic main.bas main.asm
+intybasic main.bas main.asm ~/intybasic
 as1600 -o ${slug}.rom main.asm
 jzintv ${slug}.rom
 \`\`\`
+
+> The third argument to \`intybasic\` is the path to your IntyBASIC install
+> (replace \`~/intybasic\` with wherever you put it). That's where the
+> compiler picks up \`intybasic_prologue.asm\` and \`intybasic_epilogue.asm\`.
+> Without it the generated \`main.asm\` is missing all runtime stubs and
+> \`as1600\` fails with dozens of "undefined symbol" errors.
 
 ## Lift into your own game
 

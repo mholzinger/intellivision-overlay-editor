@@ -129,9 +129,14 @@ export class IntyBasicMusic extends MusicEngine {
 '  screen up and plays the song below on loop.
 '
 '  TO BUILD AND RUN:
-'      intybasic ${slug}.bas ${slug}.asm
+'      intybasic ${slug}.bas ${slug}.asm ~/intybasic
 '      as1600 -o ${slug}.rom ${slug}.asm
 '      jzintv ${slug}.rom
+'
+'    (The third arg points intybasic at intybasic_prologue.asm /
+'     intybasic_epilogue.asm — replace ~/intybasic with your install path.
+'     If you skip it, intybasic emits the .asm without those wrappers and
+'     as1600 fails with dozens of undefined symbols.)
 '
 '  TO LIFT THE MUSIC INTO YOUR OWN GAME:
 '    1. Copy everything between "' --- MUSIC BEGIN ---" and "' --- MUSIC END ---"
@@ -183,9 +188,14 @@ ${data.trimEnd()}
 '  This is the runnable shell. It INCLUDEs ${slug}.bas (the song data) and
 '  plays it through IntyBASIC's built-in PLAY engine. Build with:
 '
-'      intybasic main.bas main.asm
+'      intybasic main.bas main.asm ~/intybasic
 '      as1600 -o ${slug}.rom main.asm
 '      jzintv ${slug}.rom
+'
+'  (The third arg tells intybasic where intybasic_prologue.asm and
+'   intybasic_epilogue.asm live — replace ~/intybasic with your install
+'   path. Without it the .asm comes out missing all runtime stubs and
+'   as1600 fails with dozens of "undefined symbol" errors.)
 '
 ' ============================================================================
 
@@ -231,10 +241,16 @@ Exported from the [Intellivision Overlay Editor](https://intellivision-overlay-e
 ## Build and run
 
 \`\`\`
-intybasic main.bas main.asm
+intybasic main.bas main.asm ~/intybasic
 as1600 -o ${slug}.rom main.asm
 jzintv ${slug}.rom
 \`\`\`
+
+> The third argument to \`intybasic\` is the path to your IntyBASIC install
+> (replace \`~/intybasic\` with wherever you put it). That's where the
+> compiler picks up \`intybasic_prologue.asm\` and \`intybasic_epilogue.asm\`.
+> Without it the generated \`main.asm\` is missing all runtime stubs and
+> \`as1600\` fails with dozens of "undefined symbol" errors.
 
 ## Lift into your own game
 
