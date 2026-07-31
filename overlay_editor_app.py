@@ -1164,13 +1164,19 @@ def emulator_game_latest():
         ) as r:
             uploads = _json.loads(r.read()).get('uploads', [])
 
-        # Pick the first ZIP upload
-        zip_upload = next(
-            (u for u in uploads if u.get('filename', '').lower().endswith('.zip')),
-            None
-        )
-        if not zip_upload:
+        # Pick the most recently updated ZIP upload. itch.io returns uploads in
+        # display order, not date order, so taking the first one pins the page
+        # to whichever build happens to sit at the top of the list.
+        zip_uploads = [u for u in uploads if u.get('filename', '').lower().endswith('.zip')]
+        if not zip_uploads:
             return jsonify({'error': 'No ZIP upload found on itch.io'}), 404
+        zip_upload = max(
+            zip_uploads,
+            key=lambda u: (u.get('updated_at') or u.get('created_at') or '', u.get('id', 0))
+        )
+        print(f'[game/latest] {len(zip_uploads)} zip upload(s); serving '
+              f'{zip_upload.get("filename")} (updated {zip_upload.get("updated_at")})',
+              file=sys.stderr)
 
         # Get signed download URL
         with urllib.request.urlopen(
@@ -1192,6 +1198,11 @@ def emulator_game_latest():
             headers={
                 'Content-Disposition': f'attachment; filename="{filename}"',
                 'Content-Length': str(len(data)),
+                # Never let a browser pin an old build — this endpoint exists
+                # precisely to hand back whatever is newest on itch.io.
+                'Cache-Control': 'no-store, max-age=0',
+                'X-Itch-Upload-Id': str(zip_upload.get('id', '')),
+                'X-Itch-Updated-At': str(zip_upload.get('updated_at', '')),
             }
         )
     except Exception as e:
