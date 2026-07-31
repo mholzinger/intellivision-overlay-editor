@@ -11,6 +11,7 @@ from io import BytesIO
 from PIL import Image
 import cairosvg
 import os
+import sys
 import subprocess
 import logging
 import mimetypes
