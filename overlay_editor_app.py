@@ -1037,67 +1037,111 @@ def emulator_bios_file(filename):
     return send_from_directory(path.parent, path.name,
                                mimetype='application/octet-stream')
 
+# Known-good MD5s for the Intellivision BIOS ROMs. Anything that doesn't match
+# is discarded rather than handed to the emulator (Archive.org serves an HTML
+# error page with a 200 in some failure modes).
+BIOS_MD5 = {
+    'exec.bin':   '62e761035cb657903761800f4437b8af',
+    'grom.bin':   '0cd5946c6473e42e8e4c2137785e427f',
+    'ecs.bin':    '2e72a9a2b897d330a35c8b07a6146c52',
+    'ivoice.bin': 'd5530f74681ec6e0f282dab42e6b1c5f',
+}
+
+# Archive.org sources, tried in order. Each entry maps a BIOS filename to a
+# direct download URL. Archive.org can extract a single member from an item's
+# ZIP via /download/<item>/<zip>/<path-inside-zip>, so these pull ~35 KB total
+# instead of a multi-gigabyte BIOS pack.
+#
+# Note: the old source (OpenEmuBIOSPack) was taken down by Archive.org — it now
+# returns 403 "Item not available" for everyone, logged in or not. These items
+# are in public collections and need no IA credentials.
+BIOS_SOURCES = [
+    {
+        'name': 'Retropie BIOS Files (Archive.org)',
+        'base': ('https://archive.org/download/retropiebiosfilesconfiguredforeverysystem_20190904/'
+                 'Retropie%20Bios%20Files%20Configured%20for%20Every%20System.zip/'
+                 'Retropie%20Bios%20Files%20Configured%20for%20Every%20System%2FBIOS%2F'),
+        'files': {'exec.bin': 'exec.bin', 'grom.bin': 'grom.bin',
+                  'ecs.bin': 'ecs.bin', 'ivoice.bin': 'ivoice.bin'},
+    },
+    {
+        'name': 'Batocera BIOS V29+ (Archive.org)',
+        'base': ('https://archive.org/download/batocera-bios-v-29/Batocera%20BIOS%20V29%2B.zip/'
+                 'Batocera%20BIOS%20V29%2B%2FMattel%20Intellivision%2F'),
+        'files': {'exec.bin': 'exec.bin', 'grom.bin': 'grom.bin'},
+    },
+]
+
+
+def _fetch_bios_from_source(source, timeout=45):
+    """Download a source's BIOS files, keeping only those matching a known MD5."""
+    import hashlib
+    import requests
+
+    found = {}
+    for name, remote in source['files'].items():
+        try:
+            resp = requests.get(source['base'] + remote, timeout=timeout,
+                                allow_redirects=True)
+        except Exception as e:
+            print(f'[bios/fetch] {source["name"]}/{name}: {e}', file=sys.stderr)
+            continue
+        if resp.status_code != 200:
+            print(f'[bios/fetch] {source["name"]}/{name}: HTTP {resp.status_code}',
+                  file=sys.stderr)
+            continue
+        digest = hashlib.md5(resp.content).hexdigest()
+        if digest != BIOS_MD5[name]:
+            print(f'[bios/fetch] {source["name"]}/{name}: md5 mismatch ({digest})',
+                  file=sys.stderr)
+            continue
+        found[name] = resp.content
+    return found
+
+
 @app.route('/emulator/bios/fetch/available')
 def emulator_bios_fetch_available():
-    """Return whether IA credentials are configured (so UI can show/hide the Fetch button)."""
-    has_creds = bool(os.environ.get('OVL_IA_ACCESS_KEY') and os.environ.get('OVL_IA_SECRET_KEY'))
-    return jsonify({'available': has_creds})
+    """Return whether server-side BIOS fetching is possible (so UI can show/hide the button)."""
+    return jsonify({'available': True})
 
 
 @app.route('/emulator/bios/fetch')
 def emulator_bios_fetch():
     """
-    Proxy-fetch the OpenEmu BIOS Pack ZIP from Archive.org using the server's
-    IA credentials and stream it back to the browser same-origin.
-    Requires OVL_IA_ACCESS_KEY and OVL_IA_SECRET_KEY environment variables.
+    Fetch the Intellivision BIOS ROMs (exec/grom, plus ecs/ivoice when available)
+    from Archive.org server-side and return them as a small ZIP the emulator
+    shell extracts client-side. No Archive.org credentials required.
     """
-    access_key = os.environ.get('OVL_IA_ACCESS_KEY')
-    secret_key = os.environ.get('OVL_IA_SECRET_KEY')
-    logged_in_user = os.environ.get('OVL_IA_LOGGED_IN_USER', '')
-    logged_in_sig = os.environ.get('OVL_IA_LOGGED_IN_SIG', '')
-    if not access_key or not secret_key:
-        return jsonify({'error': 'IA credentials not configured on server'}), 503
+    import io
+    import zipfile
 
-    try:
-        import internetarchive as ia
+    collected = {}
+    for source in BIOS_SOURCES:
+        collected.update({k: v for k, v in _fetch_bios_from_source(source).items()
+                          if k not in collected})
+        if 'exec.bin' in collected and 'grom.bin' in collected:
+            break
 
-        # Strip Set-Cookie metadata (expires, path, domain) — keep value only
-        def _cv(s):
-            return s.split(';')[0].strip() if s else ''
+    if 'exec.bin' not in collected or 'grom.bin' not in collected:
+        missing = [n for n in ('exec.bin', 'grom.bin') if n not in collected]
+        return jsonify({
+            'error': f'Archive.org fetch failed — could not retrieve {", ".join(missing)}. '
+                     'Drop the BIOS files in manually instead.'
+        }), 502
 
-        config = {
-            's3': {'access': access_key, 'secret': secret_key},
-            'cookies': {'logged-in-user': _cv(logged_in_user), 'logged-in-sig': _cv(logged_in_sig)},
-        }
-        session = ia.get_session(config)
-        item = session.get_item('OpenEmuBIOSPack')
-        zip_file = next(
-            (f for f in item.get_files() if f.name.lower().endswith('.zip')),
-            None
-        )
-        if not zip_file:
-            return jsonify({'error': 'ZIP not found in Archive.org item'}), 404
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for name in ('exec.bin', 'grom.bin', 'ecs.bin', 'ivoice.bin'):
+            if name in collected:
+                zf.writestr(name, collected[name])
+    buf.seek(0)
 
-        from urllib.parse import quote
-        url = f'https://archive.org/download/OpenEmuBIOSPack/{quote(zip_file.name)}'
-        resp = session.get(url, stream=True)
-        if resp.status_code != 200:
-            return jsonify({'error': f'Archive.org returned {resp.status_code}'}), 502
-
-        def generate():
-            for chunk in resp.iter_content(chunk_size=65536):
-                if chunk:
-                    yield chunk
-
-        return app.response_class(
-            generate(),
-            status=200,
-            mimetype='application/zip',
-            headers={'Content-Disposition': 'attachment; filename="OpenEmu BIOS Pack.zip"'}
-        )
-    except Exception as e:
-        print(f'[bios/fetch] error: {e}', file=sys.stderr)
-        return jsonify({'error': str(e)}), 502
+    return app.response_class(
+        buf.getvalue(),
+        status=200,
+        mimetype='application/zip',
+        headers={'Content-Disposition': 'attachment; filename="intellivision-bios.zip"'}
+    )
 
 
 @app.route('/emulator/game/latest')
